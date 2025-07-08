@@ -53,7 +53,7 @@ export default function ProfileForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    seEror('');
+    seEro('');
     setSuccess('');
     if (!name || !phone || !gender || !birth || !score) {
       setError('모든 항목을 입력해 주세요.');

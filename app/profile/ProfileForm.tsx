@@ -22,7 +22,7 @@ export default function ProfileForm() {
   const [gender, setGender] = useState('');
   const [birth, setBirth] = useState('');
   const [score, setScore] = useState('');
-  //   const [error, setError] = useState('');
+  const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const router = useRouter();
   const { data: session } = useSession();

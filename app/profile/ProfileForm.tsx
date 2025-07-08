@@ -22,7 +22,7 @@ export default function ProfileForm() {
   const [gender, setGender] = useState('');
   const [birth, setBirth] = useState('');
   const [score, setScore] = useState('');
-  const [error, setError] = useState('');
+  //   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const router = useRouter();
   const { data: session } = useSession();
@@ -53,7 +53,7 @@ export default function ProfileForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    seEro('');
+    // setError('');
     setSuccess('');
     if (!name || !phone || !gender || !birth || !score) {
       setError('모든 항목을 입력해 주세요.');

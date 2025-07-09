@@ -34,7 +34,7 @@ export default function RootLayout({
           <SessionProviderWrapper>
             <SWRConfigContext>
               <Navbar />
-              {children}
+              <main className="p-5">{children}</main>
             </SWRConfigContext>
           </SessionProviderWrapper>
         </Theme>

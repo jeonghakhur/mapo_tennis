@@ -12,7 +12,6 @@ import {
 } from '@radix-ui/themes';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import SkeletonCard from '@/components/SkeletonCard';
 
 export default function WelcomePage() {
   const [name, setName] = useState('');
@@ -59,7 +58,23 @@ export default function WelcomePage() {
   return (
     <Box p="6" width="100%">
       {!session?.user ? (
-        <SkeletonCard />
+        <Box mb="4">
+          <Text as="label" size="3" mb="2" style={{ display: 'block' }}>
+            이메일
+          </Text>
+          <Text
+            size="3"
+            style={{
+              color: '#666',
+              background: '#f5f5f5',
+              borderRadius: 8,
+              padding: '8px 12px',
+              display: 'block',
+            }}
+          >
+            {session?.user?.email || ''}
+          </Text>
+        </Box>
       ) : (
         <>
           <Box mb="4">
@@ -79,7 +94,7 @@ export default function WelcomePage() {
               {session?.user?.email || ''}
             </Text>
           </Box>
-          <Text size="5" weight="bold" align="center" mb="4">
+          <Text size="5" weight="bold" align="center" mb="4" mr="2">
             추가 정보 입력
           </Text>
           <Text size="2" align="center" mb="5">

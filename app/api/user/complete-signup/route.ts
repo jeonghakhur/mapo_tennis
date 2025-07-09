@@ -4,7 +4,7 @@ import type { User } from '@/model/user';
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, phone, gender, birth, score, email } = await req.json();
+    const { name, phone, gender, birth, score, email, address } = await req.json();
     if (!name || !phone || !gender || !birth || !score || !email) {
       return NextResponse.json({ error: '필수 정보 누락' }, { status: 400 });
     }
@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
       score: Number(score),
       email,
       level: 1,
+      address,
     };
     const result = await upsertUser(userData);
     return NextResponse.json({ ok: true, id: result._id });

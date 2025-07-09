@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { Flex, Button, Text, Avatar } from '@radix-ui/themes';
-import { useSession, signIn, signOut } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 
 export default function Navbar() {
@@ -22,14 +22,10 @@ export default function Navbar() {
       <Flex align="center" justify="between" px="5" py="3">
         {/* 좌측: 홈 */}
         <Link href="/" style={{ textDecoration: 'none' }}>
-          <Text size="4" weight="bold" color="mint">
-            홈
-          </Text>
+          홈
         </Link>
         <Link href="/club" style={{ textDecoration: 'none' }}>
-          <Text size="4" weight="bold" color="mint">
-            클럽
-          </Text>
+          클럽
         </Link>
         {/* 우측: 로그인/회원가입 또는 사용자 정보/로그아웃 */}
         <Flex align="center" gap="3">
@@ -37,7 +33,6 @@ export default function Navbar() {
             <>
               <Button
                 variant="soft"
-                color="mint"
                 onClick={() =>
                   router.push(`/auth/signin?callbackUrl=${encodeURIComponent(pathname)}`)
                 }
@@ -46,7 +41,6 @@ export default function Navbar() {
               </Button>
               <Button
                 variant="solid"
-                color="mint"
                 onClick={() =>
                   router.push(`/auth/signup?callbackUrl=${encodeURIComponent(pathname)}`)
                 }

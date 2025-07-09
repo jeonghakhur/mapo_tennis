@@ -15,7 +15,7 @@ export default function SocialAuthButtons({ mode }: { mode: 'login' | 'signup' }
         onClick={() => signIn('kakao', { callbackUrl: isSignup ? '/welcome' : callbackUrl })}
         size="3"
       >
-        <img src="/kakao.svg" alt="Kakao" width={24} height={24} style={{ marginRight: 8 }} />
+        <Image src="/kakao.svg" alt="Kakao" width={24} height={24} style={{ marginRight: 8 }} />
         카카오로 {isSignup ? '회원가입하기' : '로그인'}
       </Button>
       <Button
@@ -23,7 +23,7 @@ export default function SocialAuthButtons({ mode }: { mode: 'login' | 'signup' }
         onClick={() => signIn('naver', { callbackUrl: isSignup ? '/welcome' : callbackUrl })}
         size="3"
       >
-        <img src="/naver.svg" alt="Naver" width={24} height={24} style={{ marginRight: 8 }} />
+        <Image src="/naver.svg" alt="Naver" width={24} height={24} style={{ marginRight: 8 }} />
         네이버로 {isSignup ? '회원가입하기' : '로그인'}
       </Button>
       <Button
@@ -31,7 +31,7 @@ export default function SocialAuthButtons({ mode }: { mode: 'login' | 'signup' }
         onClick={() => signIn('google', { callbackUrl: isSignup ? '/welcome' : callbackUrl })}
         size="3"
       >
-        <img src="/google.svg" width={18} height={18} alt="Google" style={{ marginRight: 8 }} />
+        <Image src="/google.svg" width={18} height={18} alt="Google" style={{ marginRight: 8 }} />
         구글로 {isSignup ? '회원가입하기' : '로그인'}
       </Button>
     </Flex>

@@ -1,6 +1,15 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Button, TextField, Flex, Text, RadioGroup, Box, Select } from '@radix-ui/themes';
+import {
+  Button,
+  TextField,
+  Flex,
+  Text,
+  RadioGroup,
+  Box,
+  Select,
+  Separator,
+} from '@radix-ui/themes';
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
 import type { User } from '@/model/user';
@@ -89,27 +98,36 @@ export default function ProfileForm() {
   return (
     <>
       {isHydrating ? (
-        <SkeletonCard />
+        <SkeletonCard lines={4} cardHeight={188} />
       ) : (
         <form onSubmit={handleSubmit}>
+          <Box>
+            <Text size="5" weight="bold" align="center" mb="4" mr="2">
+              프로필 정보 수정
+            </Text>
+            <Text size="2" align="center" mb="5">
+              회원 정보를 수정할 수 있습니다.
+            </Text>
+            <Separator my="4" size="4" />
+          </Box>
           <Box mb="4">
-            <Box mb="4">
-              <Text as="label" size="3" mb="2" style={{ display: 'block' }}>
-                이메일
-              </Text>
-              <Text
-                size="3"
-                style={{
-                  color: '#666',
-                  background: '#f5f5f5',
-                  borderRadius: 8,
-                  padding: '8px 12px',
-                  display: 'block',
-                }}
-              >
-                {session?.user?.email || ''}
-              </Text>
-            </Box>
+            <Text as="label" size="3" mb="2" style={{ display: 'block' }}>
+              이메일
+            </Text>
+            <Text
+              size="3"
+              style={{
+                color: '#666',
+                background: '#f5f5f5',
+                borderRadius: 8,
+                padding: '8px 12px',
+                display: 'block',
+              }}
+            >
+              {session?.user?.email || ''}
+            </Text>
+          </Box>
+          <Box mb="4">
             <Text as="label" size="3" mb="2" style={{ display: 'block' }}>
               실명
             </Text>

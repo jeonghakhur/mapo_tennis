@@ -1,5 +1,6 @@
 import { Card, Box, Text, Separator } from '@radix-ui/themes';
 import SocialAuthButtons from '../../../components/SocialAuthButtons';
+import { Suspense } from 'react';
 
 export default function SignInPage() {
   return (
@@ -14,7 +15,9 @@ export default function SignInPage() {
           소셜 계정으로 로그인하세요.
         </Text>
         <Separator my="4" size="4" />
-        <SocialAuthButtons mode="login" />
+        <Suspense fallback={<div>로딩 중...</div>}>
+          <SocialAuthButtons mode="login" />
+        </Suspense>
       </Card>
     </Box>
   );

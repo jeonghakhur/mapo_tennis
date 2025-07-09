@@ -8,13 +8,19 @@ export async function upsertUser({
   birth,
   score,
   email,
-}: Omit<User, '_id' | '_type' | 'level'>): Promise<User> {
+  level,
+}: Omit<User, '_id' | '_type'>): Promise<User> {
   if (!email) throw new Error('email is required');
   const existing = await client.fetch<User>(`*[_type == "user" && email == $email][0]`, { email });
   let result;
   if (existing && existing._id) {
-    result = await client.patch(existing._id).set({ name, phone, gender, birth, score }).commit();
+    // 기존 유저: level은 변경하지 않고, 전달된 값만 업데이트
+    result = await client
+      .patch(existing._id)
+      .set({ name, phone, gender, birth, score, level })
+      .commit();
   } else if (!existing) {
+    // 신규 유저: level을 1로 저장
     result = await client.create({
       _type: 'user',
       name,
@@ -33,5 +39,10 @@ export async function upsertUser({
 
 export async function getUserByEmail(email: string): Promise<User | null> {
   if (!email) throw new Error('email is required');
-  return await client.fetch<User>(`*[_type == "user" && email == $email][0]`, { email });
+  return await client.fetch<User>(
+    `*[_type == "user" && email == $email][0]{
+      ...,
+    }`,
+    { email },
+  );
 }

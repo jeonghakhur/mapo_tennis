@@ -5,7 +5,8 @@ export interface User {
   phone: string;
   gender: string;
   birth: string;
-  score: string;
+  score: number;
   email: string;
   level: number;
+  address?: string;
 }

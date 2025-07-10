@@ -9,11 +9,13 @@ import { urlFor } from '@/sanity/lib/image';
 import { useDropzone } from 'react-dropzone';
 import { isHydrating } from '@/lib/isHydrating';
 import SkeletonCard from '@/components/SkeletonCard';
+import { useLoading } from '@/hooks/useLoading';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 export default function ClubEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params);
   const router = useRouter();
-  const { club, updateClubById } = useClub(id);
+  const { club, updateClubById, isLoading } = useClub(id);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [workDays, setWorkDays] = useState('');
@@ -22,10 +24,10 @@ export default function ClubEditPage({ params }: { params: Promise<{ id: string 
   const [contact, setContact] = useState('');
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [imageRemoved, setImageRemoved] = useState(false);
+  const { loading, withLoading } = useLoading();
 
   useEffect(() => {
     if (club) {
@@ -62,7 +64,6 @@ export default function ClubEditPage({ params }: { params: Promise<{ id: string 
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setIsLoading(true);
     setError('');
     setSuccess('');
     try {
@@ -77,13 +78,12 @@ export default function ClubEditPage({ params }: { params: Promise<{ id: string 
       if (imageRemoved) {
         updateData.image = null;
       }
-      await updateClubById(updateData, image ?? undefined);
+      withLoading(() => updateClubById(updateData, image ?? undefined));
       setSuccess('클럽이 성공적으로 수정되었습니다!');
       setTimeout(() => router.push(`/club/${id}`), 1000);
     } catch (e) {
       setError('서버 오류가 발생했습니다. ' + String(e));
     }
-    setIsLoading(false);
   };
 
   const hydrating = isHydrating(isLoading, club);
@@ -94,6 +94,7 @@ export default function ClubEditPage({ params }: { params: Promise<{ id: string 
         <SkeletonCard lines={4} />
       ) : (
         <>
+          {loading && <LoadingOverlay size="3" />}
           <h2 style={{ fontSize: 24, marginBottom: 16 }}>클럽 수정</h2>
           <form onSubmit={handleSubmit}>
             <Separator my="4" size="4" />

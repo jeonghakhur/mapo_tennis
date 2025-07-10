@@ -8,6 +8,8 @@ import { urlFor } from '@/sanity/lib/image';
 import { useClub } from '@/hooks/useClubs';
 import SkeletonCard from '@/components/SkeletonCard';
 import { isHydrating } from '@/lib/isHydrating';
+import { useLoading } from '@/hooks/useLoading';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 export default function ClubDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params);
@@ -15,17 +17,18 @@ export default function ClubDetailPage({ params }: { params: Promise<{ id: strin
   const { club, isLoading, deleteClubById } = useClub(id);
   const [open, setOpen] = useState(false); // AlertDialog open state
   const [deleting, setDeleting] = useState(false);
+  const { loading, withLoading } = useLoading();
 
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      await deleteClubById();
+      withLoading(() => deleteClubById());
       router.push('/club');
     } catch (e) {
       alert(e instanceof Error ? e.message : '삭제에 실패했습니다.');
     }
     setDeleting(false);
-    setOpen(false);
+    // setOpen(false);
   };
 
   const hydrating = isHydrating(isLoading, club);
@@ -36,6 +39,7 @@ export default function ClubDetailPage({ params }: { params: Promise<{ id: strin
         <SkeletonCard lines={4} />
       ) : (
         <>
+          {loading && <LoadingOverlay size="3" />}
           <Button size="2" variant="soft" color="gray" mb="4" onClick={() => router.back()}>
             목록으로 돌아가기
           </Button>

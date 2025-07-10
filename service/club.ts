@@ -36,10 +36,8 @@ export async function updateClub(id: string, updateFields: Record<string, unknow
     updateFields.image === null &&
     prevClub?.image?.asset?._ref
   ) {
-    console.log('[updateClub] 이미지 asset 삭제 시도:', prevClub.image.asset._ref);
     try {
       await client.delete(prevClub.image.asset._ref);
-      console.log('[updateClub] 이미지 asset 삭제 성공:', prevClub.image.asset._ref);
     } catch (err) {
       console.error('[updateClub] 이미지 asset 삭제 실패:', err);
     }
@@ -53,4 +51,21 @@ export async function updateClub(id: string, updateFields: Record<string, unknow
   const patchResult = await client.patch(id).set(updateFields).commit();
   console.log('[updateClub] patch 커밋 결과:', patchResult);
   return patchResult;
+}
+
+// 클럽 단일 정보 조회 함수 (GROQ 쿼리로 id로만 조회)
+export async function getClub(id: string): Promise<Club | null> {
+  if (!id) return null;
+  const clubArr = await client.fetch(`*[_type == "club" && _id == $id][0]`, { id });
+  // clubArr는 단일 객체이거나 null
+  if (
+    clubArr &&
+    typeof clubArr.name === 'string' &&
+    typeof clubArr.description === 'string' &&
+    typeof clubArr.isPublic === 'boolean' &&
+    clubArr.createdBy
+  ) {
+    return clubArr as unknown as Club;
+  }
+  return null;
 }

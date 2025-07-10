@@ -1,5 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getClubs, createClub, deleteClub, uploadClubImage, updateClub } from '@/service/club';
+import {
+  getClubs,
+  createClub,
+  deleteClub,
+  uploadClubImage,
+  updateClub,
+  getClub,
+} from '@/service/club';
 import type { Club } from '@/model/club';
 import { getUserByEmail } from '@/service/user';
 import { getServerSession } from 'next-auth';
@@ -9,12 +16,12 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
-    const clubs = await getClubs();
     if (id) {
-      const club = clubs.find((c) => c._id === id);
+      const club = await getClub(id);
       if (!club) return NextResponse.json({ error: '클럽을 찾을 수 없습니다.' }, { status: 404 });
       return NextResponse.json({ club });
     }
+    const clubs = await getClubs();
     return NextResponse.json({ clubs });
   } catch (e) {
     return NextResponse.json({ error: '서버 오류', detail: String(e) }, { status: 500 });

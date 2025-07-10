@@ -8,11 +8,13 @@ type SkeletonProps = {
   cardHeight?: number; // 각 카드의 높이(px)
 };
 
+const cardDefaultHeight = [104, 132, 160];
+
 export default function SkeletonCard({
   lines = 3,
   className = '',
   lineClassName = '',
-  cardHeight = 120, // 기본 카드 높이(px)
+  cardHeight = cardDefaultHeight[lines - 1] || 0, // 기본 카드 높이(px)
 }: SkeletonProps) {
   // SSR에서는 6, CSR에서만 실제 높이로 변경
   const [cardCount, setCardCount] = useState(6);
@@ -23,7 +25,6 @@ export default function SkeletonCard({
     const cardGap = 16;
     const height = window.innerHeight - navbarHeight - bodyPaddingY;
     const count = Math.floor(height / (cardHeight + cardGap));
-    console.log(height, cardHeight, cardGap, count);
 
     setCardCount(count > 0 ? count : 1);
   }, [cardHeight]);

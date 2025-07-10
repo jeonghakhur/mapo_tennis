@@ -14,6 +14,7 @@ import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
 import type { User } from '@/model/user';
 import SkeletonCard from '@/components/SkeletonCard';
+import Container from '@/components/Container';
 
 export default function ProfileForm() {
   const [name, setName] = useState('');
@@ -31,15 +32,12 @@ export default function ProfileForm() {
     isLoading,
     error: swrError,
     mutate,
-  } = useSWR<{ user: User }>(
-    email ? `/api/user/get-by-email?email=${encodeURIComponent(email)}` : null,
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      shouldRetryOnError: false, // 선택: 오류 나도 재시도 안 함
-    },
-  );
+  } = useSWR<{ user: User }>(email ? `/api/user/?email=${email}` : null, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    shouldRetryOnError: false, // 선택: 오류 나도 재시도 안 함
+  });
 
   useEffect(() => {
     if (data && data.user) {
@@ -96,7 +94,7 @@ export default function ProfileForm() {
     typeof window === 'undefined' || isLoading || data === undefined || !data.user;
 
   return (
-    <>
+    <Container>
       {isHydrating ? (
         <SkeletonCard lines={4} cardHeight={188} />
       ) : (
@@ -235,6 +233,6 @@ export default function ProfileForm() {
           </Button>
         </form>
       )}
-    </>
+    </Container>
   );
 }

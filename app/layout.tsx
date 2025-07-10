@@ -4,7 +4,6 @@ import './globals.css';
 import '@radix-ui/themes/styles.css';
 import SessionProviderWrapper from '../components/SessionProviderWrapper';
 import { Theme } from '@radix-ui/themes';
-import Navbar from '../components/Navbar';
 import SWRConfigContext from '../context/SWRConfigContext';
 
 const geistSans = Geist({
@@ -32,10 +31,7 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Theme>
           <SessionProviderWrapper>
-            <SWRConfigContext>
-              <Navbar />
-              <main className="p-5">{children}</main>
-            </SWRConfigContext>
+            <SWRConfigContext>{children}</SWRConfigContext>
           </SessionProviderWrapper>
         </Theme>
       </body>

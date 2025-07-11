@@ -17,9 +17,10 @@ export default function Navbar() {
         position: 'sticky',
         top: 0,
         zIndex: 100,
+        height: '56px',
       }}
     >
-      <Flex align="center" justify="between" px="5" py="3">
+      <Flex align="center" px="5" py="3" gap="3">
         {/* 좌측: 홈 */}
         <Link href="/" style={{ textDecoration: 'none' }}>
           홈
@@ -28,7 +29,7 @@ export default function Navbar() {
           클럽
         </Link>
         {/* 우측: 로그인/회원가입 또는 사용자 정보/로그아웃 */}
-        <Flex align="center" gap="3">
+        <Flex align="center" gap="3" ml="auto" style={{ height: '32px' }}>
           {status === 'loading' ? null : !session ? (
             <>
               <Button

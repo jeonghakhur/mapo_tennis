@@ -11,10 +11,12 @@ import {
   Separator,
 } from '@radix-ui/themes';
 import { useSession } from 'next-auth/react';
-import useSWR from 'swr';
-import type { User } from '@/model/user';
+import { useUser } from '@/hooks/useUser';
 import SkeletonCard from '@/components/SkeletonCard';
 import Container from '@/components/Container';
+import { isHydrating } from '@/lib/isHydrating';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import { useLoading } from '@/hooks/useLoading';
 
 export default function ProfileForm() {
   const [name, setName] = useState('');
@@ -27,28 +29,19 @@ export default function ProfileForm() {
   const [success, setSuccess] = useState('');
   const { data: session } = useSession();
   const email = session?.user?.email;
-  const {
-    data,
-    isLoading,
-    error: swrError,
-    mutate,
-  } = useSWR<{ user: User }>(email ? `/api/user/?email=${email}` : null, {
-    revalidateIfStale: false,
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    shouldRetryOnError: false, // 선택: 오류 나도 재시도 안 함
-  });
+  const { user, isLoading, error: swrError, updateUser, updateError } = useUser(email);
+  const { loading, withLoading } = useLoading();
 
   useEffect(() => {
-    if (data && data.user) {
-      setName(data.user.name || '');
-      setPhone(data.user.phone || '');
-      setGender(data.user.gender || '');
-      setBirth(data.user.birth || '');
-      setScore(data.user.score ? String(data.user.score) : '');
-      setAddress(data.user.address || '');
+    if (user) {
+      setName(user.name || '');
+      setPhone(user.phone || '');
+      setGender(user.gender || '');
+      setBirth(user.birth || '');
+      setScore(user.score ? String(user.score) : '');
+      setAddress(user.address || '');
     }
-  }, [data]);
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,10 +55,8 @@ export default function ProfileForm() {
       setError('생년월일은 8자리(YYYYMMDD)로 입력해 주세요.');
       return;
     }
-    const res = await fetch('/api/user/complete-signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    withLoading(() =>
+      updateUser({
         name,
         phone,
         gender,
@@ -74,12 +65,11 @@ export default function ProfileForm() {
         email: session?.user?.email,
         address,
       }),
-    });
-    if (res.ok) {
+    );
+    if (!updateError) {
       setSuccess('회원 정보가 성공적으로 수정되었습니다.');
-      mutate();
     } else {
-      setError('회원 정보 수정에 실패했습니다. 다시 시도해 주세요.');
+      setError(updateError);
     }
   };
 
@@ -90,15 +80,15 @@ export default function ProfileForm() {
       </Text>
     );
 
-  const isHydrating =
-    typeof window === 'undefined' || isLoading || data === undefined || !data.user;
+  const hydrating = isHydrating(isLoading, user);
 
   return (
     <Container>
-      {isHydrating ? (
-        <SkeletonCard lines={4} cardHeight={188} />
+      {hydrating ? (
+        <SkeletonCard lines={4} />
       ) : (
         <form onSubmit={handleSubmit}>
+          {loading && <LoadingOverlay size="3" />}
           <Box>
             <Text size="5" weight="bold" align="center" mb="4" mr="2">
               프로필 정보 수정

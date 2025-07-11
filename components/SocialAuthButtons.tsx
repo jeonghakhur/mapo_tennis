@@ -12,7 +12,11 @@ export default function SocialAuthButtons({ mode }: { mode: 'login' | 'signup' }
     <Flex direction="column" gap="3" align="center" style={{ width: 280 }}>
       <Button
         style={{ background: '#fee500', color: '#181600' }}
-        onClick={() => signIn('kakao', { callbackUrl: isSignup ? '/welcome' : callbackUrl })}
+        onClick={() =>
+          signIn('kakao', {
+            callbackUrl: isSignup ? '/welcome' : `/check-signup?callbackUrl=${callbackUrl}`,
+          })
+        }
         size="3"
       >
         <Image src="/kakao.svg" alt="Kakao" width={24} height={24} style={{ marginRight: 8 }} />
@@ -20,7 +24,11 @@ export default function SocialAuthButtons({ mode }: { mode: 'login' | 'signup' }
       </Button>
       <Button
         style={{ background: '#03c75a', color: 'white' }}
-        onClick={() => signIn('naver', { callbackUrl: isSignup ? '/welcome' : callbackUrl })}
+        onClick={() =>
+          signIn('naver', {
+            callbackUrl: isSignup ? '/welcome' : `/check-signup?callbackUrl=${callbackUrl}`,
+          })
+        }
         size="3"
       >
         <Image src="/naver.svg" alt="Naver" width={24} height={24} style={{ marginRight: 8 }} />
@@ -28,7 +36,11 @@ export default function SocialAuthButtons({ mode }: { mode: 'login' | 'signup' }
       </Button>
       <Button
         style={{ background: '#fff', color: '#222', border: '1px solid #ccc' }}
-        onClick={() => signIn('google', { callbackUrl: isSignup ? '/welcome' : callbackUrl })}
+        onClick={() =>
+          signIn('google', {
+            callbackUrl: isSignup ? '/welcome' : `/check-signup?callbackUrl=${callbackUrl}`,
+          })
+        }
         size="3"
       >
         <Image src="/google.svg" width={18} height={18} alt="Google" style={{ marginRight: 8 }} />

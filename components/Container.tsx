@@ -5,7 +5,7 @@ export default function Container({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Navbar />
-      <main className="p-5">{children}</main>
+      <main className="pt-5 px-5 pb-15">{children}</main>
     </>
   );
 }

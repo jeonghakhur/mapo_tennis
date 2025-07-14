@@ -56,16 +56,6 @@ export async function updateClub(id: string, updateFields: Record<string, unknow
 // 클럽 단일 정보 조회 함수 (GROQ 쿼리로 id로만 조회)
 export async function getClub(id: string): Promise<Club | null> {
   if (!id) return null;
-  const clubArr = await client.fetch(`*[_type == "club" && _id == $id][0]`, { id });
-  // clubArr는 단일 객체이거나 null
-  if (
-    clubArr &&
-    typeof clubArr.name === 'string' &&
-    typeof clubArr.description === 'string' &&
-    typeof clubArr.isPublic === 'boolean' &&
-    clubArr.createdBy
-  ) {
-    return clubArr as unknown as Club;
-  }
-  return null;
+  const club = await client.fetch(`*[_type == "club" && _id == $id][0]`, { id });
+  return club ? (club as Club) : null;
 }

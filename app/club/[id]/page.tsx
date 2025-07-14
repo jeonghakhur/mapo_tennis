@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box, Text, Button, Flex, AlertDialog } from '@radix-ui/themes';
+import { Button, Flex, AlertDialog, DataList } from '@radix-ui/themes';
 import Container from '@/components/Container';
 import Image from 'next/image';
 import { urlFor } from '@/sanity/lib/image';
@@ -75,48 +75,50 @@ export default function ClubDetailPage({ params }: { params: Promise<{ id: strin
           </Flex>
           {club && (
             <>
-              {club.image?.asset?._ref && (
-                <Box mb="4">
-                  <Image
-                    src={urlFor(club.image).url()}
-                    alt={club.name}
-                    width={800}
-                    height={600}
-                    style={{
-                      borderRadius: 12,
-                      objectFit: 'contain',
-                      maxWidth: 320,
-                      maxHeight: 200,
-                      width: '100%',
-                      height: 'auto',
-                      display: 'block',
-                    }}
-                  />
-                </Box>
-              )}
-              <Box mb="4">
-                <Text size="6" weight="bold">
-                  {club.name}
-                </Text>
-              </Box>
-              <Box mb="2">
-                <Text size="4">{club.description}</Text>
-              </Box>
-              <Box mb="2">
-                <Text size="3" color="gray">
-                  장소: {club.location}
-                </Text>
-              </Box>
-              <Box mb="2">
-                <Text size="3" color="gray">
-                  공개여부: {club.isPublic ? '공개' : '비공개'}
-                </Text>
-              </Box>
-              <Box mb="2">
-                <Text size="3" color="gray">
-                  연락처: {club.contact || '-'}
-                </Text>
-              </Box>
+              <DataList.Root>
+                {club.image?.asset?._ref && (
+                  <DataList.Item align="center">
+                    <DataList.Label>클럽 이미지</DataList.Label>
+                    <DataList.Value>
+                      <Image
+                        src={urlFor(club.image).url()}
+                        alt={club.name}
+                        width={160}
+                        height={120}
+                        style={{
+                          borderRadius: 12,
+                          objectFit: 'contain',
+                          maxWidth: 160,
+                          maxHeight: 120,
+                          width: '100%',
+                          height: 'auto',
+                          display: 'block',
+                        }}
+                      />
+                    </DataList.Value>
+                  </DataList.Item>
+                )}
+                <DataList.Item>
+                  <DataList.Label>클럽명</DataList.Label>
+                  <DataList.Value>{club.name}</DataList.Value>
+                </DataList.Item>
+                <DataList.Item>
+                  <DataList.Label>소개</DataList.Label>
+                  <DataList.Value>{club.description}</DataList.Value>
+                </DataList.Item>
+                <DataList.Item>
+                  <DataList.Label>장소</DataList.Label>
+                  <DataList.Value>{club.location}</DataList.Value>
+                </DataList.Item>
+                <DataList.Item>
+                  <DataList.Label>공개여부</DataList.Label>
+                  <DataList.Value>{club.isPublic ? '공개' : '비공개'}</DataList.Value>
+                </DataList.Item>
+                <DataList.Item>
+                  <DataList.Label>연락처</DataList.Label>
+                  <DataList.Value>{club.contact || '-'}</DataList.Value>
+                </DataList.Item>
+              </DataList.Root>
             </>
           )}
         </>

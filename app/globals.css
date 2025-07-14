@@ -1,2 +1,40 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
+.rt-TableRootTable {
+  border-top: 1px solid #e0e0e0;
+}
+.rt-TableRootTable th,
+.rt-TableRootTable td {
+  border-left: 1px solid #e0e0e0;
+
+  &:first-child {
+    border-left: none;
+  }
+}
+
+.table-form {
+  width: 100%;
+  border-collapse: collapse;
+  border-top: 1px solid #e0e0e0;
+
+  th {
+    padding: 8px;
+    border-bottom: 1px solid #e0e0e0;
+    border-left: 1px solid #e0e0e0;
+    text-align: left;
+
+    &:first-child {
+      border-left: none;
+    }
+  }
+
+  td {
+    padding: 8px;
+    border-bottom: 1px solid #e0e0e0;
+    border-left: 1px solid #e0e0e0;
+
+    &:first-child {
+      border-left: none;
+    }
+  }
+}

@@ -9,8 +9,6 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
 
-  console.log(session);
-
   return (
     <nav
       style={{

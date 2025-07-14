@@ -54,59 +54,7 @@ export const club = {
       description: '클럽을 생성한 사용자',
       readOnly: true,
     },
-    {
-      name: 'members',
-      type: 'array',
-      title: '클럽 회원',
-      of: [
-        {
-          type: 'object',
-          fields: [
-            {
-              name: 'name',
-              type: 'string',
-              title: '성명',
-              validation: (Rule: Rule) => Rule.required(),
-            },
-            {
-              name: 'role',
-              type: 'string',
-              title: '직위',
-              options: { list: ['회장', '부회장', '회원', '기타'] },
-            },
-            { name: 'birth', type: 'string', title: '생년월일' },
-            {
-              name: 'gender',
-              type: 'string',
-              title: '성별',
-              options: { list: ['남성', '여성', '기타'] },
-            },
-            {
-              name: 'joinedAt',
-              type: 'datetime',
-              title: '가입일',
-              validation: (Rule: Rule) => Rule.required(),
-            },
-            { name: 'leftAt', type: 'datetime', title: '탈퇴일' },
-            {
-              name: 'isApproved',
-              type: 'boolean',
-              title: '회원활동 승인여부',
-              initialValue: false,
-            },
-            {
-              name: 'userRef',
-              type: 'reference',
-              to: [{ type: 'user' }],
-              title: '회원(user) 참조',
-              description: '실제 회원 계정과 연결(선택)',
-            },
-            { name: 'contact', type: 'string', title: '연락처', description: '선택' },
-            { name: 'memo', type: 'text', title: '비고', description: '관리자 메모 등(선택)' },
-          ],
-        },
-      ],
-    },
+    // 회원 관련 필드 삭제됨
   ],
   preview: {
     select: {

@@ -39,45 +39,48 @@ export default function ClubPage() {
       {error && <Text color="red">클럽 목록을 불러오지 못했습니다.</Text>}
       <Box>
         {clubs.length === 0 && <Text>등록된 클럽이 없습니다.</Text>}
-        {clubs.map((club) => (
-          <Link
-            key={club._id}
-            href={`/club/${club._id}`}
-            style={{ textDecoration: 'none', color: 'inherit' }}
-          >
-            <Box
-              mb="4"
-              p="3"
-              style={{
-                border: '1px solid #eee',
-                borderRadius: 8,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 16,
-              }}
+        {clubs
+          .slice()
+          .sort((a, b) => a.name.localeCompare(b.name, 'ko-KR'))
+          .map((club) => (
+            <Link
+              key={club._id}
+              href={`/club/${club._id}`}
+              style={{ textDecoration: 'none', color: 'inherit' }}
             >
-              {club.image?.asset?._ref && (
-                <Image
-                  src={urlFor(club.image).width(200).height(200).url()}
-                  alt={club.name}
-                  width={24}
-                  height={24}
-                  style={{ borderRadius: 8, objectFit: 'cover' }}
-                />
-              )}
-              <div>
-                <Text size="4" weight="bold">
-                  {club.name}
-                </Text>
-                <Text size="2" color="gray">
-                  {club.location}
-                </Text>
-                <Text size="2">{club.description}</Text>
-              </div>
-            </Box>
-          </Link>
-        ))}
+              <Box
+                mb="4"
+                p="3"
+                style={{
+                  border: '1px solid #eee',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 16,
+                }}
+              >
+                {club.image?.asset?._ref && (
+                  <Image
+                    src={urlFor(club.image).width(200).height(200).url()}
+                    alt={club.name}
+                    width={24}
+                    height={24}
+                    style={{ borderRadius: 8, objectFit: 'cover' }}
+                  />
+                )}
+                <div>
+                  <Text size="4" weight="bold">
+                    {club.name}
+                  </Text>
+                  <Text size="2" color="gray">
+                    {club.location}
+                  </Text>
+                  <Text size="2">{club.description}</Text>
+                </div>
+              </Box>
+            </Link>
+          ))}
       </Box>
     </Container>
   );

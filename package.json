@@ -14,7 +14,7 @@
     "@radix-ui/themes": "^3.2.1",
     "@sanity/image-url": "^1.1.0",
     "@sanity/vision": "^3.97.1",
-    "@uiw/react-md-editor": "^4.0.7",
+    "@toast-ui/react-editor": "^3.2.3",
     "clsx": "^2.1.1",
     "lucide-react": "^0.525.0",
     "next": "15.3.5",
@@ -23,8 +23,6 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-dropzone": "^14.3.8",
-    "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1",
     "sanity": "^3.97.1",
     "styled-components": "^6.1.19",
     "swr": "^2.3.4"

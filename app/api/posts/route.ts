@@ -33,6 +33,12 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const data: PostInput = await req.json();
+
+    // 필수 필드 검증
+    if (!data.title || !data.title.trim()) {
+      return NextResponse.json({ error: '제목은 필수 입력 사항입니다.' }, { status: 400 });
+    }
+
     const result = await createPost(data);
 
     // 알림 생성

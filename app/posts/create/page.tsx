@@ -20,10 +20,27 @@ export default function CreatePostPage() {
     attachments: [],
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<{ title?: string }>({});
   const router = useRouter();
+
+  const validateForm = () => {
+    const newErrors: { title?: string } = {};
+
+    if (!formData.title.trim()) {
+      newErrors.title = '제목을 입력해주세요.';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -52,6 +69,10 @@ export default function CreatePostPage() {
   };
 
   const handleSave = async (publish: boolean) => {
+    if (!validateForm()) {
+      return;
+    }
+
     const updatedData = { ...formData, isPublished: publish };
     setFormData(updatedData);
 
@@ -103,15 +124,25 @@ export default function CreatePostPage() {
               size="3"
               placeholder="포스트 제목을 입력하세요"
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, title: e.target.value });
+                if (errors.title) {
+                  setErrors({ ...errors, title: undefined });
+                }
+              }}
               required
+              color={errors.title ? 'red' : undefined}
             />
+            {errors.title && (
+              <Text size="1" color="red" mt="1">
+                {errors.title}
+              </Text>
+            )}
           </div>
 
           <MarkdownEditor
             value={formData.content}
             onChange={(value) => setFormData({ ...formData, content: value })}
-            placeholder="포스트 내용을 마크다운으로 작성하세요..."
           />
 
           <FileUpload
@@ -119,38 +150,23 @@ export default function CreatePostPage() {
             onAttachmentsChange={(attachments) => setFormData({ ...formData, attachments })}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Text as="div" size="2" weight="bold" mb="2">
-                작성자 *
-              </Text>
-              <TextField.Root
-                size="3"
-                placeholder="작성자 이름"
-                value={formData.author}
-                onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-                required
-              />
-            </div>
-
-            <div>
-              <Text as="div" size="2" weight="bold" mb="2">
-                카테고리 *
-              </Text>
-              <Select.Root
-                value={formData.category}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, category: value as 'notice' | 'event' | 'general' })
-                }
-              >
-                <Select.Trigger />
-                <Select.Content>
-                  <Select.Item value="general">일반</Select.Item>
-                  <Select.Item value="notice">공지사항</Select.Item>
-                  <Select.Item value="event">이벤트</Select.Item>
-                </Select.Content>
-              </Select.Root>
-            </div>
+          <div>
+            <Text as="div" size="2" weight="bold" mb="2">
+              카테고리 *
+            </Text>
+            <Select.Root
+              value={formData.category}
+              onValueChange={(value) =>
+                setFormData({ ...formData, category: value as 'notice' | 'event' | 'general' })
+              }
+            >
+              <Select.Trigger />
+              <Select.Content>
+                <Select.Item value="general">일반</Select.Item>
+                <Select.Item value="notice">공지사항</Select.Item>
+                <Select.Item value="event">이벤트</Select.Item>
+              </Select.Content>
+            </Select.Root>
           </div>
 
           <Flex gap="3" justify="end" pt="4">

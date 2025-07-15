@@ -34,6 +34,9 @@ export default function Navbar() {
         <Link href="/club-member" style={{ textDecoration: 'none' }}>
           클럽멤버
         </Link>
+        <Link href="/posts" style={{ textDecoration: 'none' }}>
+          포스트
+        </Link>
         <Link href="/notifications" style={{ textDecoration: 'none', position: 'relative' }}>
           <Bell size={20} />
           {unreadCount > 0 && (

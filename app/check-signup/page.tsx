@@ -2,10 +2,10 @@
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '@/hooks/useUser';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { Button, Box, Text, Flex, Card, Spinner } from '@radix-ui/themes';
 
-export default function CheckSignupPage() {
+function CheckSignupContent() {
   const { data: session, status } = useSession();
   const { replace, push } = useRouter();
   const searchParams = useSearchParams();
@@ -64,5 +64,21 @@ export default function CheckSignupPage() {
         </Card>
       </Box>
     )
+  );
+}
+
+function CheckSignupFallback() {
+  return (
+    <Flex justify="center" align="center" style={{ minHeight: '60vh' }}>
+      <Spinner size="3" />
+    </Flex>
+  );
+}
+
+export default function CheckSignupPage() {
+  return (
+    <Suspense fallback={<CheckSignupFallback />}>
+      <CheckSignupContent />
+    </Suspense>
   );
 }

@@ -3,7 +3,6 @@ import {
   Box,
   Text,
   Button,
-  Table,
   Flex,
   Select,
   TextField,
@@ -259,20 +258,20 @@ export default function ClubMemberListPage() {
             </Dialog.Content>
           </Dialog.Root>
           <div className="overflow-x-auto">
-            <Table.Root className="whitespace-nowrap">
-              <Table.Header>
-                <Table.Row className="text-center text-lg">
-                  <Table.ColumnHeaderCell>순번</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell>클럽</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell>이름</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell>직위</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell>나이</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell>점수</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell>성별</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell>회원상태</Table.ColumnHeaderCell>
-                </Table.Row>
-              </Table.Header>
-              <Table.Body>
+            <table className="table-form">
+              <thead>
+                <tr>
+                  <th>순번</th>
+                  <th>클럽</th>
+                  <th>이름</th>
+                  <th>직위</th>
+                  <th>나이</th>
+                  <th>점수</th>
+                  <th>성별</th>
+                  <th>회원상태</th>
+                </tr>
+              </thead>
+              <tbody>
                 {(filteredMembersFinal as MemberType[])
                   .slice()
                   .sort((a, b) => {
@@ -283,24 +282,23 @@ export default function ClubMemberListPage() {
                   .map((m, idx) => {
                     const id = (m as ClubMember)._id || idx;
                     return (
-                      <Table.Row
+                      <tr
                         key={id}
-                        className="text-center hover:bg-gray-100 cursor-pointer text-lg"
                         onClick={() => router.push(`/club-member/${(m as ClubMember)._id || ''}`)}
                       >
-                        <Table.Cell>{idx + 1}</Table.Cell>
-                        <Table.Cell>{m.club && 'name' in m.club ? m.club.name : '-'}</Table.Cell>
-                        <Table.Cell>{m.user}</Table.Cell>
-                        <Table.Cell>{m.role || '-'}</Table.Cell>
-                        <Table.Cell>{getAge(m.birth)}</Table.Cell>
-                        <Table.Cell>{m.score || '-'}</Table.Cell>
-                        <Table.Cell>{m.gender || '-'}</Table.Cell>
-                        <Table.Cell>{m.status || '-'}</Table.Cell>
-                      </Table.Row>
+                        <td>{idx + 1}</td>
+                        <td>{m.club && 'name' in m.club ? m.club.name : '-'}</td>
+                        <td>{m.user}</td>
+                        <td>{m.role || '-'}</td>
+                        <td>{getAge(m.birth)}</td>
+                        <td>{m.score || '-'}</td>
+                        <td>{m.gender || '-'}</td>
+                        <td>{m.status || '-'}</td>
+                      </tr>
                     );
                   })}
-              </Table.Body>
-            </Table.Root>
+              </tbody>
+            </table>
           </div>
         </Box>
       )}

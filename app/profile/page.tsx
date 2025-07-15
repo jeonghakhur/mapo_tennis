@@ -10,7 +10,7 @@ import {
   Select,
   Separator,
 } from '@radix-ui/themes';
-import { useSession } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { useUser } from '@/hooks/useUser';
 import SkeletonCard from '@/components/SkeletonCard';
 import Container from '@/components/Container';
@@ -218,9 +218,14 @@ export default function ProfileForm() {
               {success}
             </Text>
           )}
-          <Button type="submit" style={{ marginTop: 16, width: '100%' }} size="4" radius="large">
-            회원 정보 수정
-          </Button>
+          <Box className="btn-wrap">
+            <Button variant="outline" size="3" onClick={() => signOut({ callbackUrl: '/' })}>
+              로그아웃
+            </Button>
+            <Button type="submit" size="3" radius="large">
+              회원 정보 수정
+            </Button>
+          </Box>
         </form>
       )}
     </Container>

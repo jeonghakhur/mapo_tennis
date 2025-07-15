@@ -1,13 +1,16 @@
 'use client';
 import Link from 'next/link';
-import { Flex, Button, Text, Avatar } from '@radix-ui/themes';
-import { useSession, signOut } from 'next-auth/react';
+import { Flex, Button, Avatar, Badge } from '@radix-ui/themes';
+import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useNotifications } from '@/hooks/useNotifications';
+import { Bell } from 'lucide-react';
 
 export default function Navbar() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const { unreadCount } = useNotifications();
 
   return (
     <nav
@@ -28,6 +31,32 @@ export default function Navbar() {
         <Link href="/club" style={{ textDecoration: 'none' }}>
           클럽
         </Link>
+        <Link href="/club-member" style={{ textDecoration: 'none' }}>
+          클럽멤버
+        </Link>
+        <Link href="/notifications" style={{ textDecoration: 'none', position: 'relative' }}>
+          <Bell size={20} />
+          {unreadCount > 0 && (
+            <Badge
+              color="red"
+              size="1"
+              style={{
+                position: 'absolute',
+                top: '-8px',
+                right: '-8px',
+                minWidth: '16px',
+                height: '16px',
+                fontSize: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {unreadCount}
+            </Badge>
+          )}
+        </Link>
+
         {/* 우측: 로그인/회원가입 또는 사용자 정보/로그아웃 */}
         <Flex align="center" gap="3" ml="auto" style={{ height: '32px' }}>
           {status === 'loading' ? null : !session ? (
@@ -54,15 +83,11 @@ export default function Navbar() {
               <Avatar
                 src={session.user?.image ?? undefined}
                 fallback={session.user?.name?.[0] ?? 'U'}
-                size="2"
+                size="3"
                 radius="full"
                 style={{ cursor: 'pointer' }}
                 onClick={() => router.push('/profile')}
               />
-              <Text size="3">{session.user?.name}</Text>
-              <Button variant="soft" color="gray" onClick={() => signOut({ callbackUrl: '/' })}>
-                로그아웃
-              </Button>
             </>
           )}
         </Flex>

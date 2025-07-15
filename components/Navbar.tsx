@@ -37,6 +37,9 @@ export default function Navbar() {
         <Link href="/posts" style={{ textDecoration: 'none' }}>
           포스트
         </Link>
+        <Link href="/expenses" style={{ textDecoration: 'none' }}>
+          지출내역
+        </Link>
         <Link href="/notifications" style={{ textDecoration: 'none', position: 'relative' }}>
           <Bell size={20} />
           {unreadCount > 0 && (

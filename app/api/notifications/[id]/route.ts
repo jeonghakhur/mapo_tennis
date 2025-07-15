@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { markNotificationAsRead, deleteNotification } from '@/service/notification';
 
 // 알림 읽음 처리
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     await markNotificationAsRead(id);
 
@@ -16,9 +16,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 }
 
 // 알림 삭제
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     await deleteNotification(id);
 

@@ -51,6 +51,7 @@ export default function FileUpload({ attachments, onAttachmentsChange }: FileUpl
 
   const getFileIcon = (type: string) => {
     if (type.startsWith('image/')) {
+      // eslint-disable-next-line jsx-a11y/alt-text
       return <Image size={16} />;
     } else if (type === 'application/pdf') {
       return <FileText size={16} />;

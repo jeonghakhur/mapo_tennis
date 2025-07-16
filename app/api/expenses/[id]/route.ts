@@ -4,9 +4,10 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 
 // 지출내역 개별 조회
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const expense = await getExpense(params.id);
+    const { id } = await params;
+    const expense = await getExpense(id);
     if (!expense) {
       return NextResponse.json({ error: '지출내역을 찾을 수 없습니다.' }, { status: 404 });
     }
@@ -18,13 +19,14 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 // 지출내역 수정
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.name) {
       return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
     }
 
+    const { id } = await params;
     const formData = await req.formData();
     const title = formData.get('title') as string;
     const storeName = formData.get('storeName') as string;
@@ -61,7 +63,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       description: description || undefined,
     };
 
-    const expense = await updateExpense(params.id, updateData);
+    const expense = await updateExpense(id, updateData);
     return NextResponse.json(expense);
   } catch (error) {
     console.error('지출내역 수정 실패:', error);
@@ -70,14 +72,15 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 // 지출내역 삭제
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.name) {
       return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
     }
 
-    await deleteExpense(params.id);
+    const { id } = await params;
+    await deleteExpense(id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('지출내역 삭제 실패:', error);

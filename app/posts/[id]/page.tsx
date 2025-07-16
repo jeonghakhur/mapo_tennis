@@ -153,6 +153,7 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
                     >
                       <div className="flex items-center gap-2">
                         {attachment.type.startsWith('image/') ? (
+                          // eslint-disable-next-line jsx-a11y/alt-text
                           <Image size={16} />
                         ) : attachment.type === 'application/pdf' ? (
                           <FileText size={16} />

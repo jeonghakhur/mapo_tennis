@@ -1,7 +1,7 @@
 'use client';
 import { Box, Text, Button, Flex, TextField, Select } from '@radix-ui/themes';
 import Container from '@/components/Container';
-import { ArrowLeft, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { use } from 'react';
@@ -106,15 +106,6 @@ export default function EditTournamentPage({ params }: EditTournamentPageProps) 
       ) : (
         <Box>
           {loading && <LoadingOverlay size="3" />}
-          <Flex align="center" gap="3" mb="6">
-            <Button variant="soft" onClick={() => router.back()} size="2">
-              <ArrowLeft size={16} />
-              뒤로가기
-            </Button>
-            <Text size="6" weight="bold">
-              대회 수정
-            </Text>
-          </Flex>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

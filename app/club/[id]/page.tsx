@@ -40,9 +40,6 @@ export default function ClubDetailPage({ params }: { params: Promise<{ id: strin
       ) : (
         <>
           {loading && <LoadingOverlay size="3" />}
-          <Button size="2" variant="soft" color="gray" mb="4" onClick={() => router.back()}>
-            목록으로 돌아가기
-          </Button>
           <Flex gap="3" mb="4">
             <Button size="2" color="blue" onClick={() => router.push(`/club/${id}/edit`)}>
               수정

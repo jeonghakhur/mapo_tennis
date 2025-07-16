@@ -1,7 +1,7 @@
 'use client';
 import { Box, Text, Button, Flex, Badge, Card } from '@radix-ui/themes';
 import Container from '@/components/Container';
-import { ArrowLeft, Edit, Trash2, Calendar, MapPin, Users } from 'lucide-react';
+import { Edit, Trash2, Calendar, MapPin, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { use } from 'react';
 import { useTournament, useDeleteTournament } from '@/hooks/useTournaments';
@@ -134,15 +134,6 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
       ) : (
         <Box>
           {loading && <LoadingOverlay size="3" />}
-          <Flex align="center" gap="3" mb="6">
-            <Button variant="soft" onClick={() => router.back()} size="2">
-              <ArrowLeft size={16} />
-              뒤로가기
-            </Button>
-            <Text size="6" weight="bold">
-              대회 상세
-            </Text>
-          </Flex>
 
           <Card className="p-6">
             <div className="space-y-6">

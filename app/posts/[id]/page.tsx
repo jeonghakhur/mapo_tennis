@@ -1,7 +1,7 @@
 'use client';
 import { Box, Text, Button, Flex, Badge, Card } from '@radix-ui/themes';
 import Container from '@/components/Container';
-import { ArrowLeft, Edit, Trash2, Image, FileText, File } from 'lucide-react';
+import { Edit, Trash2, Image, FileText, File } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { usePost } from '@/hooks/usePosts';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
@@ -91,16 +91,6 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
   return (
     <Container>
       <Box>
-        <Flex align="center" gap="3" mb="4">
-          <Button variant="soft" onClick={() => router.back()} size="2">
-            <ArrowLeft size={16} />
-            뒤로가기
-          </Button>
-          <Text size="6" weight="bold">
-            포스트 상세
-          </Text>
-        </Flex>
-
         <Card className="p-6">
           <div className="space-y-4">
             {/* 헤더 */}

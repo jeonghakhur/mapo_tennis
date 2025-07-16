@@ -38,15 +38,19 @@ export default function PostsPage() {
       notice: '공지사항',
       event: '이벤트',
       general: '일반',
+      tournament_schedule: '대회일정',
+      tournament_info: '대회요강',
     };
     return categoryMap[category as keyof typeof categoryMap] || category;
   };
 
   const getCategoryColor = (category: string) => {
-    const colorMap: Record<string, 'red' | 'blue' | 'gray'> = {
+    const colorMap: Record<string, 'red' | 'blue' | 'gray' | 'green' | 'orange'> = {
       notice: 'red',
       event: 'blue',
       general: 'gray',
+      tournament_schedule: 'green',
+      tournament_info: 'orange',
     };
     return colorMap[category] || 'gray';
   };

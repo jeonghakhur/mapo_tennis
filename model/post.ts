@@ -11,7 +11,7 @@ export interface Post {
   title: string;
   content: string;
   author: string;
-  category: 'notice' | 'event' | 'general';
+  category: 'notice' | 'event' | 'general' | 'tournament_schedule' | 'tournament_info';
   isPublished: boolean;
   publishedAt?: string;
   createdAt: string;
@@ -23,7 +23,7 @@ export interface PostInput {
   title: string;
   content: string;
   author: string;
-  category: 'notice' | 'event' | 'general';
+  category: 'notice' | 'event' | 'general' | 'tournament_schedule' | 'tournament_info';
   isPublished?: boolean;
   publishedAt?: string;
   attachments?: Attachment[];

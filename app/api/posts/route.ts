@@ -8,6 +8,7 @@ import {
   deletePost,
   publishPost,
   unpublishPost,
+  getPostsByCategory,
 } from '@/service/post';
 import type { PostInput } from '@/model/post';
 import { createNotification, createNotificationMessage } from '@/service/notification';
@@ -16,6 +17,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get('id');
   const all = searchParams.get('all');
+  const category = searchParams.get('category');
 
   if (id) {
     const post = await getPost(id);
@@ -23,6 +25,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: '포스트를 찾을 수 없습니다.' }, { status: 404 });
     }
     return NextResponse.json({ post });
+  }
+
+  // 카테고리 필터가 있으면 해당 카테고리 포스트만
+  if (category) {
+    const posts = await getPostsByCategory(category);
+    return NextResponse.json(posts);
   }
 
   // all 파라미터가 있으면 모든 포스트, 없으면 발행된 포스트만

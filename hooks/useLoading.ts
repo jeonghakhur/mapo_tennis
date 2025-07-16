@@ -13,7 +13,8 @@ export function useLoading() {
   const withLoading = useCallback(async (fn: () => Promise<unknown>) => {
     setLoading(true);
     try {
-      await fn();
+      const result = await fn();
+      return result;
     } finally {
       setLoading(false);
     }

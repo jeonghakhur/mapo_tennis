@@ -32,6 +32,8 @@ export default defineType({
           { title: '공지사항', value: 'notice' },
           { title: '이벤트', value: 'event' },
           { title: '일반', value: 'general' },
+          { title: '대회일정', value: 'tournament_schedule' },
+          { title: '대회요강', value: 'tournament_info' },
         ],
       },
       validation: (Rule) => Rule.required(),

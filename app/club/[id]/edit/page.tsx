@@ -78,7 +78,7 @@ export default function ClubEditPage({ params }: { params: Promise<{ id: string 
       if (imageRemoved) {
         updateData.image = null;
       }
-      withLoading(() => updateClubById(updateData, image ?? undefined));
+      await withLoading(() => updateClubById(updateData, image ?? undefined));
       setSuccess('클럽이 성공적으로 수정되었습니다!');
       setTimeout(() => router.push(`/club/${id}`), 1000);
     } catch (e) {

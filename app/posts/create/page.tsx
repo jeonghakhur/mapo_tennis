@@ -157,7 +157,15 @@ export default function CreatePostPage() {
             <Select.Root
               value={formData.category}
               onValueChange={(value) =>
-                setFormData({ ...formData, category: value as 'notice' | 'event' | 'general' })
+                setFormData({
+                  ...formData,
+                  category: value as
+                    | 'notice'
+                    | 'event'
+                    | 'general'
+                    | 'tournament_schedule'
+                    | 'tournament_info',
+                })
               }
             >
               <Select.Trigger />
@@ -165,6 +173,8 @@ export default function CreatePostPage() {
                 <Select.Item value="general">일반</Select.Item>
                 <Select.Item value="notice">공지사항</Select.Item>
                 <Select.Item value="event">이벤트</Select.Item>
+                <Select.Item value="tournament_schedule">대회일정</Select.Item>
+                <Select.Item value="tournament_info">대회요강</Select.Item>
               </Select.Content>
             </Select.Root>
           </div>

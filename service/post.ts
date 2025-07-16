@@ -25,6 +25,13 @@ export async function getPost(id: string): Promise<Post | null> {
   return await client.fetch(`*[_type == "post" && _id == $id][0]`, { id });
 }
 
+// 카테고리별 포스트 조회
+export async function getPostsByCategory(category: string): Promise<Post[]> {
+  return await client.fetch(`*[_type == "post" && category == $category] | order(createdAt desc)`, {
+    category,
+  });
+}
+
 // 포스트 생성
 export async function createPost(data: PostInput): Promise<Post> {
   const post = await client.create({

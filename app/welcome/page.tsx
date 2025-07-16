@@ -48,17 +48,21 @@ export default function WelcomePage() {
       return;
     }
     setError('');
-    withLoading(() =>
-      signup({
-        name,
-        phone,
-        gender,
-        birth,
-        score,
-        email: session?.user?.email,
-        address,
-      }),
-    );
+    try {
+      await withLoading(() =>
+        signup({
+          name,
+          phone,
+          gender,
+          birth,
+          score,
+          email: session?.user?.email,
+          address,
+        }),
+      );
+    } catch {
+      setError('회원가입 중 오류가 발생했습니다.');
+    }
   };
 
   return (

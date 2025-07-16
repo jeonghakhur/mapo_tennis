@@ -22,7 +22,7 @@ export default function ClubDetailPage({ params }: { params: Promise<{ id: strin
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      withLoading(() => deleteClubById());
+      await withLoading(() => deleteClubById());
       router.push('/club');
     } catch (e) {
       alert(e instanceof Error ? e.message : '삭제에 실패했습니다.');

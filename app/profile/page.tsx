@@ -55,21 +55,25 @@ export default function ProfileForm() {
       setError('생년월일은 8자리(YYYYMMDD)로 입력해 주세요.');
       return;
     }
-    withLoading(() =>
-      updateUser({
-        name,
-        phone,
-        gender,
-        birth,
-        score: Number(score),
-        email: session?.user?.email,
-        address,
-      }),
-    );
-    if (!updateError) {
-      setSuccess('회원 정보가 성공적으로 수정되었습니다.');
-    } else {
-      setError(updateError);
+    try {
+      await withLoading(() =>
+        updateUser({
+          name,
+          phone,
+          gender,
+          birth,
+          score: Number(score),
+          email: session?.user?.email,
+          address,
+        }),
+      );
+      if (!updateError) {
+        setSuccess('회원 정보가 성공적으로 수정되었습니다.');
+      } else {
+        setError(updateError);
+      }
+    } catch {
+      setError('회원 정보 수정 중 오류가 발생했습니다.');
     }
   };
 

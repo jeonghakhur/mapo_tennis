@@ -65,7 +65,7 @@ export default function ClubCreatePage() {
       createdBy: { _type: 'reference' as const, _ref: session?.user?.email || '' },
     };
     try {
-      withLoading(() => createClubWithOptimistic(newClub, clubData, image ?? undefined));
+      await withLoading(() => createClubWithOptimistic(newClub, clubData, image ?? undefined));
       setSuccess('클럽이 성공적으로 생성되었습니다!');
       setTimeout(() => router.push('/club'), 400);
     } catch (e) {

@@ -13,6 +13,8 @@ interface ConfirmDialogProps {
   onCancel?: () => void;
   trigger?: React.ReactNode;
   disabled?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export default function ConfirmDialog({
@@ -26,15 +28,22 @@ export default function ConfirmDialog({
   onCancel,
   trigger,
   disabled = false,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: ConfirmDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // 제어된 상태와 비제어 상태 처리
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : isOpen;
+  const onOpenChange = isControlled ? controlledOnOpenChange : setIsOpen;
 
   const handleConfirm = async () => {
     setIsLoading(true);
     try {
       await onConfirm();
-      setIsOpen(false);
+      onOpenChange?.(false);
     } catch (error) {
       console.error('확인 작업 실패:', error);
     } finally {
@@ -43,13 +52,13 @@ export default function ConfirmDialog({
   };
 
   const handleCancel = () => {
-    setIsOpen(false);
+    onOpenChange?.(false);
     onCancel?.();
   };
 
   return (
-    <AlertDialog.Root open={isOpen} onOpenChange={setIsOpen}>
-      <AlertDialog.Trigger disabled={disabled}>{trigger}</AlertDialog.Trigger>
+    <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
+      {trigger && <AlertDialog.Trigger disabled={disabled}>{trigger}</AlertDialog.Trigger>}
       <AlertDialog.Content>
         <AlertDialog.Title>{title}</AlertDialog.Title>
         <AlertDialog.Description>{description}</AlertDialog.Description>

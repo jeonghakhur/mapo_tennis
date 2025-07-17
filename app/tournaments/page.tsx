@@ -1,7 +1,7 @@
 'use client';
 import { Box, Text, Button, Flex, Badge, Card, Select } from '@radix-ui/themes';
 import Container from '@/components/Container';
-import { Plus, Calendar, MapPin, Users } from 'lucide-react';
+import { Plus, Calendar, MapPin } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useTournaments } from '@/hooks/useTournaments';
@@ -136,10 +136,6 @@ export default function TournamentsPage() {
                         <div className="flex items-center gap-2">
                           <MapPin size={16} />
                           <Text size="2">{tournament.location}</Text>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Users size={16} />
-                          <Text size="2">{tournament.currentParticipants || 0} 명</Text>
                         </div>
                       </div>
                     </div>

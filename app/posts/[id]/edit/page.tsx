@@ -165,7 +165,9 @@ export default function EditPostPage({ params }: EditPostPageProps) {
             </Text>
             <Select.Root
               value={formData.category}
-              onValueChange={(value) =>
+              onValueChange={(value) => {
+                if (!value) return;
+
                 setFormData({
                   ...formData,
                   category: value as
@@ -174,8 +176,8 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                     | 'general'
                     | 'tournament_schedule'
                     | 'tournament_info',
-                })
-              }
+                });
+              }}
             >
               <Select.Trigger />
               <Select.Content>

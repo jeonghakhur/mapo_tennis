@@ -91,7 +91,7 @@ export default function ClubEditPage({ params }: { params: Promise<{ id: string 
   return (
     <Container>
       {hydrating ? (
-        <SkeletonCard lines={4} />
+        <SkeletonCard />
       ) : (
         <>
           {loading && <LoadingOverlay size="3" />}

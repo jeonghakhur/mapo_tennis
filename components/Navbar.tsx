@@ -1,10 +1,10 @@
 'use client';
 import Link from 'next/link';
-import { Flex, Button, Badge, DropdownMenu, Text } from '@radix-ui/themes';
+import { Flex, Button, Badge, DropdownMenu } from '@radix-ui/themes';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useNotifications } from '@/hooks/useNotifications';
-import { ArrowLeft, Menu, User, LogOut, BellRing } from 'lucide-react';
+import { ArrowLeft, Menu, User, LogOut, BellRing, House } from 'lucide-react';
 
 export default function Navbar() {
   const { data: session, status } = useSession();
@@ -40,49 +40,55 @@ export default function Navbar() {
               <ArrowLeft size={24} />
             </Button>
           ) : (
-            <Link href="/" style={{ textDecoration: 'none' }} className="text-center">
-              <Text size="5" weight="bold">
-                마포테니스
-              </Text>
+            <Link
+              href="/"
+              style={{ textDecoration: 'none' }}
+              className="absolute left-1/2 -translate-x-1/2 text-center block flex-1 font-bold text-xl"
+            >
+              마포테니스
             </Link>
           )}
         </Flex>
 
         {/* 중앙: 페이지 제목 (뒤로가기 가능한 페이지에서만 표시) */}
         {canGoBack && (
-          <Flex align="center" style={{ flex: 1, justifyContent: 'center' }}>
-            <Text size="5" weight="medium">
-              {getPageTitle(pathname)}
-            </Text>
+          <Flex
+            align="center"
+            className="absolute left-1/2 -translate-x-1/2 text-center block flex-1 font-bold text-xl"
+          >
+            {getPageTitle(pathname)}
           </Flex>
         )}
 
         {/* 우측: 알림 및 햄버거 메뉴 */}
-        <Flex align="center" gap="2">
+        <Flex align="center" gap="4">
+          <Link href="/" style={{ textDecoration: 'none' }}>
+            <House size={24} className="text-gray-800" />
+          </Link>
           {/* 알림 버튼 */}
           <Link href="/notifications" style={{ textDecoration: 'none', position: 'relative' }}>
-            <Button variant="ghost" size="2" style={{ padding: '4px 8px' }}>
-              <BellRing size={24} className="text-gray-800" />
-              {unreadCount > 0 && (
-                <Badge
-                  color="red"
-                  size="1"
-                  style={{
-                    position: 'absolute',
-                    top: '-4px',
-                    right: '-4px',
-                    minWidth: '14px',
-                    height: '14px',
-                    fontSize: '9px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {unreadCount}
-                </Badge>
-              )}
-            </Button>
+            <BellRing size={24} className="text-gray-800" />
+            {unreadCount > 0 && (
+              <Badge
+                color="red"
+                variant="solid"
+                size="1"
+                radius="full"
+                style={{
+                  position: 'absolute',
+                  top: '-8px',
+                  right: '-6px',
+                  width: '20px',
+                  height: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 'bold',
+                }}
+              >
+                {unreadCount}
+              </Badge>
+            )}
           </Link>
 
           {/* 햄버거 메뉴 */}

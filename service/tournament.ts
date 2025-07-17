@@ -10,11 +10,15 @@ export async function getTournaments(): Promise<Tournament[]> {
     startDate,
     endDate,
     location,
-    currentParticipants,
+    tournamentType,
     registrationStartDate,
     registrationDeadline,
     descriptionPostId,
     rulesPostId,
+    entryFee,
+    bankAccount,
+    accountHolder,
+    divisions,
     status,
     createdAt,
     updatedAt,
@@ -33,11 +37,15 @@ export async function getTournament(id: string): Promise<Tournament | null> {
     startDate,
     endDate,
     location,
-    currentParticipants,
+    tournamentType,
     registrationStartDate,
     registrationDeadline,
     descriptionPostId,
     rulesPostId,
+    entryFee,
+    bankAccount,
+    accountHolder,
+    divisions,
     status,
     createdAt,
     updatedAt,
@@ -54,15 +62,7 @@ export async function createTournament(
 ): Promise<Tournament> {
   const doc = {
     _type: 'tournament',
-    title: data.title,
-    startDate: data.startDate,
-    endDate: data.endDate,
-    location: data.location,
-    currentParticipants: 0,
-    registrationStartDate: data.registrationStartDate,
-    registrationDeadline: data.registrationDeadline,
-    descriptionPostId: data.descriptionPostId,
-    rulesPostId: data.rulesPostId,
+    ...data,
     status: 'upcoming',
     createdAt: new Date().toISOString(),
     createdBy,
@@ -100,19 +100,6 @@ export async function updateTournamentStatus(
   const result = await client
     .patch(id)
     .set({ status, updatedAt: new Date().toISOString() })
-    .commit();
-
-  return result as unknown as Tournament;
-}
-
-// 참가자 수 업데이트
-export async function updateParticipantCount(
-  id: string,
-  currentParticipants: number,
-): Promise<Tournament> {
-  const result = await client
-    .patch(id)
-    .set({ currentParticipants, updatedAt: new Date().toISOString() })
     .commit();
 
   return result as unknown as Tournament;

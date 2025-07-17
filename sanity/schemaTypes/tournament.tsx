@@ -30,10 +30,17 @@ export default defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
-      name: 'currentParticipants',
-      title: '현재 참가자 수',
-      type: 'number',
-      initialValue: 0,
+      name: 'tournamentType',
+      title: '대회 유형',
+      type: 'string',
+      options: {
+        list: [
+          { title: '개인전', value: 'individual' },
+          { title: '단체전', value: 'team' },
+        ],
+      },
+      initialValue: 'individual',
+      validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'registrationStartDate',
@@ -71,6 +78,96 @@ export default defineType({
       title: '대회 규칙 포스트 ID',
       type: 'string',
       description: '대회 규칙이 포함된 포스트의 ID를 입력하세요',
+    }),
+    defineField({
+      name: 'entryFee',
+      title: '참가비',
+      type: 'number',
+      description: '대회 참가비를 입력하세요',
+    }),
+    defineField({
+      name: 'bankAccount',
+      title: '입금계좌',
+      type: 'string',
+      description: '참가비 입금 계좌를 입력하세요',
+    }),
+    defineField({
+      name: 'accountHolder',
+      title: '예금주',
+      type: 'string',
+      description: '계좌 예금주를 입력하세요',
+    }),
+    defineField({
+      name: 'divisions',
+      title: '참가부서 및 상세정보',
+      type: 'array',
+      of: [
+        {
+          type: 'object',
+          name: 'division',
+          title: '부서 정보',
+          fields: [
+            {
+              name: 'division',
+              title: '부서',
+              type: 'string',
+              options: {
+                list: [
+                  { title: '마스터부', value: 'master' },
+                  { title: '챌린저부', value: 'challenger' },
+                  { title: '퓨처스부', value: 'futures' },
+                  { title: '개나리부', value: 'forsythia' },
+                  { title: '국화부', value: 'chrysanthemum' },
+                ],
+              },
+              validation: (Rule) => Rule.required(),
+            },
+            {
+              name: 'teamCount',
+              title: '참가팀수',
+              type: 'number',
+              validation: (Rule) => Rule.required().min(0),
+            },
+            {
+              name: 'matchDates',
+              title: '시합일',
+              type: 'array',
+              of: [{ type: 'string' }],
+            },
+            {
+              name: 'startTime',
+              title: '시작시간',
+              type: 'string',
+            },
+            {
+              name: 'prizes',
+              title: '시상금',
+              type: 'object',
+              fields: [
+                {
+                  name: 'first',
+                  title: '우승상금',
+                  type: 'number',
+                  initialValue: 0,
+                },
+                {
+                  name: 'second',
+                  title: '준우승상금',
+                  type: 'number',
+                  initialValue: 0,
+                },
+                {
+                  name: 'third',
+                  title: '3위상금',
+                  type: 'number',
+                  initialValue: 0,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      description: '참가하는 부서와 각 부서별 상세 정보를 입력하세요',
     }),
     defineField({
       name: 'createdAt',

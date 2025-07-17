@@ -66,6 +66,7 @@ export interface ExpenseInput {
     | 'other';
   date: string;
   description?: string;
-  receiptImage?: File;
+  receiptImage?: File | { asset: { _ref: string; _type: 'reference' } };
+  extractedText?: string;
   author: string;
 }

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { Expense } from '@/model/expense';
 import React from 'react';
 import { categoryOptions, extractAmountFromText } from '@/lib/expenseUtils';
+import { urlFor } from '@/sanity/lib/image';
 
 export default function EditExpensePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params);
@@ -22,6 +23,8 @@ export default function EditExpensePage({ params }: { params: Promise<{ id: stri
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const [expense, setExpense] = useState<Expense | null>(null); // 추가: 원본 expense 저장
+  const [showImage, setShowImage] = useState(true); // 이미지 미리보기 표시 여부
 
   useEffect(() => {
     const fetchExpense = async () => {
@@ -31,7 +34,7 @@ export default function EditExpensePage({ params }: { params: Promise<{ id: stri
           throw new Error('지출내역을 찾을 수 없습니다.');
         }
         const expense: Expense = await response.json();
-
+        setExpense(expense); // 원본 expense 저장
         setForm({
           title: expense.title,
           storeName: expense.storeName || '',
@@ -166,6 +169,25 @@ export default function EditExpensePage({ params }: { params: Promise<{ id: stri
           {deleting ? '삭제 중...' : '삭제'}
         </Button>
       </Flex>
+
+      {/* 기존 영수증 이미지 미리보기 */}
+      {expense?.receiptImage && showImage && (
+        <div style={{ marginBottom: 16 }}>
+          <Text weight="bold" size="3" color="gray" mb="2">
+            기존 영수증 이미지
+          </Text>
+          <Box className="border rounded-lg overflow-hidden mb-2">
+            <img
+              src={urlFor(expense.receiptImage).url()}
+              alt="영수증"
+              style={{ width: '100%', height: 'auto', objectFit: 'cover', maxHeight: 300 }}
+            />
+          </Box>
+          <Button size="2" color="red" variant="soft" onClick={() => setShowImage(false)}>
+            이미지 숨기기
+          </Button>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <Flex direction="column" gap="3">

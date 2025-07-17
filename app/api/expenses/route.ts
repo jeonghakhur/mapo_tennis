@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getExpenses, createExpense } from '@/service/expense';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
+import { client } from '@/sanity/lib/client';
 
 // 지출내역 목록 조회
 export async function GET() {
@@ -30,9 +31,25 @@ export async function POST(req: NextRequest) {
     const category = formData.get('category') as string;
     const date = formData.get('date') as string;
     const description = formData.get('description') as string;
+    const extractedText = formData.get('extractedText') as string | undefined;
+    const receiptImageFile = formData.get('receiptImage') as File | null;
 
     if (!title || !amount || !category || !date) {
       return NextResponse.json({ error: '필수 필드가 누락되었습니다.' }, { status: 400 });
+    }
+
+    let receiptImageSanity = undefined;
+    if (receiptImageFile && typeof receiptImageFile === 'object') {
+      // Sanity에 이미지 업로드
+      const asset = await client.assets.upload('image', receiptImageFile, {
+        filename: receiptImageFile.name,
+      });
+      receiptImageSanity = {
+        asset: {
+          _type: 'reference' as const,
+          _ref: asset._id,
+        },
+      };
     }
 
     const expenseData = {
@@ -57,6 +74,8 @@ export async function POST(req: NextRequest) {
       date,
       description: description || undefined,
       author: session.user.name,
+      receiptImage: receiptImageSanity,
+      extractedText: extractedText || undefined,
     };
 
     const expense = await createExpense(expenseData);

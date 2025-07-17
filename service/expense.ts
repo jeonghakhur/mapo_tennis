@@ -32,6 +32,12 @@ export async function createExpense(expenseData: ExpenseInput): Promise<Expense>
     description: expenseData.description,
     author: expenseData.author,
     createdAt: new Date().toISOString(),
+    ...(expenseData.receiptImage &&
+    typeof expenseData.receiptImage === 'object' &&
+    'asset' in expenseData.receiptImage
+      ? { receiptImage: expenseData.receiptImage }
+      : {}),
+    ...(expenseData.extractedText ? { extractedText: expenseData.extractedText } : {}),
   };
 
   return (await client.create(doc)) as Expense;

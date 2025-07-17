@@ -3,46 +3,76 @@ import { getExpenses, createExpense } from '@/service/expense';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { client } from '@/sanity/lib/client';
+import type { ExpenseInput } from '@/model/expense';
+
+// 카테고리 타입 정의
+type ExpenseCategory = ExpenseInput['category'];
+
+// 공통 에러 응답 함수
+const createErrorResponse = (message: string, status: number = 500) => {
+  return NextResponse.json({ error: message }, { status });
+};
+
+// 인증 확인 함수
+const checkAuth = async () => {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.name) {
+    throw new Error('로그인이 필요합니다.');
+  }
+  return session.user.name;
+};
+
+// 폼 데이터 파싱 함수
+const parseExpenseFormData = (formData: FormData) => {
+  const title = formData.get('title') as string;
+  const storeName = formData.get('storeName') as string;
+  const address = formData.get('address') as string;
+  const amount = parseInt(formData.get('amount') as string);
+  const category = formData.get('category') as string;
+  const date = formData.get('date') as string;
+  const description = formData.get('description') as string;
+  const extractedText = formData.get('extractedText') as string | undefined;
+  const receiptImageFile = formData.get('receiptImage') as File | null;
+
+  if (!title || !amount || !category || !date) {
+    throw new Error('필수 필드가 누락되었습니다.');
+  }
+
+  return {
+    title,
+    storeName,
+    address,
+    amount,
+    category: category as ExpenseCategory,
+    date,
+    description,
+    extractedText,
+    receiptImageFile,
+  };
+};
 
 // 지출내역 목록 조회
 export async function GET() {
   try {
     const expenses = await getExpenses();
     return NextResponse.json(expenses);
-  } catch (error) {
-    console.error('지출내역 조회 실패:', error);
-    return NextResponse.json({ error: '지출내역을 불러올 수 없습니다.' }, { status: 500 });
+  } catch {
+    return createErrorResponse('지출내역을 불러올 수 없습니다.');
   }
 }
 
 // 지출내역 생성
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.name) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
-    }
-
+    const author = await checkAuth();
     const formData = await req.formData();
-    const title = formData.get('title') as string;
-    const storeName = formData.get('storeName') as string;
-    const address = formData.get('address') as string;
-    const amount = parseInt(formData.get('amount') as string);
-    const category = formData.get('category') as string;
-    const date = formData.get('date') as string;
-    const description = formData.get('description') as string;
-    const extractedText = formData.get('extractedText') as string | undefined;
-    const receiptImageFile = formData.get('receiptImage') as File | null;
-
-    if (!title || !amount || !category || !date) {
-      return NextResponse.json({ error: '필수 필드가 누락되었습니다.' }, { status: 400 });
-    }
+    const parsedData = parseExpenseFormData(formData);
 
     let receiptImageSanity = undefined;
-    if (receiptImageFile && typeof receiptImageFile === 'object') {
+    if (parsedData.receiptImageFile && typeof parsedData.receiptImageFile === 'object') {
       // Sanity에 이미지 업로드
-      const asset = await client.assets.upload('image', receiptImageFile, {
-        filename: receiptImageFile.name,
+      const asset = await client.assets.upload('image', parsedData.receiptImageFile, {
+        filename: parsedData.receiptImageFile.name,
       });
       receiptImageSanity = {
         asset: {
@@ -52,37 +82,23 @@ export async function POST(req: NextRequest) {
       };
     }
 
-    const expenseData = {
-      title,
-      storeName: storeName || undefined,
-      address: address || undefined,
-      amount,
-      category: category as
-        | 'court_rental'
-        | 'equipment'
-        | 'maintenance'
-        | 'utilities'
-        | 'insurance'
-        | 'marketing'
-        | 'staff'
-        | 'office'
-        | 'cleaning'
-        | 'food'
-        | 'transport'
-        | 'event'
-        | 'other',
-      date,
-      description: description || undefined,
-      author: session.user.name,
+    const expenseData: ExpenseInput = {
+      title: parsedData.title,
+      storeName: parsedData.storeName || undefined,
+      address: parsedData.address || undefined,
+      amount: parsedData.amount,
+      category: parsedData.category,
+      date: parsedData.date,
+      description: parsedData.description || undefined,
+      author,
       receiptImage: receiptImageSanity,
-      extractedText: extractedText || undefined,
+      extractedText: parsedData.extractedText || undefined,
     };
 
     const expense = await createExpense(expenseData);
-
     return NextResponse.json(expense);
   } catch (error) {
-    console.error('지출내역 생성 실패:', error);
-    return NextResponse.json({ error: '지출내역을 생성할 수 없습니다.' }, { status: 500 });
+    const message = error instanceof Error ? error.message : '지출내역을 생성할 수 없습니다.';
+    return createErrorResponse(message, message.includes('로그인') ? 401 : 400);
   }
 }

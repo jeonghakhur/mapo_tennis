@@ -14,9 +14,9 @@ export const categoryOptions = [
   { value: 'transport', label: '교통비' },
   { value: 'event', label: '행사' },
   { value: 'other', label: '기타' },
-];
+] as const;
 
-export const categoryLabels = {
+export const categoryLabels: Record<string, string> = {
   court_rental: '코트 대여료',
   equipment: '장비 구매',
   maintenance: '시설 유지보수',
@@ -32,79 +32,80 @@ export const categoryLabels = {
   other: '기타',
 };
 
-export const categoryColors = {
-  court_rental: 'green',
-  equipment: 'blue',
+export const categoryColors: Record<
+  string,
+  'red' | 'blue' | 'green' | 'yellow' | 'orange' | 'purple' | 'pink' | 'gray'
+> = {
+  court_rental: 'blue',
+  equipment: 'green',
   maintenance: 'orange',
   utilities: 'yellow',
-  insurance: 'red',
-  marketing: 'purple',
-  staff: 'pink',
+  insurance: 'purple',
+  marketing: 'pink',
+  staff: 'red',
   office: 'gray',
-  cleaning: 'cyan',
-  food: 'lime',
-  transport: 'indigo',
-  event: 'amber',
+  cleaning: 'green',
+  food: 'orange',
+  transport: 'blue',
+  event: 'purple',
   other: 'gray',
-} as const;
-
-// GPT Vision 분석 결과를 기반으로 지출 제목 생성
-export const generateExpenseTitle = () => {
-  // 매장명은 별도 필드로 저장되므로 제목에서는 제거
-  return '영수증 지출';
 };
 
-// 금액 포맷팅
-export const formatAmount = (amount: number) => {
-  return new Intl.NumberFormat('ko-KR').format(amount);
-};
+// 금액 포맷팅 함수
+export function formatAmount(amount: number): string {
+  return amount.toLocaleString('ko-KR');
+}
 
-// 달러를 원화로 변환하는 함수
-export const convertDollarToWon = (dollarAmount: number): number => {
-  // 현재 환율 (1달러 = 1,300원) - 실제로는 API로 실시간 환율을 가져와야 함
-  const exchangeRate = 1300;
-  return Math.round(dollarAmount * exchangeRate);
-};
+// 날짜 포맷팅 함수
+export function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
 
-// 원화 기호 제거 및 숫자만 추출 (달러 포함)
-export const extractAmountFromText = (text: string): number | null => {
-  // 달러 기호가 있는지 확인
-  const dollarMatch = text.match(/\$?\s*([\d,]+\.?\d*)/);
-  if (dollarMatch) {
-    const dollarAmount = parseFloat(dollarMatch[1].replace(/,/g, ''));
-    if (!isNaN(dollarAmount) && dollarAmount > 0) {
-      return convertDollarToWon(dollarAmount);
-    }
-  }
+// 텍스트에서 금액 추출 함수
+export function extractAmountFromText(text: string): number | null {
+  if (!text) return null;
 
-  // 원화 기호와 쉼표 제거 후 숫자만 추출
-  const cleanedText = text.replace(/[￦₩원\s,]/g, '');
-  const amount = parseInt(cleanedText);
+  // 원화 기호 제거 및 숫자만 추출
+  const cleanText = text.replace(/[^\d,]/g, '');
+  const amount = parseInt(cleanText.replace(/,/g, ''));
 
-  // 유효한 숫자인지 확인
   if (isNaN(amount) || amount <= 0) {
     return null;
   }
 
   return amount;
-};
+}
 
-// 여러 금액 중 가장 큰 금액 찾기
-export const findLargestAmount = (amounts: (number | null)[]): number | null => {
-  const validAmounts = amounts.filter((amount): amount is number => amount !== null && amount > 0);
+// 달러를 원화로 변환하는 함수 (대략적인 환율 적용)
+export function convertDollarToWon(dollarAmount: number): number {
+  // 대략적인 환율 (실제로는 API를 통해 실시간 환율을 가져와야 함)
+  const exchangeRate = 1300;
+  return Math.round(dollarAmount * exchangeRate);
+}
 
-  if (validAmounts.length === 0) {
-    return null;
-  }
+// 카테고리별 색상 가져오기
+export function getCategoryColor(category: string): string {
+  return categoryColors[category] || 'gray';
+}
 
-  return Math.max(...validAmounts);
-};
+// 카테고리별 라벨 가져오기
+export function getCategoryLabel(category: string): string {
+  return categoryLabels[category] || '기타';
+}
 
-// 날짜 포맷팅
-export const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-};
+// 금액 유효성 검사
+export function isValidAmount(amount: string): boolean {
+  const num = parseFloat(amount);
+  return !isNaN(num) && num > 0;
+}
+
+// 날짜 유효성 검사
+export function isValidDate(dateString: string): boolean {
+  const date = new Date(dateString);
+  return !isNaN(date.getTime());
+}

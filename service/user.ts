@@ -15,11 +15,19 @@ export async function upsertUser({
   const existing = await client.fetch<User>(`*[_type == "user" && email == $email][0]`, { email });
   let result;
   if (existing && existing._id) {
-    // 기존 유저: level은 변경하지 않고, 전달된 값만 업데이트
-    result = await client
-      .patch(existing._id)
-      .set({ name, phone, gender, birth, score, level, address })
-      .commit();
+    // 기존 유저: 전달된 level을 사용하거나 기존 레벨 유지
+    const updateData: Partial<Omit<User, '_id' | '_type'>> = {
+      name,
+      phone,
+      gender,
+      birth,
+      score,
+      address,
+    };
+    if (level !== undefined) {
+      updateData.level = level;
+    }
+    result = await client.patch(existing._id).set(updateData).commit();
   } else if (!existing) {
     // 신규 유저: level을 1로 저장
     result = await client.create({
@@ -30,7 +38,7 @@ export async function upsertUser({
       birth,
       score,
       email,
-      level: 1,
+      level: level || 1,
       address,
     });
   } else {

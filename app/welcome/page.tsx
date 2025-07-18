@@ -11,12 +11,14 @@ import {
   Select,
 } from '@radix-ui/themes';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import AlreadyRegisteredDialog from './AlreadyRegisteredDialog';
 import { useUser } from '@/hooks/useUser';
 import { useLoading } from '@/hooks/useLoading';
 import LoadingOverlay from '@/components/LoadingOverlay';
 
 export default function WelcomePage() {
+  const router = useRouter();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [gender, setGender] = useState('');
@@ -70,6 +72,9 @@ export default function WelcomePage() {
           const errorData = await response.json();
           throw new Error(errorData.error || '회원가입에 실패했습니다.');
         }
+
+        // 회원가입 성공 시 signup-success 페이지로 이동
+        router.push('/signup-success');
       });
     } catch (error) {
       setError(error instanceof Error ? error.message : '회원가입 중 오류가 발생했습니다.');

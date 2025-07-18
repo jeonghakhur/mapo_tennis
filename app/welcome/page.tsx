@@ -31,7 +31,7 @@ export default function WelcomePage() {
   const { loading, withLoading } = useLoading();
 
   // SWR 훅으로 회원 존재 여부 확인
-  const { user, isLoading: userLoading, signup, signupLoading, signupError } = useUser(email);
+  const { user, isLoading: userLoading } = useUser(email);
 
   useEffect(() => {
     setAlreadyRegistered(!!user);
@@ -49,19 +49,30 @@ export default function WelcomePage() {
     }
     setError('');
     try {
-      await withLoading(() =>
-        signup({
-          name,
-          phone,
-          gender,
-          birth,
-          score,
-          email: session?.user?.email,
-          address,
-        }),
-      );
-    } catch {
-      setError('회원가입 중 오류가 발생했습니다.');
+      await withLoading(async () => {
+        const response = await fetch('/api/user', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name,
+            phone,
+            gender,
+            birth,
+            score: Number(score),
+            email: session?.user?.email,
+            address,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || '회원가입에 실패했습니다.');
+        }
+      });
+    } catch (error) {
+      setError(error instanceof Error ? error.message : '회원가입 중 오류가 발생했습니다.');
     }
   };
 
@@ -181,9 +192,9 @@ export default function WelcomePage() {
               />
             </Box>
 
-            {(error || signupError) && (
+            {error && (
               <Text color="red" mb="3">
-                {error || signupError}
+                {error}
               </Text>
             )}
             <Button
@@ -191,9 +202,9 @@ export default function WelcomePage() {
               style={{ marginTop: 16, width: '100%' }}
               size="4"
               radius="large"
-              disabled={signupLoading}
+              disabled={loading}
             >
-              {signupLoading ? '가입 중...' : '회원가입 완료'}
+              {loading ? '가입 중...' : '회원가입 완료'}
             </Button>
           </form>
         </>

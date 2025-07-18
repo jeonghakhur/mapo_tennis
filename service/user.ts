@@ -48,3 +48,13 @@ export async function getUserByEmail(email: string): Promise<User | null> {
     { email },
   );
 }
+
+export async function getUserById(id: string): Promise<User | null> {
+  if (!id) throw new Error('id is required');
+  return await client.fetch<User>(
+    `*[_type == "user" && _id == $id][0]{
+      ...,
+    }`,
+    { id },
+  );
+}

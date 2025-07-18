@@ -96,11 +96,7 @@ export default function TournamentsPage() {
           ) : (
             <div className="space-y-4">
               {filteredTournaments.map((tournament) => (
-                <Card
-                  key={tournament._id}
-                  className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
-                  onClick={() => router.push(`/tournaments/${tournament._id}`)}
-                >
+                <Card key={tournament._id} className="p-6 hover:bg-gray-50 transition-colors">
                   <div className="space-y-4">
                     {/* 제목과 상태 */}
                     <div className="flex items-center gap-3">
@@ -137,6 +133,33 @@ export default function TournamentsPage() {
                           <MapPin size={16} />
                           <Text size="2">{tournament.location}</Text>
                         </div>
+                      </div>
+
+                      {/* 액션 버튼 */}
+                      <div className="flex flex-col gap-2 justify-end">
+                        {tournament.status === 'upcoming' && (
+                          <Button
+                            variant="solid"
+                            color="blue"
+                            size="2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/tournaments/${tournament._id}/apply`);
+                            }}
+                          >
+                            참가 신청
+                          </Button>
+                        )}
+                        <Button
+                          variant="soft"
+                          size="2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/tournaments/${tournament._id}`);
+                          }}
+                        >
+                          상세보기
+                        </Button>
                       </div>
                     </div>
                   </div>

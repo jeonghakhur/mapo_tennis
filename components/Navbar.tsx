@@ -4,6 +4,7 @@ import { Flex, Button, Badge, DropdownMenu } from '@radix-ui/themes';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useUser } from '@/hooks/useUser';
 import { ArrowLeft, Menu, User, LogOut, BellRing, House } from 'lucide-react';
 
 export default function Navbar() {
@@ -11,6 +12,10 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const { unreadCount } = useNotifications();
+  const { user } = useUser(session?.user?.email);
+
+  // 레벨 5 이상인 사용자만 관리자 권한
+  const isAdmin = user?.level && user.level >= 5;
 
   // 뒤로가기 가능한 페이지인지 확인
   const canGoBack = pathname !== '/' && !pathname.startsWith('/auth');
@@ -116,6 +121,14 @@ export default function Navbar() {
               <DropdownMenu.Item onClick={() => router.push('/tournaments')}>
                 대회일정
               </DropdownMenu.Item>
+              <DropdownMenu.Item onClick={() => router.push('/tournament-applications')}>
+                참가신청 목록
+              </DropdownMenu.Item>
+              {isAdmin && (
+                <DropdownMenu.Item onClick={() => router.push('/tournament-applications/admin')}>
+                  전체 참가신청 목록
+                </DropdownMenu.Item>
+              )}
               <DropdownMenu.Separator />
               {status === 'loading' ? null : !session ? (
                 <>
@@ -150,6 +163,7 @@ function getPageTitle(pathname: string): string {
     '/tournaments': '대회일정',
     '/notifications': '알림',
     '/profile': '프로필',
+    '/tournament-applications/admin': '전체 참가신청 목록',
   };
 
   // 동적 라우트 처리

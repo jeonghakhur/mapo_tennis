@@ -1,14 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserByEmail, upsertUser } from '@/service/user';
+import { getUserByEmail, getUserById, upsertUser } from '@/service/user';
 import type { User } from '@/model/user';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const email = searchParams.get('email');
-  if (!email) {
-    return NextResponse.json({ error: 'email is required' }, { status: 400 });
+  const id = searchParams.get('id');
+
+  if (!email && !id) {
+    return NextResponse.json({ error: 'email or id is required' }, { status: 400 });
   }
-  const user = await getUserByEmail(email);
+
+  let user = null;
+  if (email) {
+    user = await getUserByEmail(email);
+  } else if (id) {
+    user = await getUserById(id);
+  }
+
   return NextResponse.json({ user: user || null });
 }
 

@@ -29,7 +29,7 @@ export default function ProfileForm() {
   const [success, setSuccess] = useState('');
   const { data: session } = useSession();
   const email = session?.user?.email;
-  const { user, isLoading, error: swrError, updateUser, updateError } = useUser(email);
+  const { user, isLoading, error: swrError } = useUser(email);
   const { loading, withLoading } = useLoading();
 
   useEffect(() => {
@@ -56,24 +56,32 @@ export default function ProfileForm() {
       return;
     }
     try {
-      await withLoading(() =>
-        updateUser({
-          name,
-          phone,
-          gender,
-          birth,
-          score: Number(score),
-          email: session?.user?.email,
-          address,
-        }),
-      );
-      if (!updateError) {
+      await withLoading(async () => {
+        const response = await fetch('/api/user', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name,
+            phone,
+            gender,
+            birth,
+            score: Number(score),
+            email: session?.user?.email,
+            address,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || '회원 정보 수정에 실패했습니다.');
+        }
+
         setSuccess('회원 정보가 성공적으로 수정되었습니다.');
-      } else {
-        setError(updateError);
-      }
-    } catch {
-      setError('회원 정보 수정 중 오류가 발생했습니다.');
+      });
+    } catch (error) {
+      setError(error instanceof Error ? error.message : '회원 정보 수정 중 오류가 발생했습니다.');
     }
   };
 

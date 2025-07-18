@@ -7,7 +7,18 @@ import notification from './notification';
 import post from './post';
 import expense from './expense';
 import tournament from './tournament';
+import { tournamentApplication } from './tournamentApplication';
 
 export const schema: { types: SchemaTypeDefinition[] } = {
-  types: [user, club, clubMember, award, notification, post, expense, tournament],
+  types: [
+    user,
+    club,
+    clubMember,
+    award,
+    notification,
+    post,
+    expense,
+    tournament,
+    tournamentApplication,
+  ],
 };

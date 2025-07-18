@@ -210,6 +210,16 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
 
             {/* 액션 버튼 */}
             <Flex gap="3" justify="end" pt="6" className="border-t">
+              {tournament.status === 'upcoming' && (
+                <Button
+                  variant="solid"
+                  color="blue"
+                  onClick={() => router.push(`/tournaments/${id}/apply`)}
+                  size="3"
+                >
+                  참가 신청
+                </Button>
+              )}
               <Button
                 variant="soft"
                 onClick={() => router.push(`/tournaments/${id}/edit`)}

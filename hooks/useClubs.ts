@@ -4,10 +4,10 @@ import type { Club } from '@/model/club';
 
 // 클럽 목록 조회 훅
 export function useClubs() {
-  const { data, error, isLoading, mutate } = useSWR<{ clubs: Club[] }>('/api/club');
+  const { data, error, isLoading, mutate } = useSWR<Club[]>('/api/clubs');
 
   return {
-    clubs: data?.clubs ?? [],
+    clubs: data || [],
     isLoading,
     error,
     mutate,

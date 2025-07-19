@@ -9,6 +9,7 @@ import {
   useUserTournamentApplications,
   useUpdateApplicationStatus,
 } from '@/hooks/useTournamentApplications';
+import { isModerator } from '@/lib/authUtils';
 
 import SkeletonCard from '@/components/SkeletonCard';
 import { format } from 'date-fns';
@@ -29,8 +30,8 @@ export default function TournamentApplicationsPage() {
   );
   const [selectedStatus, setSelectedStatus] = useState<string>('');
 
-  // 레벨 4 이상인 사용자만 승인/거절 권한 가짐
-  const canManageApplications = user?.level && user.level >= 4;
+  // 중간 관리자 권한 확인 (레벨 4 이상)
+  const canManageApplications = isModerator(user);
 
   const getStatusColor = (status: string) => {
     const colorMap: Record<string, 'red' | 'blue' | 'green' | 'gray'> = {

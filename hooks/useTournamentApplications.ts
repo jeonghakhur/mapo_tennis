@@ -41,8 +41,8 @@ export function useUpdateApplicationStatus() {
       url,
       { arg }: { arg: { id: string; status: 'pending' | 'approved' | 'rejected' | 'cancelled' } },
     ) => {
-      const response = await fetch(`${url}/${arg.id}/status`, {
-        method: 'PUT',
+      const response = await fetch(`${url}/${arg.id}`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -86,7 +86,7 @@ export function useDeleteApplication() {
   return useSWRMutation(
     '/api/tournament-applications',
     async (url, { arg }: { arg: { id: string } }) => {
-      const response = await fetch(`${url}/${arg.id}/delete`, {
+      const response = await fetch(`${url}/${arg.id}`, {
         method: 'DELETE',
       });
 

@@ -156,6 +156,14 @@ export function trackChanges(
           status: '회원상태',
           role: '직위',
           tennisStartYear: '입문년도',
+          // 참가신청 관련 필드
+          division: '참가부서',
+          tournamentType: '대회유형',
+          contact: '연락처',
+          email: '이메일',
+          memo: '메모',
+          isFeePaid: '참가비납부',
+          teamMembers: '참가자목록',
           //   leftAt: '탈퇴일', // 추가 (만약 표시하고 싶다면)
         };
 
@@ -196,6 +204,7 @@ export function createNotificationMessage(
     CLUB_MEMBER: '회원',
     CLUB: '클럽',
     POST: '게시글',
+    TOURNAMENT_APPLICATION: '참가신청',
   };
 
   const typeMap = {
@@ -207,6 +216,29 @@ export function createNotificationMessage(
   const title = `${entityTypeMap[entityType as keyof typeof entityTypeMap]} ${typeMap[type]}`;
 
   const message = `${entityName}이(가) ${typeMap[type]}되었습니다.`;
+
+  return { title, message };
+}
+
+// 참가신청 상태 변경 알림 메시지 생성
+export function createTournamentApplicationStatusMessage(
+  oldStatus: string,
+  newStatus: string,
+  tournamentTitle: string,
+  division: string,
+): { title: string; message: string } {
+  const statusMap = {
+    pending: '대기중',
+    approved: '승인',
+    rejected: '거절',
+    cancelled: '취소',
+  };
+
+  const oldStatusText = statusMap[oldStatus as keyof typeof statusMap] || oldStatus;
+  const newStatusText = statusMap[newStatus as keyof typeof statusMap] || newStatus;
+
+  const title = `참가신청 상태 변경`;
+  const message = `${tournamentTitle} ${division}부 참가신청이 ${oldStatusText}에서 ${newStatusText}로 변경되었습니다.`;
 
   return { title, message };
 }

@@ -16,6 +16,7 @@ import { ParticipantForm } from '@/components/tournament/ParticipantForm';
 import { TeamParticipantForm } from '@/components/tournament/TeamParticipantForm';
 import { TournamentParticipationForm } from '@/components/tournament/TournamentParticipationForm';
 import type { ClubMember } from '@/types/tournament';
+import { isModerator } from '@/lib/authUtils';
 
 // 상수 정의
 const INDIVIDUAL_PARTICIPANTS = 2;
@@ -39,6 +40,7 @@ export default function TournamentApplicationForm({
   const { loading, withLoading } = useLoading();
   const { data: session } = useSession();
   const { user } = useUser(session?.user?.email);
+  const { clubs, isLoading: clubsLoading } = useClubs();
 
   // 폼 상태
   const [division, setDivision] = useState<string>('');
@@ -46,9 +48,6 @@ export default function TournamentApplicationForm({
   const [email, setEmail] = useState<string>('');
   const [memo, setMemo] = useState<string>('');
   const [isFeePaid, setIsFeePaid] = useState<boolean>(false);
-
-  // 데이터 상태
-  const { clubs, isLoading: clubsLoading } = useClubs();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
@@ -321,8 +320,8 @@ export default function TournamentApplicationForm({
           // 수정 후 이동 경로 결정
           if (isEdit) {
             // 어드민(레벨 4 이상)은 어드민 목록으로, 일반 사용자는 일반 목록으로
-            const isAdmin = user?.level && user.level >= 4;
-            router.push(isAdmin ? '/tournament-applications/admin' : '/tournament-applications');
+            const moderator = isModerator(user);
+            router.push(moderator ? '/tournament-applications/admin' : '/tournament-applications');
           } else {
             router.push(`/tournaments/${tournament._id}`);
           }

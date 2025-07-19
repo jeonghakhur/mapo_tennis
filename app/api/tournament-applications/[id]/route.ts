@@ -1,20 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
 import {
   getTournamentApplication,
   updateTournamentApplication,
+  updateTournamentApplicationStatus,
+  deleteTournamentApplication,
 } from '@/service/tournamentApplication';
-import { getUserByEmail } from '@/service/user';
+import {
+  createNotification,
+  createTournamentApplicationStatusMessage,
+  createNotificationMessage,
+  trackChanges,
+} from '@/service/notification';
+import { getTournament } from '@/service/tournament';
+import {
+  authenticateUser,
+  checkTournamentApplicationPermission,
+  getNotificationUserId,
+} from '@/lib/apiUtils';
 import type { TournamentApplicationInput } from '@/model/tournamentApplication';
 
 // 참가신청 조회
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: '로그인 필요' }, { status: 401 });
-    }
+    const authResult = await authenticateUser();
+    if (authResult.error) return authResult.error;
 
     const { id } = await params;
     const application = await getTournamentApplication(id);
@@ -22,17 +31,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: '참가신청을 찾을 수 없습니다' }, { status: 404 });
     }
 
-    // 사용자 정보 조회
-    const user = await getUserByEmail(session.user.email);
-    if (!user?._id) {
-      return NextResponse.json({ error: '유저 정보 없음' }, { status: 400 });
-    }
-
-    // 관리자(레벨 5 이상) 또는 본인이 작성한 신청만 조회 가능
-    const isAdmin = user.level && user.level >= 5;
-    if (!isAdmin && application.createdBy !== user._id) {
-      return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 });
-    }
+    const permissionResult = checkTournamentApplicationPermission(
+      authResult.user,
+      application,
+      'read',
+    );
+    if (permissionResult.error) return permissionResult.error;
 
     return NextResponse.json(application);
   } catch (error) {
@@ -44,33 +48,21 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 // 참가신청 수정
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: '로그인 필요' }, { status: 401 });
-    }
+    const authResult = await authenticateUser();
+    if (authResult.error) return authResult.error;
 
     const { id } = await params;
-    const user = await getUserByEmail(session.user.email);
-    if (!user?._id) {
-      return NextResponse.json({ error: '유저 정보 없음' }, { status: 400 });
-    }
-
-    // 기존 신청 조회
     const existingApplication = await getTournamentApplication(id);
     if (!existingApplication) {
       return NextResponse.json({ error: '참가신청을 찾을 수 없습니다' }, { status: 404 });
     }
 
-    // 관리자(레벨 5 이상) 또는 본인이 작성한 신청만 수정 가능
-    const isAdmin = user.level && user.level >= 5;
-    if (!isAdmin && existingApplication.createdBy !== user._id) {
-      return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 });
-    }
-
-    // 일반 사용자는 승인된 신청 수정 불가
-    if (!isAdmin && existingApplication.status === 'approved') {
-      return NextResponse.json({ error: '승인된 신청은 수정할 수 없습니다' }, { status: 400 });
-    }
+    const permissionResult = checkTournamentApplicationPermission(
+      authResult.user,
+      existingApplication,
+      'update',
+    );
+    if (permissionResult.error) return permissionResult.error;
 
     const formData = await req.formData();
 
@@ -134,12 +126,160 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       isFeePaid,
     };
 
-    console.log('참가신청 수정 데이터:', applicationData);
     const result = await updateTournamentApplication(id, applicationData);
-    console.log('참가신청 수정 결과:', result);
+
+    // 대회 정보 조회
+    const tournament = await getTournament(existingApplication.tournamentId);
+    if (tournament) {
+      // 변경사항 추적
+      const changes = trackChanges(
+        existingApplication as unknown as Record<string, unknown>,
+        result as unknown as Record<string, unknown>,
+      );
+
+      if (changes.length > 0) {
+        // 참가신청 수정 알림 생성
+        const { title, message } = createNotificationMessage(
+          'UPDATE',
+          'TOURNAMENT_APPLICATION',
+          `${tournament.title} ${division}부 참가신청`,
+        );
+
+        await createNotification({
+          type: 'UPDATE',
+          entityType: 'TOURNAMENT_APPLICATION',
+          entityId: id,
+          title,
+          message,
+          changes,
+          userId: getNotificationUserId(
+            Boolean(permissionResult.isAdmin),
+            existingApplication.createdBy,
+          ),
+        });
+      }
+    }
+
     return NextResponse.json({ ok: true, id: result._id });
   } catch (error) {
     console.error('참가신청 수정 오류:', error);
+    return NextResponse.json({ error: '서버 오류' }, { status: 500 });
+  }
+}
+
+// 참가신청 상태 변경
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const authResult = await authenticateUser();
+    if (authResult.error) return authResult.error;
+
+    const { id } = await params;
+    const existingApplication = await getTournamentApplication(id);
+    if (!existingApplication) {
+      return NextResponse.json({ error: '참가신청을 찾을 수 없습니다' }, { status: 404 });
+    }
+
+    const { status } = await req.json();
+
+    if (!status || !['pending', 'approved', 'rejected', 'cancelled'].includes(status)) {
+      return NextResponse.json({ error: '유효하지 않은 상태입니다' }, { status: 400 });
+    }
+
+    // 상태가 변경되지 않은 경우 알림 생성하지 않음
+    if (existingApplication.status === status) {
+      return NextResponse.json({ ok: true, id: existingApplication._id });
+    }
+
+    // 대회 정보 조회
+    const tournament = await getTournament(existingApplication.tournamentId);
+    if (!tournament) {
+      return NextResponse.json({ error: '대회 정보를 찾을 수 없습니다' }, { status: 404 });
+    }
+
+    // 참가신청 상태 업데이트
+    const result = await updateTournamentApplicationStatus(id, status);
+
+    // 알림 생성
+    const { title, message } = createTournamentApplicationStatusMessage(
+      existingApplication.status,
+      status,
+      tournament.title,
+      existingApplication.division,
+    );
+
+    await createNotification({
+      type: 'UPDATE',
+      entityType: 'TOURNAMENT_APPLICATION',
+      entityId: id,
+      title,
+      message,
+      changes: [
+        {
+          field: '상태',
+          oldValue: existingApplication.status,
+          newValue: status,
+        },
+      ],
+      userId: existingApplication.createdBy, // 신청자에게만 알림
+    });
+
+    return NextResponse.json({ ok: true, id: result._id });
+  } catch (error) {
+    console.error('참가신청 상태 변경 오류:', error);
+    return NextResponse.json({ error: '서버 오류' }, { status: 500 });
+  }
+}
+
+// 참가신청 삭제
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const authResult = await authenticateUser();
+    if (authResult.error) return authResult.error;
+
+    const { id } = await params;
+    const existingApplication = await getTournamentApplication(id);
+    if (!existingApplication) {
+      return NextResponse.json({ error: '참가신청을 찾을 수 없습니다' }, { status: 404 });
+    }
+
+    const permissionResult = checkTournamentApplicationPermission(
+      authResult.user,
+      existingApplication,
+      'delete',
+    );
+    if (permissionResult.error) return permissionResult.error;
+
+    // 대회 정보 조회
+    const tournament = await getTournament(existingApplication.tournamentId);
+    if (!tournament) {
+      return NextResponse.json({ error: '대회 정보를 찾을 수 없습니다' }, { status: 404 });
+    }
+
+    // 삭제 전에 알림 생성
+    const { title, message } = createNotificationMessage(
+      'DELETE',
+      'TOURNAMENT_APPLICATION',
+      `${tournament.title} ${existingApplication.division}부 참가신청`,
+    );
+
+    await createNotification({
+      type: 'DELETE',
+      entityType: 'TOURNAMENT_APPLICATION',
+      entityId: id,
+      title,
+      message,
+      userId: getNotificationUserId(
+        Boolean(permissionResult.isAdmin),
+        existingApplication.createdBy,
+      ),
+    });
+
+    // 참가신청 삭제
+    await deleteTournamentApplication(id);
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error('참가신청 삭제 오류:', error);
     return NextResponse.json({ error: '서버 오류' }, { status: 500 });
   }
 }

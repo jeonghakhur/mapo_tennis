@@ -2,7 +2,7 @@ export interface Notification {
   _id: string;
   _type: 'notification';
   type: 'CREATE' | 'UPDATE' | 'DELETE';
-  entityType: 'CLUB_MEMBER' | 'CLUB' | 'POST';
+  entityType: 'CLUB_MEMBER' | 'CLUB' | 'POST' | 'TOURNAMENT_APPLICATION';
   entityId: string;
   title: string;
   message: string;
@@ -21,7 +21,7 @@ export interface Change {
 
 export interface NotificationInput {
   type: 'CREATE' | 'UPDATE' | 'DELETE';
-  entityType: 'CLUB_MEMBER' | 'CLUB' | 'POST';
+  entityType: 'CLUB_MEMBER' | 'CLUB' | 'POST' | 'TOURNAMENT_APPLICATION';
   entityId: string;
   title: string;
   message: string;

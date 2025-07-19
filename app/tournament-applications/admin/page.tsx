@@ -1,39 +1,46 @@
 'use client';
-import { Box, Text, Button, Flex, Badge, Card, Select } from '@radix-ui/themes';
+import { useState, useEffect } from 'react';
+import { Box, Text, Button, Flex, Badge, Select } from '@radix-ui/themes';
 import Container from '@/components/Container';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { useSession } from 'next-auth/react';
 import { useUser } from '@/hooks/useUser';
+import { isAdmin } from '@/lib/authUtils';
 import {
   useAdminTournamentApplications,
   useUpdateApplicationStatus,
   useDeleteApplication,
 } from '@/hooks/useTournamentApplications';
+import { useRouter } from 'next/navigation';
+import type { TournamentApplication } from '@/model/tournamentApplication';
 
 import SkeletonCard from '@/components/SkeletonCard';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import type { TournamentApplication } from '@/model/tournamentApplication';
+import { useSession } from 'next-auth/react';
 
-export default function AdminTournamentApplicationsPage() {
+export default function TournamentApplicationsAdminPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const router = useRouter();
   const { data: session } = useSession();
   const { user } = useUser(session?.user?.email);
   const { applications, isLoading } = useAdminTournamentApplications();
-  const { trigger: updateStatus, isMutating } = useUpdateApplicationStatus();
+  const { trigger: updateStatus, isMutating: isUpdating } = useUpdateApplicationStatus();
   const { trigger: deleteApplication, isMutating: isDeleting } = useDeleteApplication();
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<TournamentApplication | null>(
     null,
   );
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [isDeleteMode, setIsDeleteMode] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  // 레벨 5 이상인 사용자만 관리자 권한
-  const isAdmin = user?.level && user.level >= 5;
+  // 관리자 권한 확인
+  const admin = isAdmin(user);
+
+  useEffect(() => {
+    if (admin) {
+      // fetchApplications(); // This function is not defined in the original file, so it's removed.
+    }
+  }, [admin]);
 
   const getStatusColor = (status: string) => {
     const colorMap: Record<string, 'red' | 'blue' | 'green' | 'gray'> = {
@@ -115,7 +122,7 @@ export default function AdminTournamentApplicationsPage() {
   };
 
   // 관리자가 아닌 경우 접근 제한
-  if (!isAdmin) return;
+  if (!admin) return;
 
   return (
     <Container>
@@ -123,12 +130,6 @@ export default function AdminTournamentApplicationsPage() {
         <SkeletonCard />
       ) : (
         <Box>
-          <Flex align="center" justify="between" mb="4">
-            <Text size="5" weight="bold">
-              전체 참가신청 목록 (관리자)
-            </Text>
-          </Flex>
-
           <Flex gap="3" mb="4" align="center" wrap="wrap">
             <Flex gap="3" align="center">
               <Text size="2" weight="bold">
@@ -148,15 +149,15 @@ export default function AdminTournamentApplicationsPage() {
           </Flex>
 
           {filteredApplications.length === 0 ? (
-            <Card className="p-6 text-center">
+            <div className="p-6 text-center">
               <Text size="3" color="gray">
                 참가 신청 내역이 없습니다.
               </Text>
-            </Card>
+            </div>
           ) : (
             <div className="space-y-4">
               {filteredApplications.map((application) => (
-                <Card
+                <div
                   key={application._id}
                   className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
                   onClick={() => {
@@ -289,7 +290,7 @@ export default function AdminTournamentApplicationsPage() {
                           e.stopPropagation();
                           openStatusDialog(application, 'approved');
                         }}
-                        disabled={isMutating}
+                        disabled={isUpdating}
                       >
                         승인
                       </Button>
@@ -301,7 +302,7 @@ export default function AdminTournamentApplicationsPage() {
                           e.stopPropagation();
                           openStatusDialog(application, 'rejected');
                         }}
-                        disabled={isMutating}
+                        disabled={isUpdating}
                       >
                         거절
                       </Button>
@@ -330,7 +331,7 @@ export default function AdminTournamentApplicationsPage() {
                       </Button>
                     </Flex>
                   </div>
-                </Card>
+                </div>
               ))}
             </div>
           )}

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Box, Text, Button, Flex, Badge, Select } from '@radix-ui/themes';
 import Container from '@/components/Container';
@@ -38,7 +38,7 @@ export default function TournamentApplicationsPage() {
   // 관리자 권한 확인
   const admin = isAdmin(user);
 
-  const fetchApplications = async () => {
+  const fetchApplications = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/tournament-applications?tournamentId=${id}`);
@@ -51,7 +51,7 @@ export default function TournamentApplicationsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     if (id && admin) {

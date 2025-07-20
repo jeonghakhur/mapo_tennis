@@ -143,7 +143,36 @@ export default function Navbar() {
                   </DropdownMenu.Item>
                 </>
               ) : (
-                <DropdownMenu.Item color="red" onClick={() => signOut({ callbackUrl: '/' })}>
+                <DropdownMenu.Item
+                  color="red"
+                  onClick={async () => {
+                    try {
+                      // 먼저 세션을 명시적으로 제거
+                      await signOut({
+                        callbackUrl: '/',
+                        redirect: false,
+                      });
+
+                      // 로컬 스토리지와 세션 스토리지 정리
+                      localStorage.clear();
+                      sessionStorage.clear();
+
+                      // 쿠키 정리
+                      document.cookie.split(';').forEach(function (c) {
+                        document.cookie = c
+                          .replace(/^ +/, '')
+                          .replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
+                      });
+
+                      // 페이지 새로고침
+                      window.location.href = '/';
+                    } catch (error) {
+                      console.error('로그아웃 실패:', error);
+                      // 강제로 페이지 새로고침
+                      window.location.href = '/';
+                    }
+                  }}
+                >
                   <LogOut size={14} />
                   로그아웃
                 </DropdownMenu.Item>

@@ -70,35 +70,12 @@ export default function AuthButton() {
         variant="soft"
         onClick={async () => {
           try {
-            // 먼저 세션을 명시적으로 제거
             await signOut({
               callbackUrl: '/',
-              redirect: false,
+              redirect: true,
             });
-
-            // 로컬 스토리지와 세션 스토리지 정리
-            localStorage.clear();
-            sessionStorage.clear();
-
-            // 쿠키 정리 (NextAuth 관련 쿠키만)
-            const nextAuthCookies = [
-              'next-auth.session-token',
-              'next-auth.callback-url',
-              'next-auth.csrf-token',
-              '__Secure-next-auth.session-token',
-              '__Secure-next-auth.callback-url',
-              '__Secure-next-auth.csrf-token',
-            ];
-
-            nextAuthCookies.forEach((cookieName) => {
-              document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-            });
-
-            // 페이지 새로고침
-            window.location.href = '/';
           } catch (error) {
             console.error('로그아웃 실패:', error);
-            // 강제로 페이지 새로고침
             window.location.href = '/';
           }
         }}

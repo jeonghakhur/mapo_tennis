@@ -3,10 +3,10 @@
   "short_name": "마포구 테니스",
   "description": "마포구 테니스 협회 공식 웹사이트",
   "start_url": "/",
-  "display": "fullscreen",
+  "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#3b82f6",
-  "orientation": "portrait-primary",
+  "orientation": "portrait",
   "scope": "/",
   "lang": "ko",
   "icons": [
@@ -15,9 +15,22 @@
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ],
   "categories": ["sports", "lifestyle"],
+  "prefer_related_applications": false,
   "screenshots": [
     {
       "src": "/screenshot-wide.svg",

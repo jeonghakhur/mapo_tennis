@@ -23,8 +23,21 @@ export default function PWAInstaller() {
       e.preventDefault();
 
       // 설치 버튼 표시 로직을 여기에 추가할 수 있습니다
-      console.log('PWA 설치 가능');
+      console.log('PWA 설치 가능 - beforeinstallprompt 이벤트 발생');
     });
+
+    // PWA 설치 조건 확인
+    const checkInstallability = () => {
+      console.log('PWA 설치 조건 확인:');
+      console.log('- HTTPS:', window.location.protocol === 'https:');
+      console.log('- Service Worker:', 'serviceWorker' in navigator);
+      console.log('- Manifest:', !!document.querySelector('link[rel="manifest"]'));
+      console.log('- Standalone:', window.matchMedia('(display-mode: standalone)').matches);
+      console.log('- User Agent:', navigator.userAgent);
+    };
+
+    // 페이지 로드 후 확인
+    setTimeout(checkInstallability, 1000);
 
     window.addEventListener('appinstalled', () => {
       console.log('PWA가 성공적으로 설치되었습니다');

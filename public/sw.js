@@ -79,7 +79,13 @@ self.addEventListener('fetch', (event) => {
         // API 요청은 캐시하지 않음
         const isApiRequest = url.pathname.startsWith('/api/');
 
-        if (isStaticResource && !isApiRequest) {
+        // 세션 관련 요청은 캐시하지 않음
+        const isSessionRequest =
+          url.pathname.startsWith('/api/auth/') ||
+          url.search.includes('session') ||
+          url.search.includes('token');
+
+        if (isStaticResource && !isApiRequest && !isSessionRequest) {
           // 응답을 복제하여 캐시에 저장
           const responseToCache = response.clone();
           caches.open(CACHE_NAME).then((cache) => {

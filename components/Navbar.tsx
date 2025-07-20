@@ -157,11 +157,18 @@ export default function Navbar() {
                       localStorage.clear();
                       sessionStorage.clear();
 
-                      // 쿠키 정리
-                      document.cookie.split(';').forEach(function (c) {
-                        document.cookie = c
-                          .replace(/^ +/, '')
-                          .replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
+                      // 쿠키 정리 (NextAuth 관련 쿠키만)
+                      const nextAuthCookies = [
+                        'next-auth.session-token',
+                        'next-auth.callback-url',
+                        'next-auth.csrf-token',
+                        '__Secure-next-auth.session-token',
+                        '__Secure-next-auth.callback-url',
+                        '__Secure-next-auth.csrf-token',
+                      ];
+
+                      nextAuthCookies.forEach((cookieName) => {
+                        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
                       });
 
                       // 페이지 새로고침

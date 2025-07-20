@@ -13,7 +13,17 @@ export default function PWAInstallPrompt() {
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
 
   useEffect(() => {
+    // PWA 설치 조건 확인
+    const checkPWACriteria = () => {
+      console.log('PWA 설치 조건 확인:');
+      console.log('- HTTPS:', window.location.protocol === 'https:');
+      console.log('- Service Worker:', 'serviceWorker' in navigator);
+      console.log('- Manifest:', !!document.querySelector('link[rel="manifest"]'));
+      console.log('- Standalone:', window.matchMedia('(display-mode: standalone)').matches);
+    };
+
     const handleBeforeInstallPrompt = (e: Event) => {
+      console.log('beforeinstallprompt 이벤트 발생');
       // 기본 설치 프롬프트 방지
       e.preventDefault();
       // 나중에 사용하기 위해 이벤트 저장
@@ -26,6 +36,9 @@ export default function PWAInstallPrompt() {
       setDeferredPrompt(null);
       setShowInstallPrompt(false);
     };
+
+    // 초기 확인
+    checkPWACriteria();
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);

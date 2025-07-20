@@ -6,6 +6,7 @@ export interface Notification {
   entityId: string;
   title: string;
   message: string;
+  link?: string; // 바로가기 링크
   changes?: Change[];
   readAt?: string;
   userId?: string;
@@ -25,6 +26,7 @@ export interface NotificationInput {
   entityId: string;
   title: string;
   message: string;
+  link?: string; // 바로가기 링크
   changes?: Change[];
   userId?: string;
 }

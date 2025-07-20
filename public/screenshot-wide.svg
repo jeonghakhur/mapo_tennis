@@ -1,0 +1,14 @@
+<svg width="1280" height="720" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="720" fill="#f8fafc"/>
+  <rect x="40" y="40" width="1200" height="640" fill="white" stroke="#e2e8f0" stroke-width="2"/>
+  <rect x="60" y="80" width="1160" height="80" fill="#3b82f6"/>
+  <text x="80" y="130" font-family="Arial, sans-serif" font-size="24" fill="white">마포구 테니스 협회</text>
+  <rect x="60" y="180" width="1160" height="40" fill="#f1f5f9"/>
+  <text x="80" y="210" font-family="Arial, sans-serif" font-size="16" fill="#64748b">홈 > 포스트</text>
+  <rect x="60" y="240" width="1160" height="400" fill="white" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="80" y="280" font-family="Arial, sans-serif" font-size="20" fill="#1e293b">포스트 목록</text>
+  <rect x="80" y="300" width="1120" height="80" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="100" y="330" font-family="Arial, sans-serif" font-size="16" fill="#1e293b">공지사항</text>
+  <text x="100" y="350" font-family="Arial, sans-serif" font-size="14" fill="#64748b">2024년 마포구 테니스 대회 안내</text>
+  <text x="100" y="370" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">2024.01.15</text>
+</svg> 

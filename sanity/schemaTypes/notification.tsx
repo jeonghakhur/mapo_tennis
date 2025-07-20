@@ -27,6 +27,7 @@ export default defineType({
           { title: '클럽 회원', value: 'CLUB_MEMBER' },
           { title: '클럽', value: 'CLUB' },
           { title: '게시글', value: 'POST' },
+          { title: '참가신청', value: 'TOURNAMENT_APPLICATION' },
         ],
       },
       validation: (Rule) => Rule.required(),
@@ -48,6 +49,12 @@ export default defineType({
       title: '알림 메시지',
       type: 'text',
       validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'link',
+      title: '바로가기 링크',
+      type: 'string',
+      description: '알림 클릭 시 이동할 페이지 URL',
     }),
     defineField({
       name: 'changes',

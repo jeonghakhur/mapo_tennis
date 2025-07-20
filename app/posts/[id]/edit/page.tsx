@@ -20,6 +20,11 @@ interface EditPostPageProps {
 export default function EditPostPage({ params }: EditPostPageProps) {
   const { id } = use(params);
   const { data: session } = useSession();
+  const router = useRouter();
+
+  // 회원 레벨 4 이상인지 확인
+  const canManagePosts = session?.user?.level >= 4;
+
   const { post, isLoading } = usePost(id);
   const [formData, setFormData] = useState<PostInput>({
     title: '',
@@ -31,7 +36,13 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   });
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<{ title?: string }>({});
-  const router = useRouter();
+
+  // 권한이 없는 경우 포스트 목록으로 리다이렉트
+  useEffect(() => {
+    if (session && !canManagePosts) {
+      router.push('/posts');
+    }
+  }, [session, canManagePosts, router]);
 
   useEffect(() => {
     if (post) {
@@ -90,6 +101,17 @@ export default function EditPostPage({ params }: EditPostPageProps) {
       setIsSaving(false);
     }
   };
+
+  // 권한이 없는 경우 로딩 상태 표시
+  if (session && !canManagePosts) {
+    return (
+      <Container>
+        <Box>
+          <Text>권한이 없습니다.</Text>
+        </Box>
+      </Container>
+    );
+  }
 
   if (isLoading) {
     return (

@@ -51,6 +51,9 @@ export default function TournamentApplicationForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [isFeePaidInSuccess, setIsFeePaidInSuccess] = useState(false);
 
   // 필드 refs
   const divisionRef = useRef<HTMLDivElement>(null);
@@ -315,16 +318,22 @@ export default function TournamentApplicationForm({
             );
           }
 
-          alert(isEdit ? '참가 신청이 수정되었습니다.' : '참가 신청이 완료되었습니다.');
+          // 성공 메시지 설정
+          const baseMessage = isEdit
+            ? '참가 신청이 수정되었습니다.'
+            : '참가 신청이 완료되었습니다.';
 
-          // 수정 후 이동 경로 결정
-          if (isEdit) {
-            // 어드민(레벨 4 이상)은 어드민 목록으로, 일반 사용자는 일반 목록으로
-            const moderator = isModerator(user);
-            router.push(moderator ? '/tournament-applications/admin' : '/tournament-applications');
+          if (!isFeePaid) {
+            setSuccessMessage(
+              `${baseMessage}\n\n참가비를 입금하지 않으셨습니다.\n참가비 입금 후 참가비 납부 여부를 수정해주세요.`,
+            );
+            setIsFeePaidInSuccess(false);
           } else {
-            router.push(`/tournaments/${tournament._id}`);
+            setSuccessMessage(baseMessage);
+            setIsFeePaidInSuccess(true);
           }
+
+          setShowSuccessDialog(true);
         });
       } catch (error) {
         console.error('참가 신청 오류:', error);
@@ -346,8 +355,6 @@ export default function TournamentApplicationForm({
       isEdit,
       applicationId,
       withLoading,
-      router,
-      user,
     ],
   );
 
@@ -428,6 +435,39 @@ export default function TournamentApplicationForm({
             <AlertDialog.Cancel>
               <Button variant="surface" color="red" size="3">
                 확인
+              </Button>
+            </AlertDialog.Cancel>
+          </Flex>
+        </AlertDialog.Content>
+      </AlertDialog.Root>
+
+      {/* 성공 다이얼로그 */}
+      <AlertDialog.Root open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <AlertDialog.Content>
+          <AlertDialog.Title>{isEdit ? '참가 신청 수정 완료' : '참가 신청 완료'}</AlertDialog.Title>
+          <AlertDialog.Description>
+            <span className="whitespace-pre-line">{successMessage}</span>
+          </AlertDialog.Description>
+          <Flex gap="3" mt="4" justify="end">
+            <AlertDialog.Cancel>
+              <Button
+                variant="surface"
+                color={isFeePaidInSuccess ? 'green' : 'orange'}
+                size="3"
+                onClick={() => {
+                  // 수정 후 이동 경로 결정
+                  if (isEdit) {
+                    // 어드민(레벨 4 이상)은 어드민 목록으로, 일반 사용자는 일반 목록으로
+                    const moderator = isModerator(user);
+                    router.push(
+                      moderator ? '/tournament-applications/admin' : '/tournament-applications',
+                    );
+                  } else {
+                    router.push('/tournament-applications');
+                  }
+                }}
+              >
+                목록으로 이동
               </Button>
             </AlertDialog.Cancel>
           </Flex>

@@ -17,15 +17,22 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useSession } from 'next-auth/react';
+import { AlertCircle } from 'lucide-react';
+import { useTournaments } from '@/hooks/useTournaments';
 
 export default function TournamentApplicationsAdminPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [tournamentFilter, setTournamentFilter] = useState<string>('all');
+  const [clubMismatchFilter, setClubMismatchFilter] = useState<'all' | 'only' | 'exclude'>('all');
+  const [participantNameSearch, setParticipantNameSearch] = useState('');
   const router = useRouter();
   const { data: session } = useSession();
   const { user } = useUser(session?.user?.email);
   const { applications, isLoading } = useAdminTournamentApplications();
+  const { tournaments } = useTournaments();
   const { trigger: updateStatus, isMutating: isUpdating } = useUpdateApplicationStatus();
   const { trigger: deleteApplication, isMutating: isDeleting } = useDeleteApplication();
+
   const [selectedApplication, setSelectedApplication] = useState<TournamentApplication | null>(
     null,
   );
@@ -79,11 +86,26 @@ export default function TournamentApplicationsAdminPage() {
   };
 
   const filteredApplications = applications.filter((application) => {
+    // 대회 필터
+    if (tournamentFilter !== 'all' && application.tournamentId !== tournamentFilter) {
+      return false;
+    }
     // 상태 필터
     if (filterStatus !== 'all' && application.status !== filterStatus) {
       return false;
     }
-
+    // 클럽 불일치 필터
+    const hasMismatch = application.teamMembers.some(
+      (m) => m.clubName !== application.teamMembers[0].clubName,
+    );
+    if (clubMismatchFilter === 'only' && !hasMismatch) return false;
+    if (clubMismatchFilter === 'exclude' && hasMismatch) return false;
+    // 참가자 이름 검색
+    if (participantNameSearch.trim()) {
+      const search = participantNameSearch.trim().toLowerCase();
+      const found = application.teamMembers.some((m) => m.name.toLowerCase().includes(search));
+      if (!found) return false;
+    }
     return true;
   });
 
@@ -133,7 +155,23 @@ export default function TournamentApplicationsAdminPage() {
           <Flex gap="3" mb="4" align="center" wrap="wrap">
             <Flex gap="3" align="center">
               <Text size="2" weight="bold">
-                상태 필터:
+                대회:
+              </Text>
+              <Select.Root value={tournamentFilter} onValueChange={setTournamentFilter}>
+                <Select.Trigger placeholder="전체 대회" />
+                <Select.Content>
+                  <Select.Item value="all">전체</Select.Item>
+                  {tournaments.map((t) => (
+                    <Select.Item key={t._id} value={t._id}>
+                      {t.title}
+                    </Select.Item>
+                  ))}
+                </Select.Content>
+              </Select.Root>
+            </Flex>
+            <Flex gap="3" align="center">
+              <Text size="2" weight="bold">
+                상태:
               </Text>
               <Select.Root value={filterStatus} onValueChange={setFilterStatus}>
                 <Select.Trigger placeholder="전체" />
@@ -145,6 +183,35 @@ export default function TournamentApplicationsAdminPage() {
                   <Select.Item value="cancelled">취소</Select.Item>
                 </Select.Content>
               </Select.Root>
+            </Flex>
+            <Flex gap="3" align="center">
+              <Text size="2" weight="bold">
+                클럽 불일치:
+              </Text>
+              <Select.Root
+                value={clubMismatchFilter}
+                onValueChange={(v) => setClubMismatchFilter(v as 'all' | 'only' | 'exclude')}
+              >
+                <Select.Trigger placeholder="전체" />
+                <Select.Content>
+                  <Select.Item value="all">전체</Select.Item>
+                  <Select.Item value="only">불일치만</Select.Item>
+                  <Select.Item value="exclude">불일치 제외</Select.Item>
+                </Select.Content>
+              </Select.Root>
+            </Flex>
+            <Flex gap="3" align="center">
+              <Text size="2" weight="bold">
+                참가자 이름:
+              </Text>
+              <input
+                type="text"
+                value={participantNameSearch}
+                onChange={(e) => setParticipantNameSearch(e.target.value)}
+                placeholder="이름 검색"
+                className="border rounded px-2 py-1 text-sm"
+                style={{ minWidth: 120 }}
+              />
             </Flex>
           </Flex>
 
@@ -194,13 +261,21 @@ export default function TournamentApplicationsAdminPage() {
                       {application.teamMembers.map((member, index) => (
                         <div
                           key={index}
-                          className="grid grid-cols-1 md:grid-cols-3 gap-4 p-3 bg-gray-50 rounded"
+                          className="grid grid-cols-1 md:grid-cols-4 gap-4 p-3 bg-gray-50 rounded"
                         >
                           <div>
                             <Text size="2" weight="bold" color="gray">
                               {index + 1}번째 참가자
                             </Text>
-                            <Text size="3">{member.name}</Text>
+                            <Text size="3">
+                              {member.name}
+                              {member.clubName !== application.teamMembers[0].clubName && (
+                                <span className="ml-2 text-orange-600 flex items-center inline-flex">
+                                  <AlertCircle size={16} className="inline-block mr-1" />
+                                  <span className="text-xs">클럽 불일치</span>
+                                </span>
+                              )}
+                            </Text>
                           </div>
                           <div>
                             <Text size="2" weight="bold" color="gray">

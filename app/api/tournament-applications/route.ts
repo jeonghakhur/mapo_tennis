@@ -6,6 +6,9 @@ import {
   getTournamentApplications,
 } from '@/service/tournamentApplication';
 import { getUserByEmail } from '@/service/user';
+import { createNotification, createNotificationMessage } from '@/service/notification';
+import { getNotificationUserId } from '@/lib/apiUtils';
+import { createNotificationLink } from '@/lib/notificationUtils';
 import type { TournamentApplicationInput } from '@/model/tournamentApplication';
 
 export async function GET(req: NextRequest) {
@@ -118,6 +121,30 @@ export async function POST(req: NextRequest) {
     };
 
     const result = await createTournamentApplication(applicationData, user._id);
+
+    // 알림 생성 - 참가자 정보 포함
+    const participantNames = teamMembers.map((member) => member.name).join(', ');
+    const participantClubs = [...new Set(teamMembers.map((member) => member.clubName))].join(', ');
+
+    const { title } = createNotificationMessage(
+      'CREATE',
+      'TOURNAMENT_APPLICATION',
+      tournament.title,
+    );
+
+    // 상세한 생성 메시지 생성
+    const detailedMessage = `${tournament.title} ${division}부 참가신청이 등록되었습니다.\n\n참가자: ${participantNames}\n참가클럽: ${participantClubs}`;
+
+    await createNotification({
+      type: 'CREATE',
+      entityType: 'TOURNAMENT_APPLICATION',
+      entityId: result._id!,
+      title,
+      message: detailedMessage,
+      link: createNotificationLink('TOURNAMENT_APPLICATION', result._id!),
+      userId: getNotificationUserId(user.level >= 4, user._id), // 관리자는 전체 알림, 일반 사용자는 개인 알림
+    });
+
     return NextResponse.json({ ok: true, id: result._id });
   } catch (error) {
     console.error('참가 신청 오류:', error);

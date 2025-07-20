@@ -122,9 +122,11 @@ export default function Navbar() {
               <DropdownMenu.Item onClick={() => router.push('/tournaments')}>
                 대회일정
               </DropdownMenu.Item>
-              <DropdownMenu.Item onClick={() => router.push('/my-applications')}>
-                내 참가신청
-              </DropdownMenu.Item>
+              {!admin && (
+                <DropdownMenu.Item onClick={() => router.push('/tournament-applications')}>
+                  내 참가신청
+                </DropdownMenu.Item>
+              )}
               {admin && (
                 <DropdownMenu.Item onClick={() => router.push('/tournament-applications/admin')}>
                   전체 참가신청 목록

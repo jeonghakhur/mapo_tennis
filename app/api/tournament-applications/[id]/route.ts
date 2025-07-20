@@ -17,6 +17,7 @@ import {
   checkTournamentApplicationPermission,
   getNotificationUserId,
 } from '@/lib/apiUtils';
+import { createNotificationLink } from '@/lib/notificationUtils';
 import type { TournamentApplicationInput } from '@/model/tournamentApplication';
 
 // 참가신청 조회
@@ -138,19 +139,28 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       );
 
       if (changes.length > 0) {
-        // 참가신청 수정 알림 생성
-        const { title, message } = createNotificationMessage(
+        // 참가신청 수정 알림 생성 - 참가자 정보 포함
+        const participantNames = teamMembers.map((member) => member.name).join(', ');
+        const participantClubs = [...new Set(teamMembers.map((member) => member.clubName))].join(
+          ', ',
+        );
+
+        const { title } = createNotificationMessage(
           'UPDATE',
           'TOURNAMENT_APPLICATION',
           `${tournament.title} ${division}부 참가신청`,
         );
+
+        // 상세한 수정 메시지 생성
+        const detailedMessage = `${tournament.title} ${division}부 참가신청이 수정되었습니다.\n\n참가자: ${participantNames}\n참가클럽: ${participantClubs}`;
 
         await createNotification({
           type: 'UPDATE',
           entityType: 'TOURNAMENT_APPLICATION',
           entityId: id,
           title,
-          message,
+          message: detailedMessage,
+          link: createNotificationLink('TOURNAMENT_APPLICATION', id),
           changes,
           userId: getNotificationUserId(
             Boolean(permissionResult.isAdmin),
@@ -213,6 +223,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       entityId: id,
       title,
       message,
+      link: createNotificationLink('TOURNAMENT_APPLICATION', id),
       changes: [
         {
           field: '상태',
@@ -255,19 +266,29 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       return NextResponse.json({ error: '대회 정보를 찾을 수 없습니다' }, { status: 404 });
     }
 
-    // 삭제 전에 알림 생성
-    const { title, message } = createNotificationMessage(
+    // 삭제 전에 알림 생성 - 참가자 정보 포함
+    const participantNames = existingApplication.teamMembers
+      .map((member) => member.name)
+      .join(', ');
+    const participantClubs = [
+      ...new Set(existingApplication.teamMembers.map((member) => member.clubName)),
+    ].join(', ');
+
+    const { title } = createNotificationMessage(
       'DELETE',
       'TOURNAMENT_APPLICATION',
       `${tournament.title} ${existingApplication.division}부 참가신청`,
     );
+
+    // 상세한 삭제 메시지 생성
+    const detailedMessage = `${tournament.title} ${existingApplication.division}부 참가신청이 삭제되었습니다.\n\n참가자: ${participantNames}\n참가클럽: ${participantClubs}`;
 
     await createNotification({
       type: 'DELETE',
       entityType: 'TOURNAMENT_APPLICATION',
       entityId: id,
       title,
-      message,
+      message: detailedMessage,
       userId: getNotificationUserId(
         Boolean(permissionResult.isAdmin),
         existingApplication.createdBy,

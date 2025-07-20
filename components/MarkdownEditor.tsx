@@ -66,27 +66,43 @@ export default function MarkdownEditor({ value, onChange }: MarkdownEditorProps)
       </div>
 
       {isClient && (
-        <Editor
-          ref={editorRef}
-          initialValue={value || ' '} // 여기서 value를 사용
-          onChange={handleChange}
-          height="400px"
-          initialEditType="wysiwyg"
-          useCommandShortcut={true}
-          placeholder="포스트 내용을 작성하세요..."
-          hooks={{
-            addImageBlobHook: async (blob: File, callback: (url: string) => void) => {
-              try {
-                const url = await handleImageUpload(blob);
-                if (url) {
-                  callback(url);
+        <div className="markdown-editor-container">
+          <Editor
+            ref={editorRef}
+            initialValue={value || ' '} // 여기서 value를 사용
+            onChange={handleChange}
+            height="400px"
+            initialEditType="wysiwyg"
+            useCommandShortcut={true}
+            placeholder="포스트 내용을 작성하세요..."
+            hooks={{
+              addImageBlobHook: async (blob: File, callback: (url: string) => void) => {
+                try {
+                  const url = await handleImageUpload(blob);
+                  if (url) {
+                    callback(url);
+                  }
+                } catch (error) {
+                  console.error('이미지 업로드 실패:', error);
                 }
-              } catch (error) {
-                console.error('이미지 업로드 실패:', error);
-              }
-            },
-          }}
-        />
+              },
+            }}
+          />
+          <style jsx>{`
+            .markdown-editor-container {
+              font-size: 16px; /* 모바일에서 자동 확대 방지 */
+            }
+            .markdown-editor-container :global(.toastui-editor-defaultUI) {
+              font-size: 16px;
+            }
+            .markdown-editor-container :global(.toastui-editor-defaultUI-toolbar) {
+              font-size: 16px;
+            }
+            .markdown-editor-container :global(.toastui-editor-contents) {
+              font-size: 16px;
+            }
+          `}</style>
+        </div>
       )}
     </Box>
   );

@@ -6,6 +6,7 @@ import Container from '@/components/Container';
 import ExpenseForm from '@/components/ExpenseForm';
 import { urlFor } from '@/sanity/lib/image';
 import type { Expense } from '@/model/expense';
+import Image from 'next/image';
 
 interface ExpensePageLayoutProps {
   // 페이지 정보
@@ -117,9 +118,11 @@ export default function ExpensePageLayout({
             기존 영수증 이미지
           </Text>
           <Box className="border rounded-lg overflow-hidden">
-            <img
+            <Image
               src={urlFor(expense.receiptImage).url()}
               alt="영수증"
+              width={800}
+              height={600}
               style={{
                 width: '100%',
                 height: 'auto',

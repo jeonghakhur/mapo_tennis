@@ -21,9 +21,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Mapogu Tennis Association',
   description: '마포구 테니스 협회',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
   manifest: '/manifest.json',
-  themeColor: '#3b82f6',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -41,6 +39,15 @@ export const metadata: Metadata = {
     'msapplication-config': '/browserconfig.xml',
   },
 };
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
+export const themeColor = '#3b82f6';
 
 export default function RootLayout({
   children,

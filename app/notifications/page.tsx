@@ -5,11 +5,18 @@ import Container from '@/components/Container';
 import { Bell, Check, CheckCheck, Trash2, ExternalLink } from 'lucide-react';
 import type { Notification, Change } from '@/model/notification';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { useUser } from '@/hooks/useUser';
+import { isAdmin } from '@/lib/authUtils';
 
 export default function NotificationsPage() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const { user } = useUser(session?.user?.email);
+  const admin = isAdmin(user);
+
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } =
-    useNotifications();
+    useNotifications(admin ? undefined : user?._id);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

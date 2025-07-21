@@ -12,11 +12,11 @@ export default function Navbar() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
-  const { unreadCount } = useNotifications();
   const { user } = useUser(session?.user?.email);
 
   // 관리자 권한 확인
   const admin = isAdmin(user);
+  const { unreadCount } = useNotifications(admin ? undefined : user?._id);
 
   // 뒤로가기 가능한 페이지인지 확인
   const canGoBack = pathname !== '/' && !pathname.startsWith('/auth');

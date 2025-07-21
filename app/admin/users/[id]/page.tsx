@@ -86,6 +86,7 @@ export default function AdminUserEditPage() {
             onSubmit={handleSubmit}
             loading={loading}
             submitText="회원 정보 수정"
+            mode="adminEdit"
           />
         </>
       )}

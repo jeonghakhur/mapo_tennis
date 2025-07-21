@@ -6,13 +6,14 @@ import { Combobox } from '@/components/ui/combobox';
 import { getClubs } from '@/service/club';
 import { client } from '@/sanity/lib/client';
 import type { Club } from '@/model/club';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 interface ClubSelectorProps {
   userName: string;
   selectedClubIds: string[];
   onClubsChange: (clubIds: string[]) => void;
   disabled?: boolean;
-  isNameEntered?: boolean; // 외부에서 실명 입력 완료 상태를 제어
+  mode: 'signup' | 'edit' | 'adminEdit';
 }
 
 export default function ClubSelector({
@@ -20,12 +21,14 @@ export default function ClubSelector({
   selectedClubIds,
   onClubsChange,
   disabled = false,
-  isNameEntered = false,
+  mode,
 }: ClubSelectorProps) {
   const [allClubs, setAllClubs] = useState<Club[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [membershipStatus, setMembershipStatus] = useState<Record<string, boolean>>({});
+  const [alertDialogOpen, setAlertDialogOpen] = useState(false);
+  const [alertDialogMessage, setAlertDialogMessage] = useState('');
 
   // 컴포넌트 마운트 시 클럽 목록 조회
   useEffect(() => {
@@ -47,7 +50,7 @@ export default function ClubSelector({
 
   // 사용자의 클럽 가입 여부 확인 - 실명이 입력된 후에만 실행
   useEffect(() => {
-    if (!isNameEntered || !userName || !allClubs.length) return;
+    if (!userName || !allClubs.length) return;
 
     const checkMembership = async () => {
       try {
@@ -85,18 +88,30 @@ export default function ClubSelector({
     };
 
     checkMembership();
-  }, [userName, allClubs, isNameEntered]);
+  }, [userName, allClubs]);
+
+  useEffect(() => {
+    console.log('membershipStatus:', membershipStatus);
+    console.log('allClubs:', allClubs);
+    console.log('selectedClubIds:', selectedClubIds);
+  }, [membershipStatus, allClubs, selectedClubIds]);
 
   const handleClubChange = (clubId: string) => {
-    const isMember = membershipStatus[clubId] || false;
-
     if (selectedClubIds.includes(clubId)) {
-      // 이미 선택된 클럽이면 제거
       onClubsChange(selectedClubIds.filter((id) => id !== clubId));
     } else {
-      // 가입된 클럽만 선택 가능
-      if (isMember) {
+      if (mode === 'signup') {
         onClubsChange([...selectedClubIds, clubId]);
+      } else {
+        const isMember = membershipStatus[clubId] || false;
+        if (isMember) {
+          onClubsChange([...selectedClubIds, clubId]);
+        } else {
+          setAlertDialogMessage(
+            '가입되어 있지 않은 클럽입니다. 정회원으로 등록된 클럽만 선택할 수 있습니다.',
+          );
+          setAlertDialogOpen(true);
+        }
       }
     }
   };
@@ -145,6 +160,8 @@ export default function ClubSelector({
     );
   }
 
+  // Combobox disabled prop 디버깅 로그
+  console.log('Combobox disabled:', disabled);
   return (
     <Box>
       <Text size="3" weight="bold" mb="3">
@@ -164,9 +181,18 @@ export default function ClubSelector({
           placeholder="클럽 선택"
           searchPlaceholder="클럽 검색..."
           emptyMessage="클럽이 없습니다."
-          disabled={disabled || !isNameEntered}
+          disabled={disabled}
         />
       </Box>
+      <ConfirmDialog
+        title="알림"
+        description={alertDialogMessage}
+        confirmText="확인"
+        confirmColor="blue"
+        open={alertDialogOpen}
+        onOpenChange={setAlertDialogOpen}
+        onConfirm={() => setAlertDialogOpen(false)}
+      />
 
       {selectedClubIds.length > 0 && (
         <Box

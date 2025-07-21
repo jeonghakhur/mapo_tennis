@@ -11,7 +11,6 @@ import UserForm from '@/components/UserForm';
 export default function WelcomePage() {
   const router = useRouter();
   const [alreadyRegistered, setAlreadyRegistered] = useState(false);
-  const [isNameEntered, setIsNameEntered] = useState(false);
   const { data: session } = useSession();
   const email = session?.user?.email;
   const { loading, withLoading } = useLoading();
@@ -21,10 +20,6 @@ export default function WelcomePage() {
   useEffect(() => {
     setAlreadyRegistered(!!user);
   }, [user]);
-
-  const handleNameBlur = () => {
-    setIsNameEntered(true);
-  };
 
   const handleSubmit = async (data: {
     name: string;
@@ -37,6 +32,7 @@ export default function WelcomePage() {
     clubs: string[];
   }) => {
     setError('');
+    console.log(data);
     try {
       await withLoading(async () => {
         const response = await fetch('/api/user', {
@@ -69,8 +65,7 @@ export default function WelcomePage() {
             onSubmit={handleSubmit}
             loading={loading}
             submitText="회원가입 완료"
-            isNameEntered={isNameEntered}
-            onNameBlur={handleNameBlur}
+            mode="signup"
             submitButtonProps={{
               style: { marginTop: 16, width: '100%' },
             }}

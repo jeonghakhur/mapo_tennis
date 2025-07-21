@@ -39,9 +39,8 @@ interface UserFormProps {
   showLogout?: boolean;
   onLogout?: () => void;
   submitText?: string;
-  isNameEntered?: boolean;
-  onNameBlur?: () => void;
   submitButtonProps?: Partial<ButtonProps>;
+  mode: 'signup' | 'edit' | 'adminEdit';
 }
 
 export default function UserForm({
@@ -52,9 +51,8 @@ export default function UserForm({
   showLogout = false,
   onLogout,
   submitText = '회원 정보 수정',
-  isNameEntered = true,
-  onNameBlur,
   submitButtonProps,
+  mode,
 }: UserFormProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -74,18 +72,20 @@ export default function UserForm({
   const birthRef = useRef<HTMLInputElement>(null);
   const scoreRef = useRef<HTMLButtonElement>(null);
 
+  // 최초 마운트 시에만 상태 초기화
   useEffect(() => {
     if (user) {
-      setName(user.name || '');
-      setEmail(user.email || '');
-      setPhone(user.phone || '');
-      setGender(user.gender || '');
-      setBirth(user.birth || '');
-      setScore(user.score ? String(user.score) : '');
-      setAddress(user.address || '');
-      setSelectedClubIds(user.clubs?.map((club) => club._ref) || []);
+      if (user.name) setName(user.name);
+      if (user.email) setEmail(user.email);
+      if (user.phone) setPhone(user.phone);
+      if (user.gender) setGender(user.gender);
+      if (user.birth) setBirth(user.birth);
+      if (user.score) setScore(String(user.score));
+      if (user.address) setAddress(user.address);
+      if (user.clubs) setSelectedClubIds(user.clubs.map((club) => club._ref));
     }
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,6 +139,18 @@ export default function UserForm({
     });
   };
 
+  // ClubSelector 활성화 조건 점검용 로그
+  useEffect(() => {
+    console.log(
+      'ClubSelector disabled:',
+      loading,
+      disabled,
+      name,
+      !name.trim(),
+      loading || disabled || !name.trim(),
+    );
+  }, [loading, disabled, name]);
+
   return (
     <form onSubmit={handleSubmit} noValidate>
       <Box>
@@ -173,7 +185,7 @@ export default function UserForm({
           placeholder="실명을 입력하세요"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          onBlur={onNameBlur}
+          onBlur={() => {}}
           size="3"
           radius="large"
           disabled={disabled}
@@ -266,8 +278,8 @@ export default function UserForm({
           userName={name}
           selectedClubIds={selectedClubIds}
           onClubsChange={setSelectedClubIds}
-          disabled={loading || disabled}
-          isNameEntered={isNameEntered}
+          disabled={loading || disabled || !name.trim()}
+          mode={mode}
         />
       </Box>
       {errorDialogOpen && (

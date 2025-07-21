@@ -139,3 +139,7 @@ export async function updateUser(
     throw error;
   }
 }
+
+export async function setUserApproved(userId: string) {
+  return await client.patch(userId).set({ isApprovedUser: true }).commit();
+}

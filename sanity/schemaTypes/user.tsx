@@ -45,6 +45,12 @@ export const user = {
       title: '점수',
     },
     {
+      name: 'isApprovedUser',
+      title: '승인 회원 여부',
+      type: 'boolean',
+      initialValue: false,
+    },
+    {
       name: 'clubs',
       type: 'array',
       title: '가입 클럽',

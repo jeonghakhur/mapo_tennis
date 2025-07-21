@@ -11,6 +11,15 @@ import { getUserById } from '@/service/user';
 import { isAdmin } from '@/lib/authUtils';
 import UserForm from '@/components/UserForm';
 import type { User } from '@/model/user';
+import { getClubMemberByUserAndClub } from '@/service/clubMember';
+
+// clubs의 타입을 명확히 지정
+interface ClubRef {
+  _id?: string;
+  _ref?: string;
+  _key?: string;
+  name?: string;
+}
 
 export default function AdminUserEditPage() {
   const router = useRouter();
@@ -23,6 +32,7 @@ export default function AdminUserEditPage() {
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const { loading, withLoading } = useLoading();
+  const [approvedByAdmin, setApprovedByAdmin] = useState<boolean | undefined>(undefined);
 
   useEffect(() => {
     if (session && !isAdmin(session.user)) {
@@ -36,6 +46,19 @@ export default function AdminUserEditPage() {
       try {
         const userData = await getUserById(userId);
         setUser(userData);
+        // clubs가 있으면 첫 번째 클럽 기준으로 clubMember의 approvedByAdmin을 불러옴
+        if (userData && userData.clubs && userData.clubs.length > 0) {
+          const club = userData.clubs[0] as ClubRef;
+          const clubId = club._ref || club._id;
+          if (clubId) {
+            const clubMember = await getClubMemberByUserAndClub(userData.name, clubId as string);
+            setApprovedByAdmin(clubMember?.approvedByAdmin ?? false);
+          } else {
+            setApprovedByAdmin(false);
+          }
+        } else {
+          setApprovedByAdmin(false);
+        }
       } catch (error) {
         console.error(error);
       } finally {
@@ -54,6 +77,7 @@ export default function AdminUserEditPage() {
     score: number;
     address?: string;
     clubs: string[];
+    approvedByAdmin?: boolean;
   }) => {
     try {
       await withLoading(async () => {
@@ -65,6 +89,25 @@ export default function AdminUserEditPage() {
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || '회원 정보 수정 실패');
+        }
+        // 관리자 승인 처리
+        if (data.approvedByAdmin && data.clubs && data.clubs.length > 0) {
+          for (const clubId of data.clubs) {
+            await fetch('/api/club-member/approve', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                user: data.name,
+                clubId,
+                email: data.email,
+                phone: data.phone,
+                gender: data.gender,
+                birth: data.birth,
+                score: data.score,
+                userId: userId,
+              }),
+            });
+          }
         }
         setSuccessMessage('회원 정보가 성공적으로 수정되었습니다.');
         setShowSuccessDialog(true);
@@ -82,7 +125,7 @@ export default function AdminUserEditPage() {
         <>
           {loading && <LoadingOverlay size="3" />}
           <UserForm
-            user={user}
+            user={{ ...user, approvedByAdmin }}
             onSubmit={handleSubmit}
             loading={loading}
             submitText="회원 정보 수정"

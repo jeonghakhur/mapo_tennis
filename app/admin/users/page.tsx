@@ -9,6 +9,15 @@ import SkeletonCard from '@/components/SkeletonCard';
 import { useLoading } from '@/hooks/useLoading';
 import { useAdminUsers } from '@/hooks/useAdminUsers';
 
+// clubs의 타입을 명확히 지정
+interface ClubWithApproval {
+  _id?: string;
+  _ref?: string;
+  _key?: string;
+  name?: string;
+  approvedByAdmin?: boolean;
+}
+
 export default function AdminUsersPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -192,10 +201,20 @@ export default function AdminUsersPage() {
                 <td>
                   {user.clubs && user.clubs.length > 0 ? (
                     <Flex gap="1" wrap="wrap">
-                      {user.clubs.map((club, idx) => (
-                        <Badge key={club._key || club._ref || idx} color="blue" variant="soft">
-                          {club.name}
-                        </Badge>
+                      {user.clubs.map((club: ClubWithApproval, idx: number) => (
+                        <span
+                          key={club._key || club._ref || club._id || idx}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                        >
+                          <Badge color="blue" variant="soft">
+                            {club.name}
+                          </Badge>
+                          {club.approvedByAdmin && (
+                            <Badge color="green" variant="solid" style={{ marginLeft: 2 }}>
+                              관리자 승인
+                            </Badge>
+                          )}
+                        </span>
                       ))}
                     </Flex>
                   ) : (

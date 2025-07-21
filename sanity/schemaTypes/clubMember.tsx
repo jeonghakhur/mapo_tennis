@@ -83,5 +83,11 @@ export const clubMember = {
       title: '비고',
       description: '관리자 메모 등(선택)',
     },
+    {
+      name: 'approvedByAdmin',
+      title: '관리자 승인 여부',
+      type: 'boolean',
+      initialValue: false,
+    },
   ],
 };

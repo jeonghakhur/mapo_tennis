@@ -8,6 +8,7 @@ import {
   Box,
   Select,
   Separator,
+  Switch,
 } from '@radix-ui/themes';
 import ClubSelector from './ClubSelector';
 import type { ButtonProps } from '@radix-ui/themes';
@@ -23,6 +24,7 @@ interface UserFormProps {
     score?: number;
     address?: string;
     clubs?: { _ref: string }[];
+    approvedByAdmin?: boolean;
   } | null;
   onSubmit: (data: {
     name: string;
@@ -33,6 +35,7 @@ interface UserFormProps {
     score: number;
     address?: string;
     clubs: string[];
+    approvedByAdmin?: boolean;
   }) => Promise<void>;
   loading?: boolean;
   disabled?: boolean;
@@ -66,6 +69,7 @@ export default function UserForm({
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [focusMoveFn, setFocusMoveFn] = useState<(() => void) | null>(null);
   const [isNameEntered, setIsNameEntered] = useState(false);
+  const [approvedByAdmin, setApprovedByAdmin] = useState(user?.approvedByAdmin ?? false);
 
   const nameRef = useRef<HTMLInputElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
@@ -84,6 +88,7 @@ export default function UserForm({
       if (user.score) setScore(String(user.score));
       if (user.address) setAddress(user.address);
       if (user.clubs) setSelectedClubIds(user.clubs.map((club) => club._ref));
+      if (typeof user.approvedByAdmin === 'boolean') setApprovedByAdmin(user.approvedByAdmin);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -144,6 +149,7 @@ export default function UserForm({
       score: Number(score),
       address,
       clubs: selectedClubIds,
+      approvedByAdmin,
     });
   };
 
@@ -290,6 +296,18 @@ export default function UserForm({
           mode={mode}
         />
       </Box>
+      {mode === 'adminEdit' && (
+        <Box mb="4">
+          <Flex align="center" gap="3">
+            <Switch
+              checked={approvedByAdmin}
+              onCheckedChange={setApprovedByAdmin}
+              disabled={disabled || loading}
+            />
+            <Text size="3">관리자 승인(정회원 인정)</Text>
+          </Flex>
+        </Box>
+      )}
       {errorDialogOpen && (
         <ConfirmDialog
           title="입력 오류"

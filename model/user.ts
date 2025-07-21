@@ -10,5 +10,6 @@ export interface User {
   level: number;
   address?: string;
   clubs?: { _key: string; _ref: string; name?: string }[]; // 클럽
+  isApprovedUser?: boolean;
   _createdAt?: string;
 }

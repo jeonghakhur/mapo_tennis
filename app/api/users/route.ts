@@ -35,7 +35,7 @@ async function getUsersHandler(req: NextRequest) {
     const end = start + limit;
     query += ` [${start}...${end}]`;
 
-    // 클럽 정보도 함께 가져오기
+    // 클럽 정보도 함께 가져오기 (clubMember의 approvedByAdmin 포함)
     query += ` {
       _id,
       _createdAt,
@@ -49,7 +49,9 @@ async function getUsersHandler(req: NextRequest) {
       address,
       clubs[]->{
         _id,
-        name
+        name,
+        // clubMember의 approvedByAdmin 포함
+        "approvedByAdmin": *[_type == 'clubMember' && user == ^.^.name && club._ref == ^._id][0].approvedByAdmin
       }
     }`;
 

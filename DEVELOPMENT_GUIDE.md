@@ -326,6 +326,104 @@ const isAnyLoading = dataLoading || actionLoading;
 - React Hook Form 사용 권장
 - 유효성 검사 포함
 - 에러 메시지 한국어
+- **액션 처리 후 AlertDialog 사용**
+
+#### 액션 처리 후 피드백 가이드라인
+
+##### 1. AlertDialog 컴포넌트 사용
+
+```typescript
+import ConfirmDialog from '@/components/ConfirmDialog';
+import { useState } from 'react';
+
+export default function UserEditPage() {
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const handleSubmit = async (data: UserFormData) => {
+    try {
+      const response = await fetch('/api/user', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        setSuccessMessage('회원 정보가 성공적으로 수정되었습니다.');
+        setShowSuccessDialog(true);
+      } else {
+        throw new Error('수정 실패');
+      }
+    } catch (error) {
+      console.error('수정 오류:', error);
+    }
+  };
+
+  return (
+    <div>
+      {/* 폼 컴포넌트 */}
+
+      {/* 성공 알림 다이얼로그 */}
+      <ConfirmDialog
+        title="수정 완료"
+        description={successMessage}
+        confirmText="확인"
+        confirmVariant="solid"
+        confirmColor="green"
+        open={showSuccessDialog}
+        onOpenChange={setShowSuccessDialog}
+        onConfirm={() => setShowSuccessDialog(false)}
+      />
+    </div>
+  );
+}
+```
+
+##### 2. 액션별 AlertDialog 패턴
+
+| 액션 유형     | 제목        | 설명                                 | 색상  | 사용 시기      |
+| ------------- | ----------- | ------------------------------------ | ----- | -------------- |
+| **생성 성공** | "생성 완료" | "새로운 항목이 생성되었습니다."      | green | 데이터 생성 후 |
+| **수정 성공** | "수정 완료" | "정보가 성공적으로 수정되었습니다."  | green | 데이터 수정 후 |
+| **삭제 성공** | "삭제 완료" | "항목이 삭제되었습니다."             | green | 데이터 삭제 후 |
+| **오류 발생** | "오류 발생" | "작업 중 오류가 발생했습니다."       | red   | 에러 발생 시   |
+| **확인 필요** | "확인"      | "정말로 이 작업을 수행하시겠습니까?" | red   | 위험한 작업 전 |
+
+##### 3. AlertDialog 사용 패턴
+
+```typescript
+// 1. 성공 알림
+<ConfirmDialog
+  title="수정 완료"
+  description="회원 정보가 성공적으로 수정되었습니다."
+  confirmText="확인"
+  confirmColor="green"
+  open={showSuccess}
+  onOpenChange={setShowSuccess}
+  onConfirm={() => setShowSuccess(false)}
+/>
+
+// 2. 삭제 확인
+<ConfirmDialog
+  title="삭제 확인"
+  description="정말로 이 항목을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+  confirmText="삭제"
+  cancelText="취소"
+  confirmColor="red"
+  onConfirm={handleDelete}
+/>
+
+// 3. 오류 알림
+<ConfirmDialog
+  title="오류 발생"
+  description="작업 중 오류가 발생했습니다. 다시 시도해주세요."
+  confirmText="확인"
+  confirmColor="red"
+  open={showError}
+  onOpenChange={setShowError}
+  onConfirm={() => setShowError(false)}
+/>
+```
 
 ### 6. 상태 관리
 
@@ -747,3 +845,30 @@ describe('DELETE /api/notifications/delete-all', () => {
 - **점진적 로딩**: 중요 데이터부터 순차적으로 로드
 - **캐싱 활용**: 이전 데이터 유지로 깜빡임 방지
 - **적절한 메시지**: 사용자에게 진행 상황 알림
+
+## 액션 처리 후 피드백 체크리스트
+
+### 새 컴포넌트 작성 시
+
+- [ ] 성공 시 `ConfirmDialog` 사용
+- [ ] 오류 시 적절한 에러 메시지 표시
+- [ ] 로딩 상태 관리 (`useLoading` 훅 사용)
+- [ ] 사용자 친화적인 메시지 작성
+- [ ] 액션별 적절한 색상 선택 (성공: green, 오류: red)
+
+### 기존 컴포넌트 수정 시
+
+- [ ] 기존 alert/confirm을 `ConfirmDialog`로 변경
+- [ ] 성공/오류 메시지 표준화
+- [ ] 로딩 상태 추가
+- [ ] 사용자 경험 개선
+
+### 액션 처리 패턴
+
+| 액션 유형     | 다이얼로그 제목 | 색상  | 사용 시기      |
+| ------------- | --------------- | ----- | -------------- |
+| **생성 성공** | "생성 완료"     | green | 데이터 생성 후 |
+| **수정 성공** | "수정 완료"     | green | 데이터 수정 후 |
+| **삭제 성공** | "삭제 완료"     | green | 데이터 삭제 후 |
+| **오류 발생** | "오류 발생"     | red   | 에러 발생 시   |
+| **확인 필요** | "확인"          | red   | 위험한 작업 전 |

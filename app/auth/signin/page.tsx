@@ -7,7 +7,7 @@ export default function SignInPage() {
     <Box
       style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
     >
-      <Card style={{ width: 340, padding: 32, borderRadius: 16, background: '#fff' }}>
+      <Card style={{ width: 340, padding: 32, background: '#fff' }}>
         <Text size="5" weight="bold" align="center" mb="4" style={{ color: '#222' }}>
           로그인
         </Text>

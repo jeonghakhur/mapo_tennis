@@ -14,6 +14,7 @@ import { signOut, useSession } from 'next-auth/react';
 import { useUser } from '@/hooks/useUser';
 import SkeletonCard from '@/components/SkeletonCard';
 import Container from '@/components/Container';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { isHydrating } from '@/lib/isHydrating';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import { useLoading } from '@/hooks/useLoading';
@@ -26,7 +27,8 @@ export default function ProfileForm() {
   const [score, setScore] = useState(''); // string으로 관리
   const [address, setAddress] = useState(''); // 주소(선택)
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const { data: session } = useSession();
   const email = session?.user?.email;
   const { user, isLoading, error: swrError } = useUser(email);
@@ -46,7 +48,6 @@ export default function ProfileForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setSuccess('');
     if (!name || !phone || !gender || !birth || !score) {
       setError('모든 항목을 입력해 주세요.');
       return;
@@ -78,7 +79,8 @@ export default function ProfileForm() {
           throw new Error(errorData.error || '회원 정보 수정에 실패했습니다.');
         }
 
-        setSuccess('회원 정보가 성공적으로 수정되었습니다.');
+        setSuccessMessage('회원 정보가 성공적으로 수정되었습니다.');
+        setShowSuccessDialog(true);
       });
     } catch (error) {
       setError(error instanceof Error ? error.message : '회원 정보 수정 중 오류가 발생했습니다.');
@@ -225,9 +227,9 @@ export default function ProfileForm() {
               {error}
             </Text>
           )}
-          {success && (
-            <Text color="green" mb="3">
-              {success}
+          {error && (
+            <Text color="red" mb="3">
+              {error}
             </Text>
           )}
           <Box className="btn-wrap">
@@ -240,6 +242,18 @@ export default function ProfileForm() {
           </Box>
         </form>
       )}
+
+      {/* 성공 알림 다이얼로그 */}
+      <ConfirmDialog
+        title="수정 완료"
+        description={successMessage}
+        confirmText="확인"
+        confirmVariant="solid"
+        confirmColor="green"
+        open={showSuccessDialog}
+        onOpenChange={setShowSuccessDialog}
+        onConfirm={() => setShowSuccessDialog(false)}
+      />
     </Container>
   );
 }

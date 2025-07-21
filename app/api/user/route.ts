@@ -94,17 +94,49 @@ export async function PUT(req: NextRequest) {
     if (result._id) {
       const { title } = createNotificationMessage('UPDATE', 'USER', name);
 
-      // 상세한 회원 수정 메시지 생성
-      const detailedMessage = `회원 정보가 수정되었습니다.\n\n이름: ${name}\n이메일: ${email}\n연락처: ${phone}\n성별: ${gender === 'male' ? '남성' : '여성'}\n생년월일: ${birth}\n테니스 점수: ${score}점`;
+      // 변경된 내용만 추출하여 메시지 생성
+      const changes = [];
 
-      await createNotification({
-        type: 'UPDATE',
-        entityType: 'USER',
-        entityId: result._id,
-        title,
-        message: detailedMessage,
-        link: createNotificationLink('USER', result._id),
-      });
+      if (existingUser.name !== name) {
+        changes.push(`이름: ${existingUser.name} → ${name}`);
+      }
+      if (existingUser.phone !== phone) {
+        changes.push(`연락처: ${existingUser.phone} → ${phone}`);
+      }
+      if (existingUser.gender !== gender) {
+        changes.push(
+          `성별: ${existingUser.gender === 'male' ? '남성' : '여성'} → ${gender === 'male' ? '남성' : '여성'}`,
+        );
+      }
+      if (existingUser.birth !== birth) {
+        changes.push(`생년월일: ${existingUser.birth} → ${birth}`);
+      }
+      if (existingUser.score !== Number(score)) {
+        changes.push(`테니스 점수: ${existingUser.score}점 → ${score}점`);
+      }
+      if (existingUser.address !== address) {
+        if (existingUser.address && address) {
+          changes.push(`주소: ${existingUser.address} → ${address}`);
+        } else if (!existingUser.address && address) {
+          changes.push(`주소: 추가됨 (${address})`);
+        } else if (existingUser.address && !address) {
+          changes.push(`주소: 삭제됨`);
+        }
+      }
+
+      // 변경된 내용이 있을 때만 알림 생성
+      if (changes.length > 0) {
+        const detailedMessage = `회원 정보가 수정되었습니다.\n\n변경된 내용:\n${changes.join('\n')}`;
+
+        await createNotification({
+          type: 'UPDATE',
+          entityType: 'USER',
+          entityId: result._id,
+          title,
+          message: detailedMessage,
+          link: createNotificationLink('USER', result._id),
+        });
+      }
     }
 
     return NextResponse.json({ ok: true, id: result._id });

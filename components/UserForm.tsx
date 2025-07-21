@@ -65,6 +65,7 @@ export default function UserForm({
   const [error, setError] = useState('');
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [focusMoveFn, setFocusMoveFn] = useState<(() => void) | null>(null);
+  const [isNameEntered, setIsNameEntered] = useState(false);
 
   const nameRef = useRef<HTMLInputElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
@@ -123,6 +124,13 @@ export default function UserForm({
     if (!score) {
       setError('점수를 선택해 주세요.');
       setFocusMoveFn(() => () => scoreRef.current?.focus());
+      setErrorDialogOpen(true);
+      return;
+    }
+    // 클럽 필수 유효성 검사 (회원가입 모드에서만)
+    if (mode === 'signup' && selectedClubIds.length === 0) {
+      setError('가입할 클럽을 1개 이상 선택해 주세요.');
+      setFocusMoveFn(null);
       setErrorDialogOpen(true);
       return;
     }
@@ -185,7 +193,7 @@ export default function UserForm({
           placeholder="실명을 입력하세요"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          onBlur={() => {}}
+          onBlur={() => setIsNameEntered(!!name.trim())}
           size="3"
           radius="large"
           disabled={disabled}
@@ -278,7 +286,7 @@ export default function UserForm({
           userName={name}
           selectedClubIds={selectedClubIds}
           onClubsChange={setSelectedClubIds}
-          disabled={loading || disabled || !name.trim()}
+          disabled={loading || disabled || !isNameEntered}
           mode={mode}
         />
       </Box>

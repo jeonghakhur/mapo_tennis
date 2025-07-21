@@ -67,7 +67,7 @@ export default function Navbar() {
         )}
 
         {/* 우측: 알림 및 햄버거 메뉴 */}
-        <Flex align="center" gap="4">
+        <Flex align="center" gap="2">
           <Link href="/" style={{ textDecoration: 'none' }}>
             <House size={24} className="text-gray-800" />
           </Link>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserByEmail, getUserById, upsertUser } from '@/service/user';
 import { createNotification, createNotificationMessage } from '@/service/notification';
 import { createNotificationLink } from '@/lib/notificationUtils';
+import { getClubs } from '@/service/club';
 import type { User } from '@/model/user';
 
 export async function GET(req: NextRequest) {
@@ -25,11 +26,33 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, phone, gender, birth, score, email, address } = await req.json();
+    console.log('회원가입 요청 시작');
+    const body = await req.json();
+    console.log('요청 데이터:', body);
+
+    const { name, phone, gender, birth, score, email, address, clubs } = body;
+
+    console.log('클럽 데이터 상세:', {
+      clubs,
+      clubsType: typeof clubs,
+      isArray: Array.isArray(clubs),
+      clubsLength: clubs?.length,
+      firstClub: clubs?.[0],
+      firstClubType: typeof clubs?.[0],
+    });
+
     if (!name || !phone || !gender || !birth || !score || !email) {
+      console.log('필수 정보 누락:', { name, phone, gender, birth, score, email });
       return NextResponse.json({ error: '필수 정보 누락' }, { status: 400 });
     }
-    const userData: Omit<User, '_id' | '_type'> = {
+
+    console.log('Sanity 클라이언트 설정 확인:', {
+      projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
+      dataset: process.env.NEXT_PUBLIC_SANITY_DATASET,
+      hasToken: !!process.env.SANITY_SECRET_TOKEN,
+    });
+
+    const userData: Omit<User, '_id' | '_type'> & { clubs?: string[] } = {
       name,
       phone,
       gender,
@@ -38,15 +61,35 @@ export async function POST(req: NextRequest) {
       email,
       level: 1,
       address,
+      clubs: clubs ? clubs.map((clubId: string) => clubId) : [],
     };
+
+    console.log('사용자 데이터 준비 완료:', userData);
+
     const result = await upsertUser(userData);
+    console.log('사용자 생성/업데이트 완료:', result);
 
     // 회원가입 알림 생성 (관리자만 받음)
     if (result._id) {
+      console.log('알림 생성 시작');
       const { title } = createNotificationMessage('CREATE', 'USER', name);
 
+      // 클럽 정보 가져오기
+      let clubInfo = '';
+      if (clubs && clubs.length > 0) {
+        try {
+          const allClubs = await getClubs();
+          const selectedClubs = allClubs.filter((club) => clubs.includes(club._id!));
+          if (selectedClubs.length > 0) {
+            clubInfo = `\n가입 클럽: ${selectedClubs.map((club) => club.name).join(', ')}`;
+          }
+        } catch (error) {
+          console.error('클럽 정보 조회 실패:', error);
+        }
+      }
+
       // 상세한 회원가입 메시지 생성
-      const detailedMessage = `새로운 회원이 가입했습니다.\n\n이름: ${name}\n이메일: ${email}\n연락처: ${phone}\n성별: ${gender === 'male' ? '남성' : '여성'}\n생년월일: ${birth}\n테니스 점수: ${score}점`;
+      const detailedMessage = `새로운 회원이 가입했습니다.\n\n이름: ${name}\n이메일: ${email}\n연락처: ${phone}\n성별: ${gender === 'male' ? '남성' : '여성'}\n생년월일: ${birth}\n테니스 점수: ${score}점${clubInfo}`;
 
       await createNotification({
         type: 'CREATE',
@@ -56,17 +99,20 @@ export async function POST(req: NextRequest) {
         message: detailedMessage,
         link: createNotificationLink('USER', result._id),
       });
+      console.log('알림 생성 완료');
     }
 
     return NextResponse.json({ ok: true, id: result._id });
   } catch (e) {
+    console.error('회원가입 오류 상세:', e);
+    console.error('오류 스택:', e instanceof Error ? e.stack : '스택 정보 없음');
     return NextResponse.json({ error: '서버 오류', detail: String(e) }, { status: 500 });
   }
 }
 
 export async function PUT(req: NextRequest) {
   try {
-    const { name, phone, gender, birth, score, email, address } = await req.json();
+    const { name, phone, gender, birth, score, email, address, clubs } = await req.json();
     if (!name || !phone || !gender || !birth || !score || !email) {
       return NextResponse.json({ error: '필수 정보 누락' }, { status: 400 });
     }
@@ -77,7 +123,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: '사용자를 찾을 수 없습니다' }, { status: 404 });
     }
 
-    const userData: Omit<User, '_id' | '_type'> = {
+    const userData: Omit<User, '_id' | '_type'> & { clubs?: string[] } = {
       name,
       phone,
       gender,
@@ -86,6 +132,7 @@ export async function PUT(req: NextRequest) {
       email,
       level: existingUser.level || 1, // 기존 레벨 유지
       address,
+      clubs: clubs || [],
     };
 
     const result = await upsertUser(userData);
@@ -121,6 +168,29 @@ export async function PUT(req: NextRequest) {
           changes.push(`주소: 추가됨 (${address})`);
         } else if (existingUser.address && !address) {
           changes.push(`주소: 삭제됨`);
+        }
+      }
+
+      // 클럽 정보 변경 확인
+      const existingClubIds =
+        (existingUser as User & { clubs?: { _ref: string; _type: 'reference' }[] }).clubs?.map(
+          (club) => club._ref,
+        ) || [];
+      const newClubIds = clubs || [];
+
+      if (JSON.stringify(existingClubIds.sort()) !== JSON.stringify(newClubIds.sort())) {
+        try {
+          const allClubs = await getClubs();
+          const existingClubs = allClubs.filter((club) => existingClubIds.includes(club._id!));
+          const newClubs = allClubs.filter((club) => newClubIds.includes(club._id!));
+
+          const existingClubNames = existingClubs.map((club) => club.name).join(', ') || '없음';
+          const newClubNames = newClubs.map((club) => club.name).join(', ') || '없음';
+
+          changes.push(`가입 클럽: ${existingClubNames} → ${newClubNames}`);
+        } catch (error) {
+          console.error('클럽 정보 조회 실패:', error);
+          changes.push(`가입 클럽: 변경됨 (상세 정보 조회 실패)`);
         }
       }
 

@@ -16,6 +16,7 @@ import AlreadyRegisteredDialog from './AlreadyRegisteredDialog';
 import { useUser } from '@/hooks/useUser';
 import { useLoading } from '@/hooks/useLoading';
 import LoadingOverlay from '@/components/LoadingOverlay';
+import ClubSelector from '@/components/ClubSelector';
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -25,8 +26,10 @@ export default function WelcomePage() {
   const [birth, setBirth] = useState('');
   const [score, setScore] = useState('');
   const [address, setAddress] = useState(''); // 주소(선택)
+  const [selectedClubIds, setSelectedClubIds] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [alreadyRegistered, setAlreadyRegistered] = useState(false);
+  const [isNameEntered, setIsNameEntered] = useState(false);
   const { data: session } = useSession();
   const email = session?.user?.email;
 
@@ -38,6 +41,13 @@ export default function WelcomePage() {
   useEffect(() => {
     setAlreadyRegistered(!!user);
   }, [user]);
+
+  const handleNameBlur = () => {
+    if (name.trim().length > 0) {
+      setIsNameEntered(true);
+      console.log('실명 입력이 완료되었습니다:', name);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +75,7 @@ export default function WelcomePage() {
             score: Number(score),
             email: session?.user?.email,
             address,
+            clubs: selectedClubIds,
           }),
         });
 
@@ -121,6 +132,7 @@ export default function WelcomePage() {
                 placeholder="실명을 입력하세요"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                onBlur={handleNameBlur}
                 size="3"
                 radius="large"
                 required
@@ -194,6 +206,14 @@ export default function WelcomePage() {
                 onChange={(e) => setAddress(e.target.value)}
                 size="3"
                 radius="large"
+              />
+            </Box>
+            <Box mb="4">
+              <ClubSelector
+                userName={name}
+                selectedClubIds={selectedClubIds}
+                onClubsChange={setSelectedClubIds}
+                isNameEntered={isNameEntered}
               />
             </Box>
 

@@ -44,6 +44,18 @@ export const user = {
       type: 'number',
       title: '점수',
     },
+    {
+      name: 'clubs',
+      type: 'array',
+      title: '가입 클럽',
+      description: '사용자가 가입한 클럽 목록',
+      of: [
+        {
+          type: 'reference',
+          to: [{ type: 'club' }],
+        },
+      ],
+    },
     // {
     //   name: 'following',
     //   type: 'array',

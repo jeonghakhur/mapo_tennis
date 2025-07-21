@@ -7,8 +7,8 @@ export default function SignUpPage() {
     <Box
       style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
     >
-      <Card style={{ width: 340, padding: 32, borderRadius: 16, background: '#fff' }}>
-        <Text size="5" weight="bold" align="center" mb="4" style={{ color: '#222' }}>
+      <Card style={{ width: 340, padding: 32, background: '#fff' }}>
+        <Text size="5" weight="bold" align="center" style={{ color: '#222' }} as="div">
           회원가입
         </Text>
         <Text size="2" align="center" mb="5" style={{ color: '#222' }}>

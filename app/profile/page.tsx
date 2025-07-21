@@ -18,6 +18,8 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { isHydrating } from '@/lib/isHydrating';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import { useLoading } from '@/hooks/useLoading';
+import ClubSelector from '@/components/ClubSelector';
+import type { User } from '@/model/user';
 
 export default function ProfileForm() {
   const [name, setName] = useState('');
@@ -26,6 +28,7 @@ export default function ProfileForm() {
   const [birth, setBirth] = useState('');
   const [score, setScore] = useState(''); // string으로 관리
   const [address, setAddress] = useState(''); // 주소(선택)
+  const [selectedClubIds, setSelectedClubIds] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -42,6 +45,11 @@ export default function ProfileForm() {
       setBirth(user.birth || '');
       setScore(user.score ? String(user.score) : '');
       setAddress(user.address || '');
+      setSelectedClubIds(
+        (user as User & { clubs?: { _ref: string; _type: 'reference' }[] }).clubs?.map(
+          (club) => club._ref,
+        ) || [],
+      );
     }
   }, [user]);
 
@@ -71,6 +79,7 @@ export default function ProfileForm() {
             score: Number(score),
             email: session?.user?.email,
             address,
+            clubs: selectedClubIds,
           }),
         });
 
@@ -219,6 +228,16 @@ export default function ProfileForm() {
               onChange={(e) => setAddress(e.target.value)}
               size="3"
               radius="large"
+            />
+          </Box>
+
+          <Box mb="4">
+            <ClubSelector
+              userName={name}
+              selectedClubIds={selectedClubIds}
+              onClubsChange={setSelectedClubIds}
+              disabled={loading}
+              isNameEntered={true}
             />
           </Box>
 

@@ -9,4 +9,5 @@ export interface User {
   email: string;
   level: number;
   address?: string;
+  clubs?: { _key: string; _ref: string; _type: 'reference' }[]; // 클럽 참조 배열
 }

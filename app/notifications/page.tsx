@@ -8,15 +8,45 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useUser } from '@/hooks/useUser';
 import { isAdmin } from '@/lib/authUtils';
+import { useEffect } from 'react';
 
 export default function NotificationsPage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { user } = useUser(session?.user?.email);
   const admin = isAdmin(user);
 
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } =
     useNotifications(admin ? undefined : user?._id);
+
+  // 로그인하지 않은 경우 로그인 페이지로 리다이렉트
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin');
+    }
+  }, [status, router]);
+
+  // 로딩 중인 경우
+  if (status === 'loading') {
+    return (
+      <Container>
+        <Box>
+          <Text>로딩 중...</Text>
+        </Box>
+      </Container>
+    );
+  }
+
+  // 로그인하지 않은 경우 로딩 화면 표시
+  if (status === 'unauthenticated') {
+    return (
+      <Container>
+        <Box>
+          <Text>로그인 페이지로 이동 중...</Text>
+        </Box>
+      </Container>
+    );
+  }
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

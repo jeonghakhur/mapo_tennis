@@ -205,6 +205,9 @@ export function createNotificationMessage(
     CLUB: '클럽',
     POST: '게시글',
     TOURNAMENT_APPLICATION: '참가신청',
+    USER: '사용자',
+    EXPENSE: '지출내역',
+    TOURNAMENT: '토너먼트',
   };
 
   const typeMap = {

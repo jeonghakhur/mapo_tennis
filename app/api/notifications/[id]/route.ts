@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { markNotificationAsRead, deleteNotification } from '@/service/notification';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
 
 // 알림 읽음 처리
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    // 인증 확인
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
+    }
+
     const { id } = await params;
 
     await markNotificationAsRead(id);
@@ -21,6 +29,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    // 인증 확인
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
+    }
+
     const { id } = await params;
 
     await deleteNotification(id);

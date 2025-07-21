@@ -3,6 +3,8 @@ import { getExpenses, createExpense } from '@/service/expense';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { client } from '@/sanity/lib/client';
+import { createNotification, createNotificationMessage } from '@/service/notification';
+import { createNotificationLink } from '@/lib/notificationUtils';
 import type { ExpenseInput } from '@/model/expense';
 
 // 카테고리 타입 정의
@@ -96,6 +98,24 @@ export async function POST(req: NextRequest) {
     };
 
     const expense = await createExpense(expenseData);
+
+    // 지출내역 알림 생성 (관리자만 받음)
+    if (expense._id) {
+      const { title } = createNotificationMessage('CREATE', 'EXPENSE', expenseData.title);
+
+      // 상세한 지출내역 메시지 생성
+      const detailedMessage = `새로운 지출내역이 등록되었습니다.\n\n제목: ${expenseData.title}\n금액: ${expenseData.amount.toLocaleString()}원\n카테고리: ${expenseData.category}\n날짜: ${expenseData.date}\n매장명: ${expenseData.storeName || '미입력'}\n등록자: ${author}`;
+
+      await createNotification({
+        type: 'CREATE',
+        entityType: 'EXPENSE',
+        entityId: expense._id,
+        title,
+        message: detailedMessage,
+        link: createNotificationLink('EXPENSE', expense._id),
+      });
+    }
+
     return NextResponse.json(expense);
   } catch (error) {
     const message = error instanceof Error ? error.message : '지출내역을 생성할 수 없습니다.';

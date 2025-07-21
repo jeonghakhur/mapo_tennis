@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Button,
   TextField,
@@ -11,6 +11,7 @@ import {
 } from '@radix-ui/themes';
 import ClubSelector from './ClubSelector';
 import type { ButtonProps } from '@radix-ui/themes';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 interface UserFormProps {
   user: {
@@ -64,6 +65,14 @@ export default function UserForm({
   const [address, setAddress] = useState('');
   const [selectedClubIds, setSelectedClubIds] = useState<string[]>([]);
   const [error, setError] = useState('');
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+  const [focusMoveFn, setFocusMoveFn] = useState<(() => void) | null>(null);
+
+  const nameRef = useRef<HTMLInputElement>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
+  const genderRef = useRef<HTMLButtonElement>(null);
+  const birthRef = useRef<HTMLInputElement>(null);
+  const scoreRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (user) {
@@ -81,14 +90,43 @@ export default function UserForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!name || !phone || !gender || !birth || !score) {
-      setError('모든 항목을 입력해 주세요.');
+    if (!name) {
+      setError('이름을 입력해 주세요.');
+      setFocusMoveFn(() => () => nameRef.current?.focus());
+      setErrorDialogOpen(true);
+      return;
+    }
+    if (!phone) {
+      setError('핸드폰번호를 입력해 주세요.');
+      setFocusMoveFn(() => () => phoneRef.current?.focus());
+      setErrorDialogOpen(true);
+      return;
+    }
+    if (!gender) {
+      setError('성별을 선택해 주세요.');
+      setFocusMoveFn(() => () => genderRef.current?.focus());
+      setErrorDialogOpen(true);
+      return;
+    }
+    if (!birth) {
+      setError('생년월일을 입력해 주세요.');
+      setFocusMoveFn(() => () => birthRef.current?.focus());
+      setErrorDialogOpen(true);
       return;
     }
     if (!/^\d{8}$/.test(birth)) {
       setError('생년월일은 8자리(YYYYMMDD)로 입력해 주세요.');
+      setFocusMoveFn(() => () => birthRef.current?.focus());
+      setErrorDialogOpen(true);
       return;
     }
+    if (!score) {
+      setError('점수를 선택해 주세요.');
+      setFocusMoveFn(() => () => scoreRef.current?.focus());
+      setErrorDialogOpen(true);
+      return;
+    }
+    setFocusMoveFn(null);
     await onSubmit({
       name,
       email,
@@ -102,7 +140,7 @@ export default function UserForm({
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} noValidate>
       <Box>
         <Text size="5" weight="bold" align="center" mb="4" mr="2">
           회원 정보 수정
@@ -131,13 +169,13 @@ export default function UserForm({
           실명
         </Text>
         <TextField.Root
+          ref={nameRef}
           placeholder="실명을 입력하세요"
           value={name}
           onChange={(e) => setName(e.target.value)}
           onBlur={onNameBlur}
           size="3"
           radius="large"
-          required
           disabled={disabled}
         />
       </Box>
@@ -146,12 +184,12 @@ export default function UserForm({
           핸드폰번호
         </Text>
         <TextField.Root
+          ref={phoneRef}
           placeholder="01012345678"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           size="3"
           radius="large"
-          required
           disabled={disabled}
         />
       </Box>
@@ -159,9 +197,9 @@ export default function UserForm({
         <Text as="label" size="3" mb="2" style={{ display: 'block' }}>
           성별
         </Text>
-        <RadioGroup.Root value={gender} onValueChange={setGender} required disabled={disabled}>
+        <RadioGroup.Root value={gender} onValueChange={setGender} disabled={disabled}>
           <Flex gap="4" mt="2">
-            <RadioGroup.Item value="male" id="male" />
+            <RadioGroup.Item value="male" id="male" ref={genderRef} />
             <Text as="label" htmlFor="male">
               남성
             </Text>
@@ -177,12 +215,12 @@ export default function UserForm({
           생년월일(8자리)
         </Text>
         <TextField.Root
+          ref={birthRef}
           placeholder="19900101"
           value={birth}
           onChange={(e) => setBirth(e.target.value)}
           size="3"
           radius="large"
-          required
           disabled={disabled}
         />
       </Box>
@@ -191,7 +229,6 @@ export default function UserForm({
           점수(1~10점)
         </Text>
         <Select.Root
-          required
           size="3"
           value={score}
           onValueChange={(v) => {
@@ -201,7 +238,7 @@ export default function UserForm({
           }}
           disabled={disabled}
         >
-          <Select.Trigger placeholder="점수를 선택하세요" />
+          <Select.Trigger placeholder="점수를 선택하세요" ref={scoreRef} />
           <Select.Content>
             {[...Array(10)].map((_, i) => (
               <Select.Item key={i + 1} value={String(i + 1)}>
@@ -233,10 +270,22 @@ export default function UserForm({
           isNameEntered={isNameEntered}
         />
       </Box>
-      {error && (
-        <Text color="red" mb="3">
-          {error}
-        </Text>
+      {errorDialogOpen && (
+        <ConfirmDialog
+          title="입력 오류"
+          description={error}
+          confirmText="확인"
+          confirmColor="red"
+          open={errorDialogOpen}
+          onOpenChange={setErrorDialogOpen}
+          onConfirm={() => {
+            setErrorDialogOpen(false);
+            if (focusMoveFn) {
+              setTimeout(() => focusMoveFn(), 0);
+              setFocusMoveFn(null);
+            }
+          }}
+        />
       )}
       <Box className="btn-wrap">
         {showLogout && onLogout && (

@@ -194,7 +194,7 @@ export default function AdminUsersPage() {
                     <Flex gap="1" wrap="wrap">
                       {user.clubs.map((club, idx) => (
                         <Badge key={club._key || club._ref || idx} color="blue" variant="soft">
-                          {club._ref}
+                          {club.name}
                         </Badge>
                       ))}
                     </Flex>

@@ -1,0 +1,13 @@
+{
+  "name": "마포테니스협회",
+  "short_name": "마포테니스협회",
+  "description": "마포구 테니스 협회 공식 웹사이트",
+  "start_url": "/",
+  "display": "fullscreen",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "orientation_lock": "portrait",
+  "scope": "/",
+  "lang": "ko"
+}

@@ -17,8 +17,19 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Mapogu Tennis Association',
-  description: '마포구 테니스 협회',
+  title: '마포구 테니스 협회',
+  description: '마포구 테니스 협회 공식 웹사이트',
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#3b82f6',
 };
 
 export default function RootLayout({
@@ -28,6 +39,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Theme>
           <SessionProviderWrapper>

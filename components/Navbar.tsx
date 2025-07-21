@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useUser } from '@/hooks/useUser';
 import { ArrowLeft, Menu, User, LogOut, BellRing, House } from 'lucide-react';
+import { isAdmin } from '@/lib/authUtils';
 
 export default function Navbar() {
   const { data: session, status } = useSession();
@@ -14,8 +15,8 @@ export default function Navbar() {
   const { unreadCount } = useNotifications();
   const { user } = useUser(session?.user?.email);
 
-  // 레벨 5 이상인 사용자만 관리자 권한
-  const isAdmin = user?.level && user.level >= 5;
+  // 관리자 권한 확인
+  const admin = isAdmin(user);
 
   // 뒤로가기 가능한 페이지인지 확인
   const canGoBack = pathname !== '/' && !pathname.startsWith('/auth');
@@ -42,7 +43,7 @@ export default function Navbar() {
         <Flex align="center" gap="3">
           {canGoBack ? (
             <Button variant="ghost" size="2" onClick={handleGoBack} style={{ padding: '4px 8px' }}>
-              <ArrowLeft size={24} />
+              <ArrowLeft size={24} className="text-gray-800" />
             </Button>
           ) : (
             <Link
@@ -50,7 +51,7 @@ export default function Navbar() {
               style={{ textDecoration: 'none' }}
               className="absolute left-1/2 -translate-x-1/2 text-center block flex-1 font-bold text-xl"
             >
-              마포테니스
+              마포구 테니스 협회
             </Link>
           )}
         </Flex>
@@ -121,10 +122,12 @@ export default function Navbar() {
               <DropdownMenu.Item onClick={() => router.push('/tournaments')}>
                 대회일정
               </DropdownMenu.Item>
-              <DropdownMenu.Item onClick={() => router.push('/tournament-applications')}>
-                참가신청 목록
-              </DropdownMenu.Item>
-              {isAdmin && (
+              {!admin && (
+                <DropdownMenu.Item onClick={() => router.push('/tournament-applications')}>
+                  내 참가신청
+                </DropdownMenu.Item>
+              )}
+              {admin && (
                 <DropdownMenu.Item onClick={() => router.push('/tournament-applications/admin')}>
                   전체 참가신청 목록
                 </DropdownMenu.Item>
@@ -140,7 +143,20 @@ export default function Navbar() {
                   </DropdownMenu.Item>
                 </>
               ) : (
-                <DropdownMenu.Item color="red" onClick={() => signOut({ callbackUrl: '/' })}>
+                <DropdownMenu.Item
+                  color="red"
+                  onClick={async () => {
+                    try {
+                      await signOut({
+                        callbackUrl: '/',
+                        redirect: true,
+                      });
+                    } catch (error) {
+                      console.error('로그아웃 실패:', error);
+                      window.location.href = '/';
+                    }
+                  }}
+                >
                   <LogOut size={14} />
                   로그아웃
                 </DropdownMenu.Item>

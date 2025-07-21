@@ -8,9 +8,15 @@ import { useSession } from 'next-auth/react';
 import MarkdownEditor from '@/components/MarkdownEditor';
 import FileUpload from '@/components/FileUpload';
 import type { PostInput } from '@/model/post';
+import { useEffect } from 'react';
 
 export default function CreatePostPage() {
   const { data: session } = useSession();
+  const router = useRouter();
+
+  // 회원 레벨 4 이상인지 확인
+  const canManagePosts = session?.user?.level >= 4;
+
   const [formData, setFormData] = useState<PostInput>({
     title: '',
     content: '',
@@ -21,7 +27,24 @@ export default function CreatePostPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ title?: string }>({});
-  const router = useRouter();
+
+  // 권한이 없는 경우 포스트 목록으로 리다이렉트
+  useEffect(() => {
+    if (session && !canManagePosts) {
+      router.push('/posts');
+    }
+  }, [session, canManagePosts, router]);
+
+  // 권한이 없는 경우 로딩 상태 표시
+  if (session && !canManagePosts) {
+    return (
+      <Container>
+        <Box>
+          <Text>권한이 없습니다.</Text>
+        </Box>
+      </Container>
+    );
+  }
 
   const validateForm = () => {
     const newErrors: { title?: string } = {};

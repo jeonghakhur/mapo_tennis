@@ -2,10 +2,11 @@ export interface Notification {
   _id: string;
   _type: 'notification';
   type: 'CREATE' | 'UPDATE' | 'DELETE';
-  entityType: 'CLUB_MEMBER' | 'CLUB' | 'POST';
+  entityType: 'CLUB_MEMBER' | 'CLUB' | 'POST' | 'TOURNAMENT_APPLICATION';
   entityId: string;
   title: string;
   message: string;
+  link?: string; // 바로가기 링크
   changes?: Change[];
   readAt?: string;
   userId?: string;
@@ -21,10 +22,11 @@ export interface Change {
 
 export interface NotificationInput {
   type: 'CREATE' | 'UPDATE' | 'DELETE';
-  entityType: 'CLUB_MEMBER' | 'CLUB' | 'POST';
+  entityType: 'CLUB_MEMBER' | 'CLUB' | 'POST' | 'TOURNAMENT_APPLICATION';
   entityId: string;
   title: string;
   message: string;
+  link?: string; // 바로가기 링크
   changes?: Change[];
   userId?: string;
 }

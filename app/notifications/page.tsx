@@ -2,10 +2,12 @@
 import { Box, Text, Button, Flex, Badge } from '@radix-ui/themes';
 import { useNotifications } from '@/hooks/useNotifications';
 import Container from '@/components/Container';
-import { Bell, Check, CheckCheck, Trash2 } from 'lucide-react';
+import { Bell, Check, CheckCheck, Trash2, ExternalLink } from 'lucide-react';
 import type { Notification, Change } from '@/model/notification';
+import { useRouter } from 'next/navigation';
 
 export default function NotificationsPage() {
+  const router = useRouter();
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } =
     useNotifications();
 
@@ -86,7 +88,17 @@ export default function NotificationsPage() {
                     ? 'bg-gray-50 border-gray-200'
                     : 'bg-blue-50 border-blue-200 hover:bg-blue-100'
                 }`}
-                onClick={() => !notification.readAt && markAsRead(notification._id)}
+                onClick={() => {
+                  // 읽지 않은 알림이면 읽음 처리
+                  if (!notification.readAt) {
+                    markAsRead(notification._id);
+                  }
+
+                  // 링크가 있으면 해당 페이지로 이동
+                  if (notification.link) {
+                    router.push(notification.link);
+                  }
+                }}
               >
                 <div className="flex justify-between items-start gap-3">
                   <div className="flex-1">
@@ -96,6 +108,7 @@ export default function NotificationsPage() {
                         {notification.title}
                       </Text>
                       {!notification.readAt && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
+                      {notification.link && <ExternalLink size={14} className="text-blue-500" />}
                     </div>
 
                     <Text size="2" color="gray" className="block mb-2">

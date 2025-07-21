@@ -1,11 +1,14 @@
 'use client';
 import { Box, Text, Button, Flex, Badge } from '@radix-ui/themes';
 import Container from '@/components/Container';
-import { Edit, Trash2, Calendar, MapPin } from 'lucide-react';
+import { Edit, Trash2, Calendar, MapPin, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { use } from 'react';
 import { useTournament, useDeleteTournament } from '@/hooks/useTournaments';
 import { usePost } from '@/hooks/usePosts';
+import { useUser } from '@/hooks/useUser';
+import { useSession } from 'next-auth/react';
+import { isAdmin } from '@/lib/authUtils';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import SkeletonCard from '@/components/SkeletonCard';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -27,6 +30,8 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
   const { id } = use(params);
   const router = useRouter();
   const { tournament, isLoading, error } = useTournament(id);
+  const { data: session } = useSession();
+  const { user } = useUser(session?.user?.email);
   const [contentLoaded, setContentLoaded] = useState(false);
   const { trigger: deleteTournament, isMutating: isDeleting } = useDeleteTournament(id);
   const { loading, withLoading } = useLoading();
@@ -35,6 +40,9 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
     tournament?.descriptionPostId || '',
   );
   const { post: rulesPost, isLoading: isLoadingRules } = usePost(tournament?.rulesPostId || '');
+
+  // 관리자 권한 확인
+  const admin = isAdmin(user);
 
   // 모든 콘텐츠 로딩 상태 확인
   const isAllContentLoaded = useCallback(() => {
@@ -218,6 +226,17 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
                   size="3"
                 >
                   참가 신청
+                </Button>
+              )}
+              {admin && (
+                <Button
+                  variant="soft"
+                  color="green"
+                  onClick={() => router.push(`/tournaments/${id}/applications`)}
+                  size="3"
+                >
+                  <Users size={16} />
+                  참가신청 관리
                 </Button>
               )}
               <Button

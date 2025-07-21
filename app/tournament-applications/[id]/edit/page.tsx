@@ -9,6 +9,7 @@ import type { TournamentApplication } from '@/model/tournamentApplication';
 import type { Tournament } from '@/model/tournament';
 import { Button, AlertDialog, Flex, Select, Text } from '@radix-ui/themes';
 import { useUser } from '@/hooks/useUser';
+import { isAdmin } from '@/lib/authUtils';
 
 export default function EditTournamentApplicationPage({
   params,
@@ -27,8 +28,8 @@ export default function EditTournamentApplicationPage({
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
-  // 레벨 5 이상인 사용자만 관리자 권한
-  const isAdmin = user?.level && user.level >= 5;
+  // 관리자 권한 확인
+  const admin = isAdmin(user);
 
   useEffect(() => {
     async function fetchApplication() {
@@ -40,7 +41,6 @@ export default function EditTournamentApplicationPage({
         }
 
         const applicationData = await response.json();
-        console.log('로드된 참가신청 데이터:', applicationData);
         setApplication(applicationData);
 
         // 대회 정보도 함께 가져오기
@@ -50,7 +50,6 @@ export default function EditTournamentApplicationPage({
           );
           if (tournamentResponse.ok) {
             const tournamentData = await tournamentResponse.json();
-            console.log('로드된 대회 데이터:', tournamentData);
             setTournament(tournamentData);
           }
         }
@@ -170,7 +169,7 @@ export default function EditTournamentApplicationPage({
   }
 
   // 일반 사용자는 승인된 신청 수정 불가
-  if (!isAdmin && application.status === 'approved') {
+  if (!admin && application.status === 'approved') {
     return (
       <Container>
         <div className="text-center py-8">
@@ -188,7 +187,7 @@ export default function EditTournamentApplicationPage({
   }
 
   // 일반 사용자는 취소된 신청 수정 불가
-  if (!isAdmin && application.status === 'cancelled') {
+  if (!admin && application.status === 'cancelled') {
     return (
       <Container>
         <div className="text-center py-8">
@@ -209,9 +208,8 @@ export default function EditTournamentApplicationPage({
     <Container>
       <div className="mb-6">
         <Flex gap="3" justify="between" align="center">
-          <h1 className="text-2xl font-bold">참가신청 수정 {isAdmin && `(관리자 모드)`}</h1>
           <Flex gap="3" align="center">
-            {isAdmin && (
+            {admin && (
               <Flex gap="3" align="center">
                 <Text size="2" weight="bold">
                   상태 변경:
@@ -236,7 +234,7 @@ export default function EditTournamentApplicationPage({
                 )}
               </Flex>
             )}
-            {!isAdmin && (
+            {!admin && (
               <AlertDialog.Root open={showCancelDialog} onOpenChange={setShowCancelDialog}>
                 <AlertDialog.Trigger>
                   <Button color="red" disabled={isCancelling}>

@@ -1,39 +1,53 @@
 'use client';
-import { Box, Text, Button, Flex, Badge, Card, Select } from '@radix-ui/themes';
+import { useState, useEffect } from 'react';
+import { Box, Text, Button, Flex, Badge, Select } from '@radix-ui/themes';
 import Container from '@/components/Container';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { useSession } from 'next-auth/react';
 import { useUser } from '@/hooks/useUser';
+import { isAdmin } from '@/lib/authUtils';
 import {
   useAdminTournamentApplications,
   useUpdateApplicationStatus,
   useDeleteApplication,
 } from '@/hooks/useTournamentApplications';
+import { useRouter } from 'next/navigation';
+import type { TournamentApplication } from '@/model/tournamentApplication';
 
 import SkeletonCard from '@/components/SkeletonCard';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import type { TournamentApplication } from '@/model/tournamentApplication';
+import { useSession } from 'next-auth/react';
+import { AlertCircle } from 'lucide-react';
+import { useTournaments } from '@/hooks/useTournaments';
 
-export default function AdminTournamentApplicationsPage() {
+export default function TournamentApplicationsAdminPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [tournamentFilter, setTournamentFilter] = useState<string>('all');
+  const [clubMismatchFilter, setClubMismatchFilter] = useState<'all' | 'only' | 'exclude'>('all');
+  const [participantNameSearch, setParticipantNameSearch] = useState('');
   const router = useRouter();
   const { data: session } = useSession();
   const { user } = useUser(session?.user?.email);
   const { applications, isLoading } = useAdminTournamentApplications();
-  const { trigger: updateStatus, isMutating } = useUpdateApplicationStatus();
+  const { tournaments } = useTournaments();
+  const { trigger: updateStatus, isMutating: isUpdating } = useUpdateApplicationStatus();
   const { trigger: deleteApplication, isMutating: isDeleting } = useDeleteApplication();
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
   const [selectedApplication, setSelectedApplication] = useState<TournamentApplication | null>(
     null,
   );
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [isDeleteMode, setIsDeleteMode] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  // 레벨 5 이상인 사용자만 관리자 권한
-  const isAdmin = user?.level && user.level >= 5;
+  // 관리자 권한 확인
+  const admin = isAdmin(user);
+
+  useEffect(() => {
+    if (admin) {
+      // fetchApplications(); // This function is not defined in the original file, so it's removed.
+    }
+  }, [admin]);
 
   const getStatusColor = (status: string) => {
     const colorMap: Record<string, 'red' | 'blue' | 'green' | 'gray'> = {
@@ -72,11 +86,26 @@ export default function AdminTournamentApplicationsPage() {
   };
 
   const filteredApplications = applications.filter((application) => {
+    // 대회 필터
+    if (tournamentFilter !== 'all' && application.tournamentId !== tournamentFilter) {
+      return false;
+    }
     // 상태 필터
     if (filterStatus !== 'all' && application.status !== filterStatus) {
       return false;
     }
-
+    // 클럽 불일치 필터
+    const hasMismatch = application.teamMembers.some(
+      (m) => m.clubName !== application.teamMembers[0].clubName,
+    );
+    if (clubMismatchFilter === 'only' && !hasMismatch) return false;
+    if (clubMismatchFilter === 'exclude' && hasMismatch) return false;
+    // 참가자 이름 검색
+    if (participantNameSearch.trim()) {
+      const search = participantNameSearch.trim().toLowerCase();
+      const found = application.teamMembers.some((m) => m.name.toLowerCase().includes(search));
+      if (!found) return false;
+    }
     return true;
   });
 
@@ -115,7 +144,7 @@ export default function AdminTournamentApplicationsPage() {
   };
 
   // 관리자가 아닌 경우 접근 제한
-  if (!isAdmin) return;
+  if (!admin) return;
 
   return (
     <Container>
@@ -123,16 +152,26 @@ export default function AdminTournamentApplicationsPage() {
         <SkeletonCard />
       ) : (
         <Box>
-          <Flex align="center" justify="between" mb="4">
-            <Text size="5" weight="bold">
-              전체 참가신청 목록 (관리자)
-            </Text>
-          </Flex>
-
           <Flex gap="3" mb="4" align="center" wrap="wrap">
             <Flex gap="3" align="center">
               <Text size="2" weight="bold">
-                상태 필터:
+                대회:
+              </Text>
+              <Select.Root value={tournamentFilter} onValueChange={setTournamentFilter}>
+                <Select.Trigger placeholder="전체 대회" />
+                <Select.Content>
+                  <Select.Item value="all">전체</Select.Item>
+                  {tournaments.map((t) => (
+                    <Select.Item key={t._id} value={t._id}>
+                      {t.title}
+                    </Select.Item>
+                  ))}
+                </Select.Content>
+              </Select.Root>
+            </Flex>
+            <Flex gap="3" align="center">
+              <Text size="2" weight="bold">
+                상태:
               </Text>
               <Select.Root value={filterStatus} onValueChange={setFilterStatus}>
                 <Select.Trigger placeholder="전체" />
@@ -145,18 +184,47 @@ export default function AdminTournamentApplicationsPage() {
                 </Select.Content>
               </Select.Root>
             </Flex>
+            <Flex gap="3" align="center">
+              <Text size="2" weight="bold">
+                클럽 불일치:
+              </Text>
+              <Select.Root
+                value={clubMismatchFilter}
+                onValueChange={(v) => setClubMismatchFilter(v as 'all' | 'only' | 'exclude')}
+              >
+                <Select.Trigger placeholder="전체" />
+                <Select.Content>
+                  <Select.Item value="all">전체</Select.Item>
+                  <Select.Item value="only">불일치만</Select.Item>
+                  <Select.Item value="exclude">불일치 제외</Select.Item>
+                </Select.Content>
+              </Select.Root>
+            </Flex>
+            <Flex gap="3" align="center">
+              <Text size="2" weight="bold">
+                참가자 이름:
+              </Text>
+              <input
+                type="text"
+                value={participantNameSearch}
+                onChange={(e) => setParticipantNameSearch(e.target.value)}
+                placeholder="이름 검색"
+                className="border rounded px-2 py-1 text-sm"
+                style={{ minWidth: 120 }}
+              />
+            </Flex>
           </Flex>
 
           {filteredApplications.length === 0 ? (
-            <Card className="p-6 text-center">
+            <div className="p-6 text-center">
               <Text size="3" color="gray">
                 참가 신청 내역이 없습니다.
               </Text>
-            </Card>
+            </div>
           ) : (
             <div className="space-y-4">
               {filteredApplications.map((application) => (
-                <Card
+                <div
                   key={application._id}
                   className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
                   onClick={() => {
@@ -193,13 +261,21 @@ export default function AdminTournamentApplicationsPage() {
                       {application.teamMembers.map((member, index) => (
                         <div
                           key={index}
-                          className="grid grid-cols-1 md:grid-cols-3 gap-4 p-3 bg-gray-50 rounded"
+                          className="grid grid-cols-1 md:grid-cols-4 gap-4 p-3 bg-gray-50 rounded"
                         >
                           <div>
                             <Text size="2" weight="bold" color="gray">
                               {index + 1}번째 참가자
                             </Text>
-                            <Text size="3">{member.name}</Text>
+                            <Text size="3">
+                              {member.name}
+                              {member.clubName !== application.teamMembers[0].clubName && (
+                                <span className="ml-2 text-orange-600 flex items-center inline-flex">
+                                  <AlertCircle size={16} className="inline-block mr-1" />
+                                  <span className="text-xs">클럽 불일치</span>
+                                </span>
+                              )}
+                            </Text>
                           </div>
                           <div>
                             <Text size="2" weight="bold" color="gray">
@@ -289,7 +365,7 @@ export default function AdminTournamentApplicationsPage() {
                           e.stopPropagation();
                           openStatusDialog(application, 'approved');
                         }}
-                        disabled={isMutating}
+                        disabled={isUpdating}
                       >
                         승인
                       </Button>
@@ -301,7 +377,7 @@ export default function AdminTournamentApplicationsPage() {
                           e.stopPropagation();
                           openStatusDialog(application, 'rejected');
                         }}
-                        disabled={isMutating}
+                        disabled={isUpdating}
                       >
                         거절
                       </Button>
@@ -330,7 +406,7 @@ export default function AdminTournamentApplicationsPage() {
                       </Button>
                     </Flex>
                   </div>
-                </Card>
+                </div>
               ))}
             </div>
           )}

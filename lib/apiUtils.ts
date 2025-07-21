@@ -130,14 +130,25 @@ export function checkTournamentApplicationPermission(
 
   // 삭제 권한
   if (action === 'delete') {
-    if (!isAdmin && !isOwner) {
-      return { error: NextResponse.json({ error: '권한이 없습니다' }, { status: 403 }) };
-    }
-    // 승인된 신청은 삭제 불가 (관리자도 불가)
-    if (application.status === 'approved') {
-      return {
-        error: NextResponse.json({ error: '승인된 신청은 삭제할 수 없습니다' }, { status: 400 }),
-      };
+    // 관리자는 모든 신청 삭제 가능 (승인된 신청 제외)
+    if (isAdmin) {
+      // 승인된 신청은 삭제 불가 (관리자도 불가)
+      if (application.status === 'approved') {
+        return {
+          error: NextResponse.json({ error: '승인된 신청은 삭제할 수 없습니다' }, { status: 400 }),
+        };
+      }
+    } else {
+      // 일반 사용자는 본인 작성자만 삭제 가능
+      if (!isOwner) {
+        return { error: NextResponse.json({ error: '권한이 없습니다' }, { status: 403 }) };
+      }
+      // 승인된 신청은 삭제 불가
+      if (application.status === 'approved') {
+        return {
+          error: NextResponse.json({ error: '승인된 신청은 삭제할 수 없습니다' }, { status: 400 }),
+        };
+      }
     }
   }
 

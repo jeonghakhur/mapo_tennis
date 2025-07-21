@@ -2,22 +2,53 @@
 import { Box, Text, Button, Flex, Badge } from '@radix-ui/themes';
 import { useNotifications } from '@/hooks/useNotifications';
 import Container from '@/components/Container';
-import { Bell, Check, CheckCheck, Trash2, ExternalLink } from 'lucide-react';
+import { Bell, Check, CheckCheck, Trash2, ExternalLink, Trash } from 'lucide-react';
 import type { Notification, Change } from '@/model/notification';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useUser } from '@/hooks/useUser';
 import { isAdmin } from '@/lib/authUtils';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function NotificationsPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const { user } = useUser(session?.user?.email);
   const admin = isAdmin(user);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
 
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } =
     useNotifications(admin ? undefined : user?._id);
+
+  // 모든 알림 삭제 함수
+  const deleteAllNotifications = async () => {
+    if (!admin) return;
+
+    if (!confirm('모든 알림을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+      return;
+    }
+
+    setIsDeletingAll(true);
+    try {
+      const response = await fetch('/api/notifications/delete-all', {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert(`${result.deletedCount}개의 알림이 삭제되었습니다.`);
+        // 페이지 새로고침으로 알림 목록 업데이트
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        alert(`삭제 실패: ${error.error}`);
+      }
+    } catch {
+      alert('삭제 중 오류가 발생했습니다.');
+    } finally {
+      setIsDeletingAll(false);
+    }
+  };
 
   // 로그인하지 않은 경우 로그인 페이지로 리다이렉트
   useEffect(() => {
@@ -100,12 +131,26 @@ export default function NotificationsPage() {
               </Badge>
             )}
           </Flex>
-          {unreadCount > 0 && (
-            <Button onClick={markAllAsRead} size="2" variant="soft">
-              <CheckCheck size={16} />
-              모두 읽음 처리
-            </Button>
-          )}
+          <Flex gap="2">
+            {unreadCount > 0 && (
+              <Button onClick={markAllAsRead} size="2" variant="soft">
+                <CheckCheck size={16} />
+                모두 읽음 처리
+              </Button>
+            )}
+            {admin && notifications.length > 0 && (
+              <Button
+                onClick={deleteAllNotifications}
+                size="2"
+                variant="soft"
+                color="red"
+                disabled={isDeletingAll}
+              >
+                <Trash size={16} />
+                {isDeletingAll ? '삭제 중...' : '모든 알림 삭제'}
+              </Button>
+            )}
+          </Flex>
         </Flex>
 
         {notifications.length === 0 ? (

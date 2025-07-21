@@ -68,6 +68,24 @@ export async function deleteNotification(notificationId: string): Promise<void> 
   await client.delete(notificationId);
 }
 
+// 모든 알림 삭제 (관리자용)
+export async function deleteAllNotifications(): Promise<{ deletedCount: number }> {
+  const query = `*[_type == "notification"]`;
+  const notifications = await client.fetch(query);
+
+  if (notifications.length === 0) {
+    return { deletedCount: 0 };
+  }
+
+  const patches = notifications.map((notification: Notification) =>
+    client.delete(notification._id),
+  );
+
+  await Promise.all(patches);
+
+  return { deletedCount: notifications.length };
+}
+
 // 변경사항 추적 함수
 export function trackChanges(
   oldData: Record<string, unknown>,

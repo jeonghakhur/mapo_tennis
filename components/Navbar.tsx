@@ -132,6 +132,11 @@ export default function Navbar() {
                   전체 참가신청 목록
                 </DropdownMenu.Item>
               )}
+              {admin && (
+                <DropdownMenu.Item onClick={() => router.push('/admin/users')}>
+                  회원 관리
+                </DropdownMenu.Item>
+              )}
               <DropdownMenu.Separator />
               {status === 'loading' ? null : !session ? (
                 <>
@@ -180,6 +185,7 @@ function getPageTitle(pathname: string): string {
     '/notifications': '알림',
     '/profile': '프로필',
     '/tournament-applications/admin': '전체 참가신청 목록',
+    '/admin/users': '회원 관리',
   };
 
   // 동적 라우트 처리

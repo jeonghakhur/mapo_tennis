@@ -1,6 +1,19 @@
 import { client } from '@/sanity/lib/client';
 import type { User } from '../model/user';
 
+type ClubRef = { _key: string; _ref: string };
+
+function normalizeClubs(clubs?: string[] | ClubRef[]): ClubRef[] {
+  if (!clubs) return [];
+  if (typeof clubs[0] === 'string') {
+    return (clubs as string[]).map((id, idx) => ({
+      _key: `club_${idx}`,
+      _ref: id,
+    }));
+  }
+  return clubs as ClubRef[];
+}
+
 export async function upsertUser({
   name,
   phone,
@@ -11,7 +24,7 @@ export async function upsertUser({
   level,
   address,
   clubs,
-}: Omit<User, '_id' | '_type'> & { clubs?: string[] }): Promise<User> {
+}: Omit<User, '_id' | '_type'> & { clubs?: string[] | ClubRef[] }): Promise<User> {
   try {
     console.log('upsertUser 시작:', { email, name });
 
@@ -39,12 +52,7 @@ export async function upsertUser({
         updateData.level = level;
       }
       if (clubs !== undefined) {
-        // clubs가 string[] 형태로 전달되면 참조 형태로 변환
-        updateData.clubs = clubs.map((clubId: string, index: number) => ({
-          _key: `club_${index}`,
-          _ref: clubId,
-          _type: 'reference',
-        }));
+        updateData.clubs = normalizeClubs(clubs);
       }
       console.log('업데이트 데이터:', updateData);
       result = await client.patch(existing._id).set(updateData).commit();
@@ -62,13 +70,7 @@ export async function upsertUser({
         email,
         level: level || 1,
         address,
-        clubs: clubs
-          ? clubs.map((clubId: string, index: number) => ({
-              _key: `club_${index}`,
-              _ref: clubId,
-              _type: 'reference',
-            }))
-          : [],
+        clubs: clubs ? normalizeClubs(clubs) : [],
       };
       console.log('생성 데이터:', createData);
       result = await client.create(createData);
@@ -101,4 +103,39 @@ export async function getUserById(id: string): Promise<User | null> {
     }`,
     { id },
   );
+}
+
+export async function updateUser(
+  id: string,
+  userData: Partial<Omit<User, '_id' | '_type'>> & { clubs?: string[] | ClubRef[] },
+): Promise<User> {
+  if (!id) throw new Error('id is required');
+
+  try {
+    console.log('updateUser 시작:', { id, userData });
+
+    const updateData: Partial<Omit<User, '_id' | '_type' | '_createdAt'>> = {
+      name: userData.name,
+      phone: userData.phone,
+      gender: userData.gender,
+      birth: userData.birth,
+      score: userData.score,
+      email: userData.email,
+      level: userData.level,
+      address: userData.address,
+    };
+
+    if (userData.clubs !== undefined) {
+      updateData.clubs = normalizeClubs(userData.clubs);
+    }
+
+    console.log('업데이트 데이터:', updateData);
+    const result = await client.patch(id).set(updateData).commit();
+    console.log('사용자 업데이트 완료:', result);
+
+    return result as unknown as User;
+  } catch (error) {
+    console.error('updateUser 오류:', error);
+    throw error;
+  }
 }

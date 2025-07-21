@@ -1,22 +1,49 @@
 'use client';
-import { useState } from 'react';
-import { signOut, useSession } from 'next-auth/react';
-import { useUser } from '@/hooks/useUser';
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import SkeletonCard from '@/components/SkeletonCard';
 import Container from '@/components/Container';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import { isHydrating } from '@/lib/isHydrating';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import { useLoading } from '@/hooks/useLoading';
+import { getUserById } from '@/service/user';
+import { isAdmin } from '@/lib/authUtils';
 import UserForm from '@/components/UserForm';
+import type { User } from '@/model/user';
 
-export default function ProfileForm() {
+export default function AdminUserEditPage() {
+  const router = useRouter();
+  const params = useParams();
+  const { data: session } = useSession();
+  const userId = params.id as string;
+
+  const [user, setUser] = useState<User | null>(null);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const { data: session } = useSession();
-  const email = session?.user?.email;
-  const { user, isLoading, error: swrError } = useUser(email);
+  const [isLoading, setIsLoading] = useState(true);
   const { loading, withLoading } = useLoading();
+
+  useEffect(() => {
+    if (session && !isAdmin(session.user)) {
+      router.replace('/');
+    }
+  }, [session, router]);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      setIsLoading(true);
+      try {
+        const userData = await getUserById(userId);
+        setUser(userData);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (userId) fetchUser();
+  }, [userId]);
 
   const handleSubmit = async (data: {
     name: string;
@@ -32,40 +59,24 @@ export default function ProfileForm() {
       await withLoading(async () => {
         const response = await fetch('/api/user', {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ...data,
-            email: session?.user?.email,
-          }),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
         });
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || '회원 정보 수정에 실패했습니다.');
+          throw new Error(errorData.error || '회원 정보 수정 실패');
         }
         setSuccessMessage('회원 정보가 성공적으로 수정되었습니다.');
         setShowSuccessDialog(true);
       });
     } catch (error) {
-      console.error(
-        error instanceof Error ? error.message : '회원 정보 수정 중 오류가 발생했습니다.',
-      );
+      console.error(error);
     }
   };
 
-  if (swrError)
-    return (
-      <span style={{ color: 'red', textAlign: 'center' }}>
-        회원 정보 조회 중 오류가 발생했습니다.
-      </span>
-    );
-
-  const hydrating = isHydrating(isLoading, user);
-
   return (
     <Container>
-      {hydrating ? (
+      {isLoading ? (
         <SkeletonCard lines={4} />
       ) : (
         <>
@@ -74,8 +85,6 @@ export default function ProfileForm() {
             user={user}
             onSubmit={handleSubmit}
             loading={loading}
-            showLogout={true}
-            onLogout={() => signOut({ callbackUrl: '/' })}
             submitText="회원 정보 수정"
           />
         </>

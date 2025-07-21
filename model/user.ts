@@ -9,5 +9,6 @@ export interface User {
   email: string;
   level: number;
   address?: string;
-  clubs?: { _key: string; _ref: string; _type: 'reference' }[]; // 클럽 참조 배열
+  clubs?: { _key: string; _ref: string; name?: string }[]; // 클럽
+  _createdAt?: string;
 }

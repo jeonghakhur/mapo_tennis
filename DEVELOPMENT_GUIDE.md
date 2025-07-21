@@ -8,6 +8,142 @@
 - TypeScript 타입 정의 필수
 - Props 인터페이스 명시적 정의
 - 한국어 주석 작성
+- **텍스트 사이즈는 3을 기본값으로 사용**
+
+#### 텍스트 사이즈 가이드라인
+
+```typescript
+// 기본 텍스트 (권장)
+<Text size="3">기본 텍스트</Text>
+
+// 제목 텍스트
+<Text size="5" weight="bold">페이지 제목</Text>
+<Text size="4" weight="bold">섹션 제목</Text>
+
+// 작은 텍스트
+<Text size="2">부가 정보, 설명</Text>
+<Text size="1">레이블, 메타 정보</Text>
+
+// 큰 텍스트
+<Text size="6" weight="bold">메인 헤드라인</Text>
+```
+
+#### 텍스트 사용 패턴
+
+| 용도              | 사이즈                   | 예시                  |
+| ----------------- | ------------------------ | --------------------- |
+| **기본 텍스트**   | `size="3"`               | 일반적인 내용, 설명   |
+| **페이지 제목**   | `size="5" weight="bold"` | 페이지 상단 제목      |
+| **섹션 제목**     | `size="4" weight="bold"` | 카드, 섹션 제목       |
+| **부가 정보**     | `size="2"`               | 설명, 부가 설명       |
+| **레이블**        | `size="1"`               | 폼 라벨, 메타 정보    |
+| **메인 헤드라인** | `size="6" weight="bold"` | 랜딩 페이지 메인 제목 |
+
+#### 폼 요소 사이즈 가이드라인
+
+- **기본 사이즈**: 모든 폼 요소는 `size="3"`을 기본값으로 사용
+- **일관성**: TextField, Button, Select 등 모든 폼 요소의 사이즈 통일
+
+```typescript
+// 텍스트 필드 (권장)
+<TextField.Root size="3" placeholder="입력해 주세요" />
+
+// 버튼 (권장)
+<Button size="3">저장</Button>
+
+// 셀렉트 (권장)
+<Select.Root size="3">
+  <Select.Trigger />
+  <Select.Content>
+    <Select.Item value="option1">옵션 1</Select.Item>
+  </Select.Content>
+</Select.Root>
+
+// 라디오 그룹 (권장)
+<RadioGroup.Root size="3">
+  <RadioGroup.Item value="option1" />
+  <RadioGroup.Item value="option2" />
+</RadioGroup.Root>
+```
+
+#### 폼 요소 사용 패턴
+
+| 요소           | 사이즈     | 예시           |
+| -------------- | ---------- | -------------- |
+| **TextField**  | `size="3"` | 입력 필드      |
+| **Button**     | `size="3"` | 액션 버튼      |
+| **Select**     | `size="3"` | 드롭다운 선택  |
+| **RadioGroup** | `size="3"` | 라디오 버튼    |
+| **Checkbox**   | `size="3"` | 체크박스       |
+| **TextArea**   | `size="3"` | 긴 텍스트 입력 |
+
+#### 테이블 사용 가이드라인
+
+- **HTML 테이블 사용**: Radix UI Table 대신 일반 HTML `<table>` 사용
+- **반응형 디자인**: 모바일에서 스크롤 가능하도록 구현
+- **일관된 스타일링**: CSS 클래스로 테이블 스타일 통일
+
+```typescript
+// HTML 테이블 사용 (권장)
+<table className="w-full border-collapse">
+  <thead>
+    <tr className="bg-gray-50">
+      <th className="p-3 text-left border-b">이름</th>
+      <th className="p-3 text-left border-b">이메일</th>
+      <th className="p-3 text-left border-b">전화번호</th>
+    </tr>
+  </thead>
+  <tbody>
+    {items.map((item) => (
+      <tr key={item.id} className="border-b hover:bg-gray-50">
+        <td className="p-3">{item.name}</td>
+        <td className="p-3">{item.email}</td>
+        <td className="p-3">{item.phone}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
+// 반응형 테이블 컨테이너
+<div className="overflow-x-auto">
+  <table className="min-w-full">
+    {/* 테이블 내용 */}
+  </table>
+</div>
+```
+
+#### 테이블 스타일 클래스
+
+```css
+/* 기본 테이블 스타일 */
+.table-container {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  background-color: #f8fafc;
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.table td {
+  padding: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.table tr:hover {
+  background-color: #f8fafc;
+}
+```
 
 ```typescript
 interface ComponentProps {

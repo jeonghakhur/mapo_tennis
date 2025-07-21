@@ -161,6 +161,42 @@
   }
 }
 
+.table-view {
+  overflow-x: auto;
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    border-top: 1px solid #e0e0e0;
+
+    /* table-layout: fixed; */
+
+    th {
+      padding: 8px;
+      border-bottom: 1px solid #e0e0e0;
+      border-left: 1px solid #e0e0e0;
+      text-align: left;
+      white-space: nowrap;
+      text-align: center;
+
+      &:first-child {
+        border-left: none;
+      }
+    }
+
+    td {
+      padding: 8px;
+      border-bottom: 1px solid #e0e0e0;
+      border-left: 1px solid #e0e0e0;
+      white-space: nowrap;
+      text-align: center;
+
+      &:first-child {
+        border-left: none;
+      }
+    }
+  }
+}
+
 .btn-wrap {
   display: flex !important;
   gap: 8px;

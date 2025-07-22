@@ -1,6 +1,6 @@
 'use client';
 import { useRef, useEffect, useState } from 'react';
-import { Box, Text } from '@radix-ui/themes';
+import { Box } from '@radix-ui/themes';
 import { uploadImageToSanityAssets } from '@/lib/sanityAssets';
 import dynamic from 'next/dynamic';
 
@@ -59,12 +59,6 @@ export default function MarkdownEditor({ value, onChange }: MarkdownEditorProps)
 
   return (
     <Box>
-      <div className="flex items-center justify-between mb-2">
-        <Text size="2" weight="bold">
-          내용 *
-        </Text>
-      </div>
-
       {isClient && (
         <div className="markdown-editor-container">
           <Editor

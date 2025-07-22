@@ -5,6 +5,7 @@ import type { DefaultSession } from 'next-auth/next';
 declare module 'next-auth' {
   interface Session extends DefaultSession {
     user?: DefaultSession['user'] & {
+      id: string;
       level?: number;
     };
   }

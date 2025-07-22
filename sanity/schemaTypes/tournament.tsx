@@ -98,6 +98,24 @@ export default defineType({
       description: '계좌 예금주를 입력하세요',
     }),
     defineField({
+      name: 'host',
+      title: '주최',
+      type: 'string',
+      description: '주최 단체 또는 인물',
+    }),
+    defineField({
+      name: 'organizer',
+      title: '주관',
+      type: 'string',
+      description: '주관 단체 또는 인물',
+    }),
+    defineField({
+      name: 'participants',
+      title: '참가인원',
+      type: 'string',
+      description: '예: 100명(남 60, 여 40)',
+    }),
+    defineField({
       name: 'divisions',
       title: '참가부서 및 상세정보',
       type: 'array',

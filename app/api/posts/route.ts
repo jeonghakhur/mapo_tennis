@@ -49,7 +49,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: '제목은 필수 입력 사항입니다.' }, { status: 400 });
       }
 
-      const result = await createPost(data);
+      console.log(data);
+
+      const result = await createPost({
+        ...data,
+        author: { _ref: typeof data.author === 'string' ? data.author : data.author._ref },
+      });
 
       // 알림 생성
       const { title, message } = createNotificationMessage('CREATE', 'POST', data.title);

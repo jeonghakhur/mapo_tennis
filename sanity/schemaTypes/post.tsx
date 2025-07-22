@@ -20,7 +20,8 @@ export default defineType({
     defineField({
       name: 'author',
       title: '작성자',
-      type: 'string',
+      type: 'reference',
+      to: [{ type: 'user' }],
       validation: (Rule) => Rule.required(),
     }),
     defineField({
@@ -32,7 +33,7 @@ export default defineType({
           { title: '공지사항', value: 'notice' },
           { title: '이벤트', value: 'event' },
           { title: '일반', value: 'general' },
-          { title: '대회일정', value: 'tournament_schedule' },
+          { title: '대회규칙', value: 'tournament_rules' },
           { title: '대회요강', value: 'tournament_info' },
         ],
       },
@@ -93,6 +94,20 @@ export default defineType({
         },
       ],
     }),
+    defineField({
+      name: 'showOnMain',
+      title: '메인에 노출',
+      type: 'boolean',
+      initialValue: false,
+      description: '메인 화면에 노출할지 여부',
+    }),
+    defineField({
+      name: 'mainPriority',
+      title: '메인 노출 우선순위',
+      type: 'number',
+      initialValue: 0,
+      description: '메인 노출 시 우선순위(낮을수록 먼저)',
+    }),
   ],
   preview: {
     select: {
@@ -107,6 +122,8 @@ export default defineType({
         notice: '공지사항',
         event: '이벤트',
         general: '일반',
+        tournament_rules: '대회규칙',
+        tournament_info: '대회요강',
       };
 
       return {

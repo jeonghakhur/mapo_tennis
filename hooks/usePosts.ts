@@ -1,9 +1,7 @@
 import useSWR from 'swr';
 
 export function usePosts(showAll = false) {
-  const { data, error, isLoading, mutate } = useSWR(`/api/posts?all=${showAll}`, null, {
-    refreshInterval: 10000, // 10초마다 새로고침
-  });
+  const { data, error, isLoading, mutate } = useSWR(`/api/posts?all=${showAll}`, null);
 
   return {
     posts: data?.posts || [],
@@ -28,9 +26,6 @@ export function usePostsByCategory(category: string) {
   const { data, error, isLoading, mutate } = useSWR(
     category ? `/api/posts?category=${category}` : null,
     null,
-    {
-      refreshInterval: 10000, // 10초마다 새로고침
-    },
   );
 
   return {

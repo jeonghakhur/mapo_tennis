@@ -1,7 +1,7 @@
 'use client';
 import { Box, Text, Button, Flex, Badge } from '@radix-ui/themes';
 import Container from '@/components/Container';
-import { Edit, Trash2, Calendar, MapPin, Users } from 'lucide-react';
+import { Edit, Trash2, Calendar, MapPin, Users, NotebookPen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { use } from 'react';
 import { useTournament, useDeleteTournament } from '@/hooks/useTournaments';
@@ -218,16 +218,6 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
 
             {/* 액션 버튼 */}
             <Flex gap="3" justify="end" pt="6" className="border-t">
-              {tournament.status === 'upcoming' && (
-                <Button
-                  variant="solid"
-                  color="blue"
-                  onClick={() => router.push(`/tournaments/${id}/apply`)}
-                  size="3"
-                >
-                  참가 신청
-                </Button>
-              )}
               {admin && (
                 <Button
                   variant="soft"
@@ -265,6 +255,33 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
               />
             </Flex>
           </div>
+
+          {/* 플로팅 참가 신청 버튼 */}
+          {tournament.status === 'upcoming' && (
+            <div
+              style={{
+                position: 'fixed',
+                bottom: '20px',
+                right: '20px',
+                zIndex: 1000,
+              }}
+            >
+              <Button
+                style={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                onClick={() => router.push(`/tournaments/${id}/apply`)}
+              >
+                <NotebookPen size={24} />
+              </Button>
+            </div>
+          )}
         </Box>
       )}
     </Container>

@@ -7,7 +7,13 @@ import { deleteFromSanityAssets } from '@/lib/sanityAssets';
 export async function getPublishedPosts(): Promise<Post[]> {
   return await client.fetch(`
     *[_type == "post" && isPublished == true]
-    | order(publishedAt desc)
+    | order(publishedAt desc){
+      ...,
+      author->{
+          _id,
+          name
+        }
+      }
   `);
 }
 
@@ -41,7 +47,7 @@ export async function createPost(data: PostInput): Promise<Post> {
     updatedAt: new Date().toISOString(),
   });
 
-  return post as Post;
+  return post as unknown as Post;
 }
 
 // 포스트 수정

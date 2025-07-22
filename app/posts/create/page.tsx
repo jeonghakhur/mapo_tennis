@@ -1,7 +1,7 @@
 'use client';
 import { Box, Text, Button, Flex, TextField, Select } from '@radix-ui/themes';
 import Container from '@/components/Container';
-import { ArrowLeft, Save, Eye } from 'lucide-react';
+import { Save, Eye } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
@@ -20,7 +20,7 @@ export default function CreatePostPage() {
   const [formData, setFormData] = useState<PostInput>({
     title: '',
     content: '',
-    author: session?.user?.name || '',
+    author: { _ref: session?.user?.id || '' },
     category: 'general',
     isPublished: false,
     attachments: [],
@@ -32,6 +32,13 @@ export default function CreatePostPage() {
   useEffect(() => {
     if (session && !canManagePosts) {
       router.push('/posts');
+    }
+
+    if (session) {
+      setFormData((prev) => ({
+        ...prev,
+        author: { _ref: session.user.id },
+      }));
     }
   }, [session, canManagePosts, router]);
 
@@ -128,19 +135,57 @@ export default function CreatePostPage() {
   return (
     <Container>
       <Box>
-        <Flex align="center" gap="3" mb="4">
-          <Button variant="soft" onClick={() => router.back()} size="2">
-            <ArrowLeft size={16} />
-            뒤로가기
-          </Button>
-          <Text size="6" weight="bold">
-            새 포스트 작성
-          </Text>
-        </Flex>
-
         <form onSubmit={handleSubmit} className="space-y-4">
+          <Flex align="center" gap="3">
+            <Text as="div" size="3" weight="bold">
+              카테고리
+            </Text>
+            <Select.Root
+              size="3"
+              value={formData.category}
+              onValueChange={(value) =>
+                setFormData({
+                  ...formData,
+                  category: value as
+                    | 'notice'
+                    | 'event'
+                    | 'general'
+                    | 'tournament_rules'
+                    | 'tournament_info',
+                })
+              }
+            >
+              <Select.Trigger />
+              <Select.Content>
+                <Select.Item value="general">일반</Select.Item>
+                <Select.Item value="notice">공지사항</Select.Item>
+                <Select.Item value="event">이벤트</Select.Item>
+                <Select.Item value="tournament_rules">대회규칙</Select.Item>
+                <Select.Item value="tournament_info">대회요강</Select.Item>
+              </Select.Content>
+            </Select.Root>
+            <Text as="div" size="2" weight="bold" mb="3">
+              메인 노출 순서
+            </Text>
+            <Select.Root
+              size="3"
+              value={formData.mainPriority !== undefined ? String(formData.mainPriority) : '0'}
+              onValueChange={(value) => setFormData({ ...formData, mainPriority: Number(value) })}
+            >
+              <Select.Trigger placeholder="메인 노출 안함" />
+              <Select.Content>
+                <Select.Item value="0">메인 노출 안함</Select.Item>
+                <Select.Item value="1">1</Select.Item>
+                <Select.Item value="2">2</Select.Item>
+                <Select.Item value="3">3</Select.Item>
+                <Select.Item value="4">4</Select.Item>
+                <Select.Item value="5">5</Select.Item>
+              </Select.Content>
+            </Select.Root>
+          </Flex>
+
           <div>
-            <Text as="div" size="2" weight="bold" mb="2">
+            <Text as="div" size="3" weight="bold" mb="2">
               제목 *
             </Text>
             <TextField.Root
@@ -172,35 +217,6 @@ export default function CreatePostPage() {
             attachments={formData.attachments || []}
             onAttachmentsChange={(attachments) => setFormData({ ...formData, attachments })}
           />
-
-          <div>
-            <Text as="div" size="2" weight="bold" mb="2">
-              카테고리 *
-            </Text>
-            <Select.Root
-              value={formData.category}
-              onValueChange={(value) =>
-                setFormData({
-                  ...formData,
-                  category: value as
-                    | 'notice'
-                    | 'event'
-                    | 'general'
-                    | 'tournament_schedule'
-                    | 'tournament_info',
-                })
-              }
-            >
-              <Select.Trigger />
-              <Select.Content>
-                <Select.Item value="general">일반</Select.Item>
-                <Select.Item value="notice">공지사항</Select.Item>
-                <Select.Item value="event">이벤트</Select.Item>
-                <Select.Item value="tournament_schedule">대회일정</Select.Item>
-                <Select.Item value="tournament_info">대회요강</Select.Item>
-              </Select.Content>
-            </Select.Root>
-          </div>
 
           <Flex gap="3" justify="end" pt="4">
             <Button

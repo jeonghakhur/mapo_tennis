@@ -5,13 +5,21 @@ export interface Attachment {
   type: string;
 }
 
+export interface PostAuthor {
+  _id: string;
+  _ref: string;
+  name: string;
+  // email?: string;
+  // profileImage?: string;
+}
+
 export interface Post {
   _id: string;
   _type: 'post';
   title: string;
   content: string;
-  author: string;
-  category: 'notice' | 'event' | 'general' | 'tournament_schedule' | 'tournament_info';
+  author: PostAuthor | string;
+  category: 'notice' | 'event' | 'general' | 'tournament_rules' | 'tournament_info';
   isPublished: boolean;
   publishedAt?: string;
   createdAt: string;
@@ -22,9 +30,10 @@ export interface Post {
 export interface PostInput {
   title: string;
   content: string;
-  author: string;
-  category: 'notice' | 'event' | 'general' | 'tournament_schedule' | 'tournament_info';
-  isPublished?: boolean;
-  publishedAt?: string;
+  author: { _ref: string }; // user._id
+  category: 'notice' | 'event' | 'general' | 'tournament_rules' | 'tournament_info';
+  isPublished: boolean;
   attachments?: Attachment[];
+  showOnMain?: boolean;
+  mainPriority?: number;
 }

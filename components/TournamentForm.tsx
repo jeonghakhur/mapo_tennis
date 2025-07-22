@@ -115,200 +115,246 @@ export default function TournamentForm({
       </Heading>
 
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-        <table className="table-form">
-          <tbody>
-            <tr>
-              <th style={{ width: '100px' }}>대회명 *</th>
-              <td>
-                <TextField.Root
-                  ref={titleRef}
-                  size="3"
-                  value={formData.title}
-                  onChange={(e) => handleInputChange(setFormData, 'title', e.target.value)}
-                  placeholder="대회명을 입력하세요"
-                />
-              </td>
-            </tr>
-            <tr>
-              <th>
-                <Text>장소 *</Text>
-              </th>
-              <td>
-                <TextField.Root
-                  ref={locationRef}
-                  size="3"
-                  value={formData.location}
-                  onChange={(e) => handleInputChange(setFormData, 'location', e.target.value)}
-                  placeholder="대회 장소를 입력하세요"
-                />
-              </td>
-            </tr>
-            <tr>
-              <th>
-                <Text>대회 유형 *</Text>
-              </th>
-              <td>
-                <RadioGroup.Root
-                  value={formData.tournamentType}
-                  onValueChange={(value) =>
-                    handleInputChange(setFormData, 'tournamentType', value as 'individual' | 'team')
-                  }
-                >
-                  <Flex gap="3">
-                    <Flex gap="2" align="center">
-                      <RadioGroup.Item value="individual" id="individual" />
-                      <Text as="label" htmlFor="individual" size="3">
-                        개인전
-                      </Text>
-                    </Flex>
-                    <Flex gap="2" align="center">
-                      <RadioGroup.Item value="team" id="team" />
-                      <Text as="label" htmlFor="team" size="3">
-                        단체전
-                      </Text>
-                    </Flex>
-                  </Flex>
-                </RadioGroup.Root>
-              </td>
-            </tr>
-            <tr>
-              <th>
-                <Text>시작일 *</Text>
-              </th>
-              <td>
-                <TextField.Root
-                  ref={startDateRef}
-                  size="3"
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) => handleInputChange(setFormData, 'startDate', e.target.value)}
-                  max={formData.endDate || undefined}
-                />
-              </td>
-            </tr>
-            <tr>
-              <th>
-                <Text>종료일</Text>
-              </th>
-              <td>
-                <TextField.Root
-                  size="3"
-                  type="date"
-                  value={formData.endDate}
-                  onChange={(e) => handleInputChange(setFormData, 'endDate', e.target.value)}
-                  min={formData.startDate || undefined}
-                />
-              </td>
-            </tr>
-            <tr>
-              <th>
-                <Text>등록 시작일 *</Text>
-              </th>
-              <td>
-                <TextField.Root
-                  ref={registrationStartDateRef}
-                  size="3"
-                  type="date"
-                  value={formData.registrationStartDate}
-                  onChange={(e) =>
-                    handleInputChange(setFormData, 'registrationStartDate', e.target.value)
-                  }
-                  max={formData.registrationDeadline || undefined}
-                  required
-                />
-              </td>
-            </tr>
-            <tr>
-              <th>
-                <Text>등록 마감일 *</Text>
-              </th>
-              <td>
-                <TextField.Root
-                  ref={registrationDeadlineRef}
-                  size="3"
-                  type="date"
-                  value={formData.registrationDeadline}
-                  onChange={(e) =>
-                    handleInputChange(setFormData, 'registrationDeadline', e.target.value)
-                  }
-                  min={formData.registrationStartDate || undefined}
-                  required
-                />
-              </td>
-            </tr>
-
-            {/* 상태 필드 (수정 페이지에서만 표시) */}
-            {status !== undefined && setStatus && (
+        <div className="table-form">
+          <table className="table-form">
+            <tbody>
               <tr>
-                <th>
-                  <Text>대회 상태</Text>
-                </th>
+                <th style={{ width: '100px' }}>대회명 *</th>
                 <td>
-                  <Select.Root
+                  <TextField.Root
+                    ref={titleRef}
                     size="3"
-                    value={status}
-                    onValueChange={(v) => {
-                      if (!v) return;
-                      setStatus(v);
-                    }}
-                  >
-                    <Select.Trigger placeholder="상태를 선택하세요" />
-                    <Select.Content>
-                      <Select.Item value="upcoming">예정</Select.Item>
-                      <Select.Item value="ongoing">진행중</Select.Item>
-                      <Select.Item value="completed">완료</Select.Item>
-                      <Select.Item value="cancelled">취소</Select.Item>
-                    </Select.Content>
-                  </Select.Root>
+                    value={formData.title}
+                    onChange={(e) => handleInputChange(setFormData, 'title', e.target.value)}
+                    placeholder="대회명을 입력하세요"
+                  />
                 </td>
               </tr>
-            )}
+              <tr>
+                <th>
+                  <Text>장소 *</Text>
+                </th>
+                <td>
+                  <TextField.Root
+                    ref={locationRef}
+                    size="3"
+                    value={formData.location}
+                    onChange={(e) => handleInputChange(setFormData, 'location', e.target.value)}
+                    placeholder="대회 장소를 입력하세요"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <Text>참가인원</Text>
+                </th>
+                <td>
+                  <TextField.Root
+                    size="3"
+                    value={formData.participants || ''}
+                    onChange={(e) => handleInputChange(setFormData, 'participants', e.target.value)}
+                    placeholder="예: 100명(남 60, 여 40)"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <Text>주최</Text>
+                </th>
+                <td>
+                  <TextField.Root
+                    size="3"
+                    value={formData.host || ''}
+                    onChange={(e) => handleInputChange(setFormData, 'host', e.target.value)}
+                    placeholder="주최 단체 또는 인물 입력"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <Text>주관</Text>
+                </th>
+                <td>
+                  <TextField.Root
+                    size="3"
+                    value={formData.organizer || ''}
+                    onChange={(e) => handleInputChange(setFormData, 'organizer', e.target.value)}
+                    placeholder="주관 단체 또는 인물 입력"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <Text>대회 유형 *</Text>
+                </th>
+                <td>
+                  <RadioGroup.Root
+                    value={formData.tournamentType}
+                    onValueChange={(value) =>
+                      handleInputChange(
+                        setFormData,
+                        'tournamentType',
+                        value as 'individual' | 'team',
+                      )
+                    }
+                  >
+                    <Flex gap="3">
+                      <Flex gap="2" align="center">
+                        <RadioGroup.Item value="individual" id="individual" />
+                        <Text as="label" htmlFor="individual" size="3">
+                          개인전
+                        </Text>
+                      </Flex>
+                      <Flex gap="2" align="center">
+                        <RadioGroup.Item value="team" id="team" />
+                        <Text as="label" htmlFor="team" size="3">
+                          단체전
+                        </Text>
+                      </Flex>
+                    </Flex>
+                  </RadioGroup.Root>
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <Text>시작일 *</Text>
+                </th>
+                <td>
+                  <TextField.Root
+                    ref={startDateRef}
+                    size="3"
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) => handleInputChange(setFormData, 'startDate', e.target.value)}
+                    max={formData.endDate || undefined}
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <Text>종료일</Text>
+                </th>
+                <td>
+                  <TextField.Root
+                    size="3"
+                    type="date"
+                    value={formData.endDate}
+                    onChange={(e) => handleInputChange(setFormData, 'endDate', e.target.value)}
+                    min={formData.startDate || undefined}
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <Text>등록 시작일 *</Text>
+                </th>
+                <td>
+                  <TextField.Root
+                    ref={registrationStartDateRef}
+                    size="3"
+                    type="date"
+                    value={formData.registrationStartDate}
+                    onChange={(e) =>
+                      handleInputChange(setFormData, 'registrationStartDate', e.target.value)
+                    }
+                    max={formData.registrationDeadline || undefined}
+                    required
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <Text>등록 마감일 *</Text>
+                </th>
+                <td>
+                  <TextField.Root
+                    ref={registrationDeadlineRef}
+                    size="3"
+                    type="date"
+                    value={formData.registrationDeadline}
+                    onChange={(e) =>
+                      handleInputChange(setFormData, 'registrationDeadline', e.target.value)
+                    }
+                    min={formData.registrationStartDate || undefined}
+                    required
+                  />
+                </td>
+              </tr>
 
-            <tr>
-              <th>
-                <Text>참가비</Text>
-              </th>
-              <td>
-                <TextField.Root
-                  size="3"
-                  type="number"
-                  min="0"
-                  value={formData.entryFee}
-                  onChange={(e) =>
-                    handleInputChange(setFormData, 'entryFee', parseInt(e.target.value) || 0)
-                  }
-                  placeholder="참가비 입력"
-                />
-              </td>
-            </tr>
-            <tr>
-              <th>
-                <Text>입금계좌</Text>
-              </th>
-              <td>
-                <TextField.Root
-                  size="3"
-                  value={formData.bankAccount}
-                  onChange={(e) => handleInputChange(setFormData, 'bankAccount', e.target.value)}
-                  placeholder="입금계좌 입력"
-                />
-              </td>
-            </tr>
-            <tr>
-              <th>
-                <Text>예금주</Text>
-              </th>
-              <td>
-                <TextField.Root
-                  size="3"
-                  value={formData.accountHolder}
-                  onChange={(e) => handleInputChange(setFormData, 'accountHolder', e.target.value)}
-                  placeholder="예금주 입력"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              <tr>
+                <th>
+                  <Text>참가비</Text>
+                </th>
+                <td>
+                  <TextField.Root
+                    size="3"
+                    type="number"
+                    min="0"
+                    value={formData.entryFee}
+                    onChange={(e) =>
+                      handleInputChange(setFormData, 'entryFee', parseInt(e.target.value) || 0)
+                    }
+                    placeholder="참가비 입력"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <Text>입금계좌</Text>
+                </th>
+                <td>
+                  <TextField.Root
+                    size="3"
+                    value={formData.bankAccount}
+                    onChange={(e) => handleInputChange(setFormData, 'bankAccount', e.target.value)}
+                    placeholder="입금계좌 입력"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <Text>예금주</Text>
+                </th>
+                <td>
+                  <TextField.Root
+                    size="3"
+                    value={formData.accountHolder}
+                    onChange={(e) =>
+                      handleInputChange(setFormData, 'accountHolder', e.target.value)
+                    }
+                    placeholder="예금주 입력"
+                  />
+                </td>
+              </tr>
+              {/* 상태 필드 (수정 페이지에서만 표시) */}
+              {status !== undefined && setStatus && (
+                <tr>
+                  <th>
+                    <Text>대회 상태</Text>
+                  </th>
+                  <td>
+                    <Select.Root
+                      size="3"
+                      value={status}
+                      onValueChange={(v) => {
+                        if (!v) return;
+                        setStatus(v);
+                      }}
+                    >
+                      <Select.Trigger placeholder="상태를 선택하세요" />
+                      <Select.Content>
+                        <Select.Item value="upcoming">예정</Select.Item>
+                        <Select.Item value="ongoing">진행중</Select.Item>
+                        <Select.Item value="completed">완료</Select.Item>
+                        <Select.Item value="cancelled">취소</Select.Item>
+                      </Select.Content>
+                    </Select.Root>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
         {/* 참가부서별 상세 정보 입력 버튼 */}
         <Flex justify="center" mt="4">
@@ -513,62 +559,64 @@ export default function TournamentForm({
         )}
 
         {/* 포스트 링크 */}
-        <table className="table-form">
-          <tbody>
-            <tr>
-              <th>
-                <Text>대회 설명</Text>
-              </th>
-              <td>
-                <Select.Root
-                  size="3"
-                  value={formData.descriptionPostId || 'none'}
-                  onValueChange={(value) =>
-                    handleInputChange(
-                      setFormData,
-                      'descriptionPostId',
-                      value === 'none' ? '' : value,
-                    )
-                  }
-                >
-                  <Select.Trigger placeholder="대회 설명 포스트를 선택하세요" />
-                  <Select.Content>
-                    <Select.Item value="none">선택하지 않음</Select.Item>
-                    {schedulePosts.map((post) => (
-                      <Select.Item key={post._id} value={post._id}>
-                        {post.title}
-                      </Select.Item>
-                    ))}
-                  </Select.Content>
-                </Select.Root>
-              </td>
-            </tr>
-            <tr>
-              <th>
-                <Text>대회 규칙</Text>
-              </th>
-              <td>
-                <Select.Root
-                  size="3"
-                  value={formData.rulesPostId || 'none'}
-                  onValueChange={(value) =>
-                    handleInputChange(setFormData, 'rulesPostId', value === 'none' ? '' : value)
-                  }
-                >
-                  <Select.Trigger placeholder="대회 규칙 포스트를 선택하세요" />
-                  <Select.Content>
-                    <Select.Item value="none">선택하지 않음</Select.Item>
-                    {infoPosts.map((post) => (
-                      <Select.Item key={post._id} value={post._id}>
-                        {post.title}
-                      </Select.Item>
-                    ))}
-                  </Select.Content>
-                </Select.Root>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="table-form">
+          <table className="table-form">
+            <tbody>
+              <tr>
+                <th>
+                  <Text>대회 요강</Text>
+                </th>
+                <td>
+                  <Select.Root
+                    size="3"
+                    value={formData.descriptionPostId || 'none'}
+                    onValueChange={(value) =>
+                      handleInputChange(
+                        setFormData,
+                        'descriptionPostId',
+                        value === 'none' ? '' : value,
+                      )
+                    }
+                  >
+                    <Select.Trigger placeholder="대회 설명 포스트를 선택하세요" />
+                    <Select.Content>
+                      <Select.Item value="none">선택하지 않음</Select.Item>
+                      {schedulePosts.map((post) => (
+                        <Select.Item key={post._id} value={post._id}>
+                          {post.title}
+                        </Select.Item>
+                      ))}
+                    </Select.Content>
+                  </Select.Root>
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <Text>대회 규칙</Text>
+                </th>
+                <td>
+                  <Select.Root
+                    size="3"
+                    value={formData.rulesPostId || 'none'}
+                    onValueChange={(value) =>
+                      handleInputChange(setFormData, 'rulesPostId', value === 'none' ? '' : value)
+                    }
+                  >
+                    <Select.Trigger placeholder="대회 규칙 포스트를 선택하세요" />
+                    <Select.Content>
+                      <Select.Item value="none">선택하지 않음</Select.Item>
+                      {infoPosts.map((post) => (
+                        <Select.Item key={post._id} value={post._id}>
+                          {post.title}
+                        </Select.Item>
+                      ))}
+                    </Select.Content>
+                  </Select.Root>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         <Flex gap="3" justify="end" className="btn-wrap">
           <Button type="button" variant="soft" onClick={onCancel} size="3">

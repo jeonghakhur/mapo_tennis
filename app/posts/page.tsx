@@ -12,12 +12,23 @@ import { hasPermissionLevel } from '@/lib/authUtils';
 
 export default function PostsPage() {
   const { data: session } = useSession();
-  const { user } = useUser(session?.user?.email);
+  const { user, isLoading: userLoading } = useUser(session?.user?.email);
   const [showAll, setShowAll] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchKeyword, setSearchKeyword] = useState('');
   const { posts, isLoading } = usePosts(showAll);
   const router = useRouter();
+
+  // user 정보가 로딩 중일 때는 로딩 UI를 먼저 보여줌
+  if (userLoading) {
+    return (
+      <Container>
+        <Box>
+          <Text>로딩 중...</Text>
+        </Box>
+      </Container>
+    );
+  }
 
   // 권한 체크 (레벨 4 이상)
   if (session && !hasPermissionLevel(user, 4)) {
@@ -44,7 +55,7 @@ export default function PostsPage() {
     { value: 'notice', label: '공지사항' },
     { value: 'event', label: '이벤트' },
     { value: 'general', label: '일반' },
-    { value: 'tournament_schedule', label: '대회일정' },
+    { value: 'tournament_rules', label: '대회규칙' },
     { value: 'tournament_info', label: '대회요강' },
   ];
 
@@ -128,7 +139,7 @@ export default function PostsPage() {
       notice: '공지사항',
       event: '이벤트',
       general: '일반',
-      tournament_schedule: '대회일정',
+      tournament_rules: '대회일정',
       tournament_info: '대회요강',
     };
     return labels[category] || '일반';
@@ -246,7 +257,10 @@ export default function PostsPage() {
                       </Text>
 
                       <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <span>작성자: {post.author}</span>
+                        <span>
+                          작성자:
+                          {typeof post.author === 'string' ? post.author : post.author?.name || ''}
+                        </span>
                         <span>생성일: {formatDate(post.createdAt)}</span>
                         {post.publishedAt && <span>발행일: {formatDate(post.publishedAt)}</span>}
                       </div>

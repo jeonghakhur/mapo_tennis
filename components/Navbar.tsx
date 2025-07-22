@@ -188,6 +188,7 @@ function getPageTitle(pathname: string): string {
     '/club': '클럽',
     '/club-member': '클럽멤버',
     '/posts': '포스트',
+    '/posts/create': '포스트 작성',
     '/expenses': '지출내역',
     '/tournaments': '대회일정',
     '/notifications': '알림',
@@ -197,14 +198,17 @@ function getPageTitle(pathname: string): string {
     '/welcome': '회원 가입',
   };
 
-  // 동적 라우트 처리
+  // 1. 먼저 정확히 일치하는 titleMap에서 찾기
+  if (titleMap[pathname]) return titleMap[pathname];
+
+  // 2. 그 다음에 동적 라우트 처리
   if (pathname.startsWith('/club/')) return '클럽 상세';
   if (pathname.startsWith('/club-member/')) return '클럽멤버';
   if (pathname.startsWith('/posts/')) return '포스트';
   if (pathname.startsWith('/expenses/')) return '지출내역';
   if (pathname.startsWith('/tournaments/') && pathname.includes('/apply')) return '참가신청';
-  if (pathname.startsWith('/tournaments/')) return '대회';
+  if (pathname.startsWith('/tournaments/')) return '대회 상세';
   if (pathname.startsWith('/admin/users/')) return '회원 정보 수정';
 
-  return titleMap[pathname] || '페이지';
+  return '페이지';
 }

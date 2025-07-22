@@ -11,6 +11,9 @@ export interface Tournament {
   descriptionPostId?: string;
   rulesPostId?: string;
   status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+  host?: string;
+  organizer?: string;
+  participants?: string;
   divisions?: Array<{
     _key: string; // Sanity Studio에서 필요한 고유 키
     division: string;
@@ -41,6 +44,9 @@ export interface TournamentFormData {
   registrationDeadline?: string;
   descriptionPostId?: string | null;
   rulesPostId?: string | null;
+  host?: string;
+  organizer?: string;
+  participants?: string;
   divisions?: Array<{
     _key: string; // Sanity Studio에서 필요한 고유 키
     division: string;

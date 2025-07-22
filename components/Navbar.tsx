@@ -74,7 +74,7 @@ export default function Navbar() {
           {/* 알림 버튼 */}
           <Link href="/notifications" style={{ textDecoration: 'none', position: 'relative' }}>
             <BellRing size={24} className="text-gray-800" />
-            {unreadCount > 0 && (
+            {session && user?._id && unreadCount > 0 && pathname !== '/welcome' && (
               <Badge
                 color="red"
                 variant="solid"
@@ -186,6 +186,7 @@ function getPageTitle(pathname: string): string {
     '/profile': '프로필',
     '/tournament-applications/admin': '전체 참가신청 목록',
     '/admin/users': '회원 관리',
+    '/welcome': '회원 가입',
   };
 
   // 동적 라우트 처리
@@ -193,7 +194,9 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/club-member/')) return '클럽멤버';
   if (pathname.startsWith('/posts/')) return '포스트';
   if (pathname.startsWith('/expenses/')) return '지출내역';
+  if (pathname.startsWith('/tournaments/') && pathname.includes('/apply')) return '참가신청';
   if (pathname.startsWith('/tournaments/')) return '대회';
+  if (pathname.startsWith('/admin/users/')) return '회원 정보 수정';
 
   return titleMap[pathname] || '페이지';
 }

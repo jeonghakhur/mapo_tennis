@@ -1,6 +1,5 @@
 import { client } from '@/sanity/lib/client';
 import type { ClubMember, ClubMemberInput } from '@/model/clubMember';
-import { setUserApproved } from './user';
 
 export async function getClubMembers(): Promise<ClubMember[]> {
   return await client.fetch(
@@ -64,7 +63,6 @@ export async function approveClubMemberByAdmin({
   gender,
   birth,
   score,
-  userId,
 }: {
   user: string;
   clubId: string;
@@ -73,7 +71,6 @@ export async function approveClubMemberByAdmin({
   gender?: string;
   birth?: string;
   score?: number;
-  userId?: string;
 }) {
   // clubMember가 있는지 확인
   const existing = await client.fetch(
@@ -108,9 +105,9 @@ export async function approveClubMemberByAdmin({
       score,
     });
   }
-  // userId가 있으면 user 문서도 승인 처리
-  if (userId) {
-    await setUserApproved(userId);
-  }
+  // userId가 있으면 user 문서도 승인 처리 - 제거됨
+  // if (userId) {
+  //   await setUserApproved(userId);
+  // }
   return clubMemberResult;
 }

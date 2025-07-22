@@ -158,26 +158,20 @@ export default function ClubSelector({
 
   return (
     <Box>
-      <Text size="3" weight="bold" mb="3">
-        가입 클럽 선택
-      </Text>
-
-      <Box mb="4">
-        <Combobox
-          options={allClubs
-            .filter((club) => club._id)
-            .map((club) => ({
-              value: club._id!,
-              label: club.name,
-            }))}
-          value={selectedClubIds.length > 0 ? selectedClubIds[0] : ''}
-          onValueChange={handleClubChange}
-          placeholder="클럽 선택"
-          searchPlaceholder="클럽 검색..."
-          emptyMessage="클럽이 없습니다."
-          disabled={disabled || !isNameEntered}
-        />
-      </Box>
+      <Combobox
+        options={allClubs
+          .filter((club) => club._id)
+          .map((club) => ({
+            value: club._id!,
+            label: club.name,
+          }))}
+        value={selectedClubIds.length > 0 ? selectedClubIds[0] : ''}
+        onValueChange={handleClubChange}
+        placeholder="클럽 선택"
+        searchPlaceholder="클럽 검색..."
+        emptyMessage="클럽이 없습니다."
+        disabled={disabled || !isNameEntered}
+      />
       <ConfirmDialog
         title="알림"
         description={alertDialogMessage}
@@ -189,27 +183,20 @@ export default function ClubSelector({
       />
 
       {selectedClubIds.length > 0 && (
-        <Box
-          mt="4"
-          p="3"
-          style={{ background: '#f0f9ff', borderRadius: 8, border: '1px solid #bae6fd' }}
-        >
-          <Text size="2" weight="bold" mb="2" color="blue">
-            선택된 클럽 ({selectedClubIds.length}개):
-          </Text>
-          <Box>
-            {selectedClubIds.map((clubId) => {
-              const club = allClubs.find((c) => c._id === clubId);
-              return (
-                <Flex key={clubId} align="center" gap="3" mb="2">
-                  <Checkbox checked={true} onCheckedChange={() => handleClubToggle(clubId)} />
-                  <Text size="2" style={{ color: '#0369a1' }}>
-                    {club?.name || '알 수 없는 클럽'}
-                  </Text>
-                </Flex>
-              );
-            })}
-          </Box>
+        <Box mt="4" pl="1">
+          {selectedClubIds.map((clubId) => {
+            const club = allClubs.find((c) => c._id === clubId);
+            return (
+              <Flex key={clubId} align="center" gap="3" mb="2">
+                <Checkbox
+                  size="3"
+                  checked={true}
+                  onCheckedChange={() => handleClubToggle(clubId)}
+                />
+                <Text size="3">{club?.name || '알 수 없는 클럽'}</Text>
+              </Flex>
+            );
+          })}
         </Box>
       )}
     </Box>

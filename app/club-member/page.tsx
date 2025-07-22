@@ -257,8 +257,8 @@ export default function ClubMemberListPage() {
               </Flex>
             </Dialog.Content>
           </Dialog.Root>
-          <div className="overflow-x-auto">
-            <table className="table-form">
+          <div className="table-view">
+            <table>
               <thead>
                 <tr>
                   <th>순번</th>

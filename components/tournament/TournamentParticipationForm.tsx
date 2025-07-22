@@ -18,9 +18,9 @@ export function TournamentParticipationForm({
   contactRef,
 }: TournamentParticipationFormProps) {
   return (
-    <>
-      <h2 className="text-lg font-bold mt-8">대회 참석 정보</h2>
-      <table className="table-form">
+    <div className="table-form">
+      <h2 className="text-lg font-bold mt-8 mb-2">대회 참석 정보</h2>
+      <table>
         <tbody>
           <tr>
             <th style={{ width: '100px' }}>참가부서 *</th>
@@ -88,6 +88,6 @@ export function TournamentParticipationForm({
           </tr>
         </tbody>
       </table>
-    </>
+    </div>
   );
 }

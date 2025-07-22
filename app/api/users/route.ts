@@ -47,6 +47,7 @@ async function getUsersHandler(req: NextRequest) {
       score,
       level,
       address,
+      isApprovedUser,
       clubs[]->{
         _id,
         name,

@@ -7,6 +7,7 @@ import { useUser, useUserManagement, type UserData } from '@/hooks/useUser';
 import { useLoading } from '@/hooks/useLoading';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import UserForm from '@/components/UserForm';
+import Container from '@/components/Container';
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -38,11 +39,11 @@ export default function WelcomePage() {
   };
 
   return (
-    <div style={{ padding: 20 }}>
+    <Container>
       {alreadyRegistered && <AlreadyRegisteredDialog open={!!alreadyRegistered} />}
       {session?.user?.email && !userLoading && !alreadyRegistered && (
         <>
-          {loading && <LoadingOverlay size="3" />}
+          {loading && <LoadingOverlay />}
           <UserForm
             user={{ email: session.user.email }}
             onSubmit={handleSubmit}
@@ -51,10 +52,11 @@ export default function WelcomePage() {
             submitButtonProps={{
               style: { marginTop: 16, width: '100%' },
             }}
+            showAgreements={true}
           />
           {error && <span style={{ color: 'red', marginTop: 8 }}>{error}</span>}
         </>
       )}
-    </div>
+    </Container>
   );
 }

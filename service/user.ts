@@ -24,6 +24,7 @@ export async function upsertUser({
   level,
   address,
   clubs,
+  isApprovedUser,
 }: Omit<User, '_id' | '_type'> & { clubs?: string[] | ClubRef[] }): Promise<User> {
   try {
     if (!email) throw new Error('email is required');
@@ -49,6 +50,9 @@ export async function upsertUser({
       if (clubs !== undefined) {
         updateData.clubs = normalizeClubs(clubs);
       }
+      if (isApprovedUser !== undefined) {
+        updateData.isApprovedUser = isApprovedUser;
+      }
       result = await client.patch(existing._id).set(updateData).commit();
     } else if (!existing) {
       // 신규 유저: level을 1로 저장
@@ -63,6 +67,7 @@ export async function upsertUser({
         level: level || 1,
         address,
         clubs: clubs ? normalizeClubs(clubs) : [],
+        isApprovedUser: isApprovedUser ?? false,
       };
       result = await client.create(createData);
     } else {
@@ -115,6 +120,10 @@ export async function updateUser(
 
     if (userData.clubs !== undefined) {
       updateData.clubs = normalizeClubs(userData.clubs);
+    }
+
+    if (userData.isApprovedUser !== undefined) {
+      updateData.isApprovedUser = userData.isApprovedUser;
     }
 
     const result = await client.patch(id).set(updateData).commit();

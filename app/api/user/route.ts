@@ -87,7 +87,8 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const { name, phone, gender, birth, score, email, address, clubs } = await req.json();
+    const { name, phone, gender, birth, score, email, address, clubs, isApprovedUser } =
+      await req.json();
     if (!name || !phone || !gender || !birth || !score || !email) {
       return NextResponse.json({ error: '필수 정보 누락' }, { status: 400 });
     }
@@ -108,6 +109,8 @@ export async function PUT(req: NextRequest) {
       level: existingUser.level || 1, // 기존 레벨 유지
       address,
       clubs: clubs || [],
+      isApprovedUser:
+        isApprovedUser !== undefined ? isApprovedUser : (existingUser.isApprovedUser ?? false),
     };
 
     const result = await upsertUser(userData);

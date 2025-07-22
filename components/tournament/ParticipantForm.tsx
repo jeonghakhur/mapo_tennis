@@ -10,9 +10,9 @@ export function ParticipantForm({
   sharedClubId = '',
 }: ParticipantFormProps) {
   return (
-    <>
-      <div className="font-bold text-lg">{label}</div>
-      <table className="table-form">
+    <div className="table-form">
+      <div className="font-bold text-lg mb-2">{label}</div>
+      <table>
         <tbody>
           <tr>
             <th style={{ width: '100px' }}>이름 *</th>
@@ -96,6 +96,6 @@ export function ParticipantForm({
           </tr>
         </tbody>
       </table>
-    </>
+    </div>
   );
 }

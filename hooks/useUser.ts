@@ -11,6 +11,7 @@ export type UserData = {
   score: number;
   address?: string;
   clubs: string[];
+  isApprovedUser?: boolean;
 };
 
 // 이메일로 사용자 정보 조회

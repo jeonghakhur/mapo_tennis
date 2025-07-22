@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { approveClubMemberByAdmin } from '@/service/clubMember';
+import { withPermission } from '@/lib/apiUtils';
 
-export async function POST(req: NextRequest) {
+async function approveHandler(req: NextRequest) {
   try {
-    const { user, clubId, email, phone, gender, birth, score, userId } = await req.json();
+    const { user, clubId, email, phone, gender, birth, score } = await req.json();
     if (!user || !clubId) {
       return NextResponse.json({ error: 'user, clubId는 필수입니다.' }, { status: 400 });
     }
@@ -15,7 +16,6 @@ export async function POST(req: NextRequest) {
       gender,
       birth,
       score,
-      userId,
     });
     return NextResponse.json({ clubMember: result });
   } catch (error) {
@@ -25,3 +25,5 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+export const POST = (req: NextRequest) => withPermission(req, 5, approveHandler);

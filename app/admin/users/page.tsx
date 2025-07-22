@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Box, Text, TextField, Button, Flex, Badge, Select } from '@radix-ui/themes';
 import Container from '@/components/Container';
 import LoadingOverlay from '@/components/LoadingOverlay';
@@ -21,20 +21,34 @@ interface ClubWithApproval {
 export default function AdminUsersPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { loading } = useLoading();
 
-  const [page, setPage] = useState(1);
+  // URL 쿼리 파라미터에서 초기값 가져오기
+  const [page, setPage] = useState(parseInt(searchParams.get('page') || '1'));
   const [limit] = useState(20);
-  const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('createdAt');
-  const [sortOrder, setSortOrder] = useState('desc');
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'createdAt');
+  const [sortOrder, setSortOrder] = useState(searchParams.get('sortOrder') || 'desc');
   const [showFilter, setShowFilter] = useState(false);
+
+  // 디바운싱된 검색어
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+
+  // 디바운싱 효과
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500); // 500ms 지연
+
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const {
     users,
     pagination,
     error: swrError,
-  } = useAdminUsers({ page, limit, search, sortBy, sortOrder });
+  } = useAdminUsers({ page, limit, search: debouncedSearch, sortBy, sortOrder });
 
   // 관리자 권한 확인
   useEffect(() => {
@@ -51,32 +65,41 @@ export default function AdminUsersPage() {
     }
   }, [session, status, router]);
 
+  // URL 쿼리 파라미터 업데이트 함수
+  const updateURL = (newParams: Record<string, string>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(newParams).forEach(([key, value]) => {
+      if (value) {
+        params.set(key, value);
+      } else {
+        params.delete(key);
+      }
+    });
+    router.push(`/admin/users?${params.toString()}`);
+  };
+
   const handleSearch = () => {
     setPage(1);
+    updateURL({ search, page: '1' });
   };
 
-  const handlePageChange = (page: number) => {
-    setPage(page);
+  // 검색어 입력 시 URL 업데이트하지 않음 (디바운싱만 적용)
+  const handleSearchInputChange = (value: string) => {
+    setSearch(value);
+    setPage(1);
+    // URL 업데이트는 검색 버튼 클릭 시에만
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ko-KR');
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    updateURL({ page: newPage.toString() });
   };
 
-  const getGenderText = (gender: string) => {
-    return gender === 'male' ? '남성' : '여성';
-  };
-
-  const getLevelBadge = (level: number) => {
-    const colors = {
-      1: 'gray',
-      2: 'blue',
-      3: 'green',
-      4: 'orange',
-      5: 'red',
-    } as const;
-
-    return <Badge color={colors[level as keyof typeof colors] || 'gray'}>레벨 {level}</Badge>;
+  const handleSortChange = (newSortBy: string, newSortOrder: string) => {
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
+    setPage(1);
+    updateURL({ sortBy: newSortBy, sortOrder: newSortOrder, page: '1' });
   };
 
   // 로딩 중이거나 권한 확인 중일 때
@@ -124,7 +147,7 @@ export default function AdminUsersPage() {
           <TextField.Root
             placeholder="이름, 클럽명, 점수로 검색"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearchInputChange(e.target.value)}
             size="3"
             style={{ width: '100%' }}
           />
@@ -141,7 +164,11 @@ export default function AdminUsersPage() {
           <Text size="3" weight="bold">
             정렬 기준
           </Text>
-          <Select.Root value={sortBy} onValueChange={setSortBy} size="3">
+          <Select.Root
+            value={sortBy}
+            onValueChange={(value) => handleSortChange(value, sortOrder)}
+            size="3"
+          >
             <Select.Trigger />
             <Select.Content>
               <Select.Item value="createdAt">가입일</Select.Item>
@@ -154,7 +181,11 @@ export default function AdminUsersPage() {
           <Text size="3" weight="bold">
             정렬 순서
           </Text>
-          <Select.Root value={sortOrder} onValueChange={setSortOrder} size="3">
+          <Select.Root
+            value={sortOrder}
+            onValueChange={(value) => handleSortChange(sortBy, value)}
+            size="3"
+          >
             <Select.Trigger />
             <Select.Content>
               <Select.Item value="desc">내림차순</Select.Item>
@@ -184,10 +215,7 @@ export default function AdminUsersPage() {
               <th>성별</th>
               <th>생년월일</th>
               <th>점수</th>
-              <th>이메일</th>
-              <th>전화번호</th>
-              <th>레벨</th>
-              <th>가입일</th>
+              <th>회원승인</th>
             </tr>
           </thead>
           <tbody>
@@ -209,11 +237,6 @@ export default function AdminUsersPage() {
                           <Badge color="blue" variant="soft">
                             {club.name}
                           </Badge>
-                          {club.approvedByAdmin && (
-                            <Badge color="green" variant="solid" style={{ marginLeft: 2 }}>
-                              관리자 승인
-                            </Badge>
-                          )}
                         </span>
                       ))}
                     </Flex>
@@ -223,13 +246,10 @@ export default function AdminUsersPage() {
                     </Text>
                   )}
                 </td>
-                <td>{getGenderText(user.gender)}</td>
+                <td>{user.gender}</td>
                 <td>{user.birth}</td>
                 <td>{user.score}점</td>
-                <td className="!text-left">{user.email}</td>
-                <td>{user.phone}</td>
-                <td>{getLevelBadge(user.level)}</td>
-                <td>{formatDate(user._createdAt || '')}</td>
+                <td>{user.isApprovedUser ? '승인' : '대기'}</td>
               </tr>
             ))}
           </tbody>

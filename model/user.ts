@@ -11,6 +11,5 @@ export interface User {
   address?: string;
   clubs?: { _key: string; _ref: string; name?: string }[]; // 클럽
   isApprovedUser?: boolean;
-  approvedByAdmin?: boolean;
   _createdAt?: string;
 }

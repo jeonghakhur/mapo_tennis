@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { signOut, useSession } from 'next-auth/react';
-import { useUser } from '@/hooks/useUser';
+import { useUser, useUserManagement, type UserData } from '@/hooks/useUser';
 import SkeletonCard from '@/components/SkeletonCard';
 import Container from '@/components/Container';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -15,35 +15,19 @@ export default function ProfileForm() {
   const [successMessage, setSuccessMessage] = useState('');
   const { data: session } = useSession();
   const email = session?.user?.email;
-  const { user, isLoading, error: swrError } = useUser(email);
+  const { user, isLoading, error: swrError, mutate } = useUser(email);
   const { loading, withLoading } = useLoading();
+  const { updateUser } = useUserManagement();
 
-  const handleSubmit = async (data: {
-    name: string;
-    email?: string;
-    phone: string;
-    gender: string;
-    birth: string;
-    score: number;
-    address?: string;
-    clubs: string[];
-  }) => {
+  const handleSubmit = async (data: UserData) => {
     try {
       await withLoading(async () => {
-        const response = await fetch('/api/user', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ...data,
-            email: session?.user?.email,
-          }),
+        await updateUser({
+          ...data,
+          email: session?.user?.email,
         });
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || '회원 정보 수정에 실패했습니다.');
-        }
+        // SWR 캐시 갱신
+        await mutate();
         setSuccessMessage('회원 정보가 성공적으로 수정되었습니다.');
         setShowSuccessDialog(true);
       });

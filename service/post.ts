@@ -21,21 +21,45 @@ export async function getPublishedPosts(): Promise<Post[]> {
 export async function getAllPosts(): Promise<Post[]> {
   return await client.fetch(`
     *[_type == "post"]
-    | order(createdAt desc)
+    | order(createdAt desc){
+      ...,
+      author->{
+          _id,
+          name
+        }
+      }
   `);
 }
 
 // 포스트 상세 조회
 export async function getPost(id: string): Promise<Post | null> {
   if (!id) return null;
-  return await client.fetch(`*[_type == "post" && _id == $id][0]`, { id });
+  return await client.fetch(
+    `*[_type == "post" && _id == $id][0]{
+      ...,
+      author->{
+          _id,
+          name
+        }
+      }`,
+    { id },
+  );
 }
 
 // 카테고리별 포스트 조회
 export async function getPostsByCategory(category: string): Promise<Post[]> {
-  return await client.fetch(`*[_type == "post" && category == $category] | order(createdAt desc)`, {
-    category,
-  });
+  return await client.fetch(
+    `*[_type == "post" && category == $category] | order(createdAt desc){
+      ...,
+      author->{
+          _id,
+          name
+        }
+      }`,
+    {
+      category,
+    },
+  );
 }
 
 // 포스트 생성

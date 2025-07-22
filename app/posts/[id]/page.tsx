@@ -7,6 +7,9 @@ import { usePost } from '@/hooks/usePosts';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import type { Attachment } from '@/model/post';
 import { use } from 'react';
+import SkeletonCard from '@/components/SkeletonCard';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import { useState } from 'react';
 
 interface PostDetailPageProps {
   params: Promise<{
@@ -18,10 +21,11 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
   const { id } = use(params);
   const { post, isLoading } = usePost(id);
   const router = useRouter();
+  const [actionLoading, setActionLoading] = useState(false);
 
   const handleDelete = async () => {
     if (!post || !confirm(`"${post.title}" 포스트를 삭제하시겠습니까?`)) return;
-
+    setActionLoading(true);
     try {
       await fetch(`/api/posts?id=${id}`, { method: 'DELETE' });
       alert('포스트가 삭제되었습니다.');
@@ -29,6 +33,8 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
     } catch (error) {
       console.error('포스트 삭제 실패:', error);
       alert('포스트 삭제 중 오류가 발생했습니다.');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -72,7 +78,7 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
     return (
       <Container>
         <Box>
-          <Text>포스트를 불러오는 중...</Text>
+          <SkeletonCard lines={6} />
         </Box>
       </Container>
     );
@@ -91,6 +97,7 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
   return (
     <Container>
       <Box>
+        {actionLoading && <LoadingOverlay />}
         <Card className="p-6">
           <div className="space-y-4">
             {/* 헤더 */}
@@ -118,7 +125,9 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
 
             {/* 메타 정보 */}
             <div className="flex flex-wrap gap-4 text-sm text-gray-600 border-b pb-4">
-              <span>작성자: {post.author}</span>
+              <span>
+                작성자: {typeof post.author === 'string' ? post.author : post.author?.name || ''}
+              </span>
               <span>생성일: {formatDate(post.createdAt)}</span>
               {post.updatedAt && <span>수정일: {formatDate(post.updatedAt)}</span>}
               {post.publishedAt && <span>발행일: {formatDate(post.publishedAt)}</span>}

@@ -9,6 +9,11 @@ import MarkdownEditor from '@/components/MarkdownEditor';
 import FileUpload from '@/components/FileUpload';
 import type { PostInput } from '@/model/post';
 import { useEffect } from 'react';
+import { usePosts } from '@/hooks/usePosts';
+import { useLoading } from '@/hooks/useLoading';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import SkeletonCard from '@/components/SkeletonCard';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 export default function CreatePostPage() {
   const { data: session } = useSession();
@@ -25,8 +30,16 @@ export default function CreatePostPage() {
     isPublished: false,
     attachments: [],
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const { loading, withLoading } = useLoading();
   const [errors, setErrors] = useState<{ title?: string }>({});
+  const [dialog, setDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    color?: 'green' | 'red';
+  }>({ open: false, title: '', description: '', color: 'green' });
+
+  const { createPost } = usePosts();
 
   // 권한이 없는 경우 포스트 목록으로 리다이렉트
   useEffect(() => {
@@ -41,6 +54,16 @@ export default function CreatePostPage() {
       }));
     }
   }, [session, canManagePosts, router]);
+
+  if (!session) {
+    return (
+      <Container>
+        <Box>
+          <SkeletonCard lines={6} />
+        </Box>
+      </Container>
+    );
+  }
 
   // 권한이 없는 경우 로딩 상태 표시
   if (session && !canManagePosts) {
@@ -66,75 +89,69 @@ export default function CreatePostPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const response = await fetch('/api/posts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        await response.json();
-        alert('포스트가 생성되었습니다.');
-        router.push('/posts');
-      } else {
-        const error = await response.json();
-        alert(`생성 실패: ${error.error}`);
+    if (!validateForm()) return;
+    await withLoading(async () => {
+      try {
+        await createPost(formData);
+        setDialog({
+          open: true,
+          title: '성공',
+          description: '포스트가 생성되었습니다.',
+          color: 'green',
+        });
+        setTimeout(() => router.push('/posts'), 1000);
+      } catch {
+        setDialog({
+          open: true,
+          title: '실패',
+          description: '포스트 생성에 실패했습니다.',
+          color: 'red',
+        });
       }
-    } catch (error) {
-      console.error('포스트 생성 실패:', error);
-      alert('포스트 생성 중 오류가 발생했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
   const handleSave = async (publish: boolean) => {
-    if (!validateForm()) {
-      return;
-    }
-
-    const updatedData = { ...formData, isPublished: publish };
-    setFormData(updatedData);
-
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/posts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updatedData),
-      });
-
-      if (response.ok) {
-        await response.json();
-        alert(publish ? '포스트가 발행되었습니다.' : '포스트가 임시저장되었습니다.');
-        router.push('/posts');
-      } else {
-        const error = await response.json();
-        alert(`저장 실패: ${error.error}`);
+    if (!validateForm()) return;
+    await withLoading(async () => {
+      try {
+        await createPost({ ...formData, isPublished: publish });
+        setDialog({
+          open: true,
+          title: '성공',
+          description: publish ? '포스트가 발행되었습니다.' : '포스트가 임시저장되었습니다.',
+          color: 'green',
+        });
+        setTimeout(() => router.push('/posts'), 1000);
+      } catch {
+        setDialog({
+          open: true,
+          title: '실패',
+          description: '포스트 저장에 실패했습니다.',
+          color: 'red',
+        });
       }
-    } catch (error) {
-      console.error('포스트 저장 실패:', error);
-      alert('포스트 저장 중 오류가 발생했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
   return (
     <Container>
       <Box>
+        {loading && <LoadingOverlay />}
+        <ConfirmDialog
+          open={dialog.open}
+          onOpenChange={(open) => {
+            setDialog({ ...dialog, open });
+            if (!open && dialog.title === '성공') {
+              router.push('/posts');
+            }
+          }}
+          title={dialog.title}
+          description={dialog.description}
+          confirmText="확인"
+          confirmColor={dialog.color}
+          onConfirm={() => setDialog({ ...dialog, open: false })}
+        />
         <form onSubmit={handleSubmit} className="space-y-4">
           <Flex align="center" gap="3">
             <Text as="div" size="3" weight="bold">
@@ -223,13 +240,13 @@ export default function CreatePostPage() {
               type="button"
               variant="soft"
               onClick={() => handleSave(false)}
-              disabled={isLoading}
+              disabled={loading}
               size="3"
             >
               <Save size={16} />
               임시저장
             </Button>
-            <Button type="button" onClick={() => handleSave(true)} disabled={isLoading} size="3">
+            <Button type="button" onClick={() => handleSave(true)} disabled={loading} size="3">
               <Eye size={16} />
               발행
             </Button>

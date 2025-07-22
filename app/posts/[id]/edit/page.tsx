@@ -5,11 +5,13 @@ import { Save, Eye } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { usePost } from '@/hooks/usePosts';
+import { usePost, usePosts } from '@/hooks/usePosts';
 import MarkdownEditor from '@/components/MarkdownEditor';
 import FileUpload from '@/components/FileUpload';
 import type { PostInput } from '@/model/post';
 import { use } from 'react';
+import SkeletonCard from '@/components/SkeletonCard';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 interface EditPostPageProps {
   params: Promise<{
@@ -26,6 +28,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   const canManagePosts = session?.user?.level >= 4;
 
   const { post, isLoading } = usePost(id);
+  const { updatePost } = usePosts();
   const [formData, setFormData] = useState<PostInput>({
     title: '',
     content: '',
@@ -36,6 +39,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   });
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<{ title?: string }>({});
+  const [actionLoading, setActionLoading] = useState(false);
 
   // 권한이 없는 경우 포스트 목록으로 리다이렉트
   useEffect(() => {
@@ -70,35 +74,18 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   };
 
   const handleSave = async (publish: boolean) => {
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
+    setActionLoading(true);
     setIsSaving(true);
-    const updatedData = { ...formData, isPublished: publish };
-
     try {
-      const response = await fetch(`/api/posts?id=${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updatedData),
-      });
-
-      if (response.ok) {
-        await response.json();
-        alert(publish ? '포스트가 발행되었습니다.' : '포스트가 저장되었습니다.');
-        router.push('/posts');
-      } else {
-        const error = await response.json();
-        alert(`저장 실패: ${error.error}`);
-      }
-    } catch (error) {
-      console.error('포스트 저장 실패:', error);
-      alert('포스트 저장 중 오류가 발생했습니다.');
+      await updatePost(id, { ...formData, isPublished: publish });
+      alert(publish ? '포스트가 발행되었습니다.' : '포스트가 저장되었습니다.');
+      router.push('/posts');
+    } catch {
+      alert('저장 실패');
     } finally {
       setIsSaving(false);
+      setActionLoading(false);
     }
   };
 
@@ -117,7 +104,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     return (
       <Container>
         <Box>
-          <Text>포스트를 불러오는 중...</Text>
+          <SkeletonCard lines={6} />
         </Box>
       </Container>
     );
@@ -136,6 +123,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   return (
     <Container>
       <Box>
+        {actionLoading && <LoadingOverlay />}
         <form className="space-y-4">
           <Flex align="center" gap="3">
             <Text as="div" weight="bold">

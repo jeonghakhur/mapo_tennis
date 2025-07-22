@@ -1,7 +1,7 @@
 'use client';
 import { Box, Text, Button, Flex, Badge, Card, Select } from '@radix-ui/themes';
 import Container from '@/components/Container';
-import { Plus, Calendar, MapPin } from 'lucide-react';
+import { Calendar, MapPin, NotebookPen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useTournaments } from '@/hooks/useTournaments';
@@ -61,16 +61,6 @@ export default function TournamentsPage() {
         <SkeletonCard />
       ) : (
         <Box>
-          <Flex align="center" justify="between" mb="6">
-            <Text size="6" weight="bold">
-              테니스 대회 일정
-            </Text>
-            <Button onClick={() => router.push('/tournaments/create')} size="3">
-              <Plus size={16} />
-              대회 등록
-            </Button>
-          </Flex>
-
           <Flex gap="3" mb="4" align="center">
             <Text size="2" weight="bold">
               상태 필터:
@@ -169,6 +159,32 @@ export default function TournamentsPage() {
           )}
         </Box>
       )}
+      {/* 플로팅 대회 등록 버튼 */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          zIndex: 1000,
+        }}
+      >
+        <Button
+          style={{
+            width: '60px',
+            height: '60px',
+            borderRadius: '50%',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#2563eb',
+            color: '#fff',
+          }}
+          onClick={() => router.push('/tournaments/create')}
+        >
+          <NotebookPen size={24} />
+        </Button>
+      </div>
     </Container>
   );
 }

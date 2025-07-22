@@ -1,7 +1,7 @@
 'use client';
 import { Box, Text, Button, Flex, Badge, Card, TextField, Select } from '@radix-ui/themes';
 import Container from '@/components/Container';
-import { Plus, Edit, Trash2, Search } from 'lucide-react';
+import { Edit, Trash2, Search, NotebookPen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
@@ -9,6 +9,8 @@ import { usePosts } from '@/hooks/usePosts';
 import type { Post } from '@/model/post';
 import { useUser } from '@/hooks/useUser';
 import { hasPermissionLevel } from '@/lib/authUtils';
+import SkeletonCard from '@/components/SkeletonCard';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 export default function PostsPage() {
   const { data: session } = useSession();
@@ -16,8 +18,9 @@ export default function PostsPage() {
   const [showAll, setShowAll] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchKeyword, setSearchKeyword] = useState('');
-  const { posts, isLoading } = usePosts(showAll);
+  const { posts, isLoading, deletePost } = usePosts(showAll);
   const router = useRouter();
+  const [actionLoading, setActionLoading] = useState(false);
 
   // user 정보가 로딩 중일 때는 로딩 UI를 먼저 보여줌
   if (userLoading) {
@@ -80,23 +83,14 @@ export default function PostsPage() {
 
   const handleDelete = async (id: string, title: string) => {
     if (!canManagePosts) return;
-
     if (confirm(`"${title}" 포스트를 삭제하시겠습니까?`)) {
+      setActionLoading(true);
       try {
-        const response = await fetch(`/api/posts?id=${id}`, {
-          method: 'DELETE',
-        });
-
-        if (response.ok) {
-          // SWR 캐시 갱신
-          window.location.reload();
-        } else {
-          const error = await response.json();
-          alert(`포스트 삭제에 실패했습니다: ${error.error}`);
-        }
-      } catch (error) {
-        console.error('포스트 삭제 오류:', error);
-        alert('포스트 삭제 중 오류가 발생했습니다.');
+        await deletePost(id);
+      } catch {
+        alert('삭제 실패');
+      } finally {
+        setActionLoading(false);
       }
     }
   };
@@ -153,7 +147,7 @@ export default function PostsPage() {
     return (
       <Container>
         <Box>
-          <Text>포스트를 불러오는 중...</Text>
+          <SkeletonCard lines={6} />
         </Box>
       </Container>
     );
@@ -162,6 +156,7 @@ export default function PostsPage() {
   return (
     <Container>
       <Box>
+        {actionLoading && <LoadingOverlay />}
         {/* 필터 및 검색 영역 */}
         <div className="flex items-center gap-4 mb-6">
           {/* 카테고리 필터 */}
@@ -304,13 +299,29 @@ export default function PostsPage() {
 
         {/* 플로팅 새 포스트 작성 버튼 */}
         {canManagePosts && (
-          <div className="fixed bottom-6 right-6 z-50">
+          <div
+            style={{
+              position: 'fixed',
+              bottom: '24px',
+              right: '24px',
+              zIndex: 1000,
+            }}
+          >
             <Button
+              style={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: '#2563eb',
+                color: '#fff',
+              }}
               onClick={() => router.push('/posts/create')}
-              size="3"
-              className="w-12 h-12 rounded-full shadow-lg hover:shadow-xl transition-shadow bg-blue-600 hover:bg-blue-700"
             >
-              <Plus size={20} />
+              <NotebookPen size={24} />
             </Button>
           </div>
         )}

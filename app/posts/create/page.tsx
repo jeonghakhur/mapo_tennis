@@ -99,7 +99,7 @@ export default function CreatePostPage() {
           description: '포스트가 생성되었습니다.',
           color: 'green',
         });
-        setTimeout(() => router.push('/posts'), 1000);
+        // setTimeout(() => router.push('/posts'), 1000);
       } catch {
         setDialog({
           open: true,
@@ -122,7 +122,7 @@ export default function CreatePostPage() {
           description: publish ? '포스트가 발행되었습니다.' : '포스트가 임시저장되었습니다.',
           color: 'green',
         });
-        setTimeout(() => router.push('/posts'), 1000);
+        // setTimeout(() => router.push('/posts'), 1000);
       } catch {
         setDialog({
           open: true,

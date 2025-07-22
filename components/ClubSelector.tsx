@@ -13,7 +13,7 @@ interface ClubSelectorProps {
   selectedClubIds: string[];
   onClubsChange: (clubIds: string[]) => void;
   disabled?: boolean;
-  mode: 'signup' | 'edit' | 'adminEdit';
+  isNameEntered?: boolean;
 }
 
 export default function ClubSelector({
@@ -21,7 +21,7 @@ export default function ClubSelector({
   selectedClubIds,
   onClubsChange,
   disabled = false,
-  mode,
+  isNameEntered = true,
 }: ClubSelectorProps) {
   const [allClubs, setAllClubs] = useState<Club[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,8 +50,7 @@ export default function ClubSelector({
 
   // 사용자의 클럽 가입 여부 확인 - 실명이 입력된 후에만 실행
   useEffect(() => {
-    if (!userName || !allClubs.length) return;
-
+    if (!userName || !allClubs.length || !isNameEntered) return;
     const checkMembership = async () => {
       try {
         // 이름으로 클럽 회원 데이터를 직접 검색
@@ -70,8 +69,6 @@ export default function ClubSelector({
         `,
           { userName },
         );
-
-        // 각 클럽별로 가입 여부 확인
         const statusMap: Record<string, boolean> = {};
         allClubs.forEach((club) => {
           const isMember = clubMembers.some(
@@ -88,20 +85,19 @@ export default function ClubSelector({
     };
 
     checkMembership();
-  }, [userName, allClubs]);
-
-  useEffect(() => {
-    console.log('membershipStatus:', membershipStatus);
-    console.log('allClubs:', allClubs);
-    console.log('selectedClubIds:', selectedClubIds);
-  }, [membershipStatus, allClubs, selectedClubIds]);
+  }, [userName, allClubs, isNameEntered]);
 
   const handleClubChange = (clubId: string) => {
     if (selectedClubIds.includes(clubId)) {
       onClubsChange(selectedClubIds.filter((id) => id !== clubId));
     } else {
-      if (mode === 'signup') {
-        onClubsChange([...selectedClubIds, clubId]);
+      if (disabled || !isNameEntered) {
+        setAlertDialogMessage(
+          disabled
+            ? '클럽 선택이 비활성화되어 있습니다. 클럽을 추가할 수 없습니다.'
+            : '이름을 먼저 입력해 주세요.',
+        );
+        setAlertDialogOpen(true);
       } else {
         const isMember = membershipStatus[clubId] || false;
         if (isMember) {
@@ -160,8 +156,6 @@ export default function ClubSelector({
     );
   }
 
-  // Combobox disabled prop 디버깅 로그
-  console.log('Combobox disabled:', disabled);
   return (
     <Box>
       <Text size="3" weight="bold" mb="3">
@@ -181,7 +175,7 @@ export default function ClubSelector({
           placeholder="클럽 선택"
           searchPlaceholder="클럽 검색..."
           emptyMessage="클럽이 없습니다."
-          disabled={disabled}
+          disabled={disabled || !isNameEntered}
         />
       </Box>
       <ConfirmDialog
@@ -208,11 +202,7 @@ export default function ClubSelector({
               const club = allClubs.find((c) => c._id === clubId);
               return (
                 <Flex key={clubId} align="center" gap="3" mb="2">
-                  <Checkbox
-                    checked={true}
-                    onCheckedChange={() => handleClubToggle(clubId)}
-                    disabled={disabled}
-                  />
+                  <Checkbox checked={true} onCheckedChange={() => handleClubToggle(clubId)} />
                   <Text size="2" style={{ color: '#0369a1' }}>
                     {club?.name || '알 수 없는 클럽'}
                   </Text>

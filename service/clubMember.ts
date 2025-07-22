@@ -40,7 +40,6 @@ export async function createClubMember(data: ClubMemberInput) {
 }
 
 export async function updateClubMember(id: string, updateFields: Partial<ClubMemberInput>) {
-  console.log(id, updateFields);
   await client.patch(id).set(updateFields).commit();
 
   // 업데이트 후 확장된 정보로 다시 조회

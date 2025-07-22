@@ -26,31 +26,12 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    console.log('회원가입 요청 시작');
     const body = await req.json();
-    console.log('요청 데이터:', body);
-
     const { name, phone, gender, birth, score, email, address, clubs } = body;
 
-    console.log('클럽 데이터 상세:', {
-      clubs,
-      clubsType: typeof clubs,
-      isArray: Array.isArray(clubs),
-      clubsLength: clubs?.length,
-      firstClub: clubs?.[0],
-      firstClubType: typeof clubs?.[0],
-    });
-
     if (!name || !phone || !gender || !birth || !score || !email) {
-      console.log('필수 정보 누락:', { name, phone, gender, birth, score, email });
       return NextResponse.json({ error: '필수 정보 누락' }, { status: 400 });
     }
-
-    console.log('Sanity 클라이언트 설정 확인:', {
-      projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
-      dataset: process.env.NEXT_PUBLIC_SANITY_DATASET,
-      hasToken: !!process.env.SANITY_SECRET_TOKEN,
-    });
 
     const userData: Omit<User, '_id' | '_type'> & { clubs?: string[] } = {
       name,
@@ -64,14 +45,10 @@ export async function POST(req: NextRequest) {
       clubs: clubs ? clubs.map((clubId: string) => clubId) : [],
     };
 
-    console.log('사용자 데이터 준비 완료:', userData);
-
     const result = await upsertUser(userData);
-    console.log('사용자 생성/업데이트 완료:', result);
 
     // 회원가입 알림 생성 (관리자만 받음)
     if (result._id) {
-      console.log('알림 생성 시작');
       const { title } = createNotificationMessage('CREATE', 'USER', name);
 
       // 클럽 정보 가져오기
@@ -99,14 +76,12 @@ export async function POST(req: NextRequest) {
         message: detailedMessage,
         link: createNotificationLink('USER', result._id),
       });
-      console.log('알림 생성 완료');
     }
 
     return NextResponse.json({ ok: true, id: result._id });
   } catch (e) {
-    console.error('회원가입 오류 상세:', e);
-    console.error('오류 스택:', e instanceof Error ? e.stack : '스택 정보 없음');
-    return NextResponse.json({ error: '서버 오류', detail: String(e) }, { status: 500 });
+    console.error('회원가입 오류:', e);
+    return NextResponse.json({ error: '서버 오류' }, { status: 500 });
   }
 }
 

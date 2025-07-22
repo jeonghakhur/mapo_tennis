@@ -8,7 +8,6 @@ import {
   Box,
   Select,
   Separator,
-  Switch,
 } from '@radix-ui/themes';
 import ClubSelector from './ClubSelector';
 import type { ButtonProps } from '@radix-ui/themes';
@@ -43,7 +42,6 @@ interface UserFormProps {
   onLogout?: () => void;
   submitText?: string;
   submitButtonProps?: Partial<ButtonProps>;
-  mode: 'signup' | 'edit' | 'adminEdit';
 }
 
 export default function UserForm({
@@ -55,9 +53,9 @@ export default function UserForm({
   onLogout,
   submitText = '회원 정보 수정',
   submitButtonProps,
-  mode,
 }: UserFormProps) {
   const [name, setName] = useState('');
+  const [nameForClubSelector, setNameForClubSelector] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [gender, setGender] = useState('');
@@ -68,8 +66,6 @@ export default function UserForm({
   const [error, setError] = useState('');
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [focusMoveFn, setFocusMoveFn] = useState<(() => void) | null>(null);
-  const [isNameEntered, setIsNameEntered] = useState(false);
-  const [approvedByAdmin, setApprovedByAdmin] = useState(user?.approvedByAdmin ?? false);
 
   const nameRef = useRef<HTMLInputElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
@@ -80,7 +76,10 @@ export default function UserForm({
   // 최초 마운트 시에만 상태 초기화
   useEffect(() => {
     if (user) {
-      if (user.name) setName(user.name);
+      if (user.name) {
+        setName(user.name);
+        setNameForClubSelector(user.name);
+      }
       if (user.email) setEmail(user.email);
       if (user.phone) setPhone(user.phone);
       if (user.gender) setGender(user.gender);
@@ -88,7 +87,6 @@ export default function UserForm({
       if (user.score) setScore(String(user.score));
       if (user.address) setAddress(user.address);
       if (user.clubs) setSelectedClubIds(user.clubs.map((club) => club._ref));
-      if (typeof user.approvedByAdmin === 'boolean') setApprovedByAdmin(user.approvedByAdmin);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -120,8 +118,8 @@ export default function UserForm({
       setErrorDialogOpen(true);
       return;
     }
-    if (!/^\d{8}$/.test(birth)) {
-      setError('생년월일은 8자리(YYYYMMDD)로 입력해 주세요.');
+    if (!/^\d{4}$/.test(birth)) {
+      setError('생년월일은 4자리(YYYY)로 입력해 주세요.');
       setFocusMoveFn(() => () => birthRef.current?.focus());
       setErrorDialogOpen(true);
       return;
@@ -133,7 +131,7 @@ export default function UserForm({
       return;
     }
     // 클럽 필수 유효성 검사 (회원가입 모드에서만)
-    if (mode === 'signup' && selectedClubIds.length === 0) {
+    if (selectedClubIds.length === 0) {
       setError('가입할 클럽을 1개 이상 선택해 주세요.');
       setFocusMoveFn(null);
       setErrorDialogOpen(true);
@@ -149,21 +147,8 @@ export default function UserForm({
       score: Number(score),
       address,
       clubs: selectedClubIds,
-      approvedByAdmin,
     });
   };
-
-  // ClubSelector 활성화 조건 점검용 로그
-  useEffect(() => {
-    console.log(
-      'ClubSelector disabled:',
-      loading,
-      disabled,
-      name,
-      !name.trim(),
-      loading || disabled || !name.trim(),
-    );
-  }, [loading, disabled, name]);
 
   return (
     <form onSubmit={handleSubmit} noValidate>
@@ -199,10 +184,13 @@ export default function UserForm({
           placeholder="실명을 입력하세요"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          onBlur={() => setIsNameEntered(!!name.trim())}
+          onBlur={() => {
+            if (name) {
+              setNameForClubSelector(name);
+            }
+          }}
           size="3"
           radius="large"
-          disabled={disabled}
         />
       </Box>
       <Box mb="4">
@@ -216,14 +204,13 @@ export default function UserForm({
           onChange={(e) => setPhone(e.target.value)}
           size="3"
           radius="large"
-          disabled={disabled}
         />
       </Box>
       <Box mb="4">
         <Text as="label" size="3" mb="2" style={{ display: 'block' }}>
           성별
         </Text>
-        <RadioGroup.Root value={gender} onValueChange={setGender} disabled={disabled}>
+        <RadioGroup.Root value={gender} onValueChange={setGender}>
           <Flex gap="4" mt="2">
             <RadioGroup.Item value="male" id="male" ref={genderRef} />
             <Text as="label" htmlFor="male">
@@ -247,7 +234,6 @@ export default function UserForm({
           onChange={(e) => setBirth(e.target.value)}
           size="3"
           radius="large"
-          disabled={disabled}
         />
       </Box>
       <Box mb="4">
@@ -262,7 +248,6 @@ export default function UserForm({
               setScore(v);
             }
           }}
-          disabled={disabled}
         >
           <Select.Trigger placeholder="점수를 선택하세요" ref={scoreRef} />
           <Select.Content>
@@ -284,30 +269,17 @@ export default function UserForm({
           onChange={(e) => setAddress(e.target.value)}
           size="3"
           radius="large"
-          disabled={disabled}
         />
       </Box>
       <Box mb="4">
         <ClubSelector
-          userName={name}
+          userName={nameForClubSelector}
           selectedClubIds={selectedClubIds}
           onClubsChange={setSelectedClubIds}
-          disabled={loading || disabled || !isNameEntered}
-          mode={mode}
+          disabled={disabled || loading}
+          isNameEntered={!!nameForClubSelector}
         />
       </Box>
-      {mode === 'adminEdit' && (
-        <Box mb="4">
-          <Flex align="center" gap="3">
-            <Switch
-              checked={approvedByAdmin}
-              onCheckedChange={setApprovedByAdmin}
-              disabled={disabled || loading}
-            />
-            <Text size="3">관리자 승인(정회원 인정)</Text>
-          </Flex>
-        </Box>
-      )}
       {errorDialogOpen && (
         <ConfirmDialog
           title="입력 오류"
@@ -327,11 +299,11 @@ export default function UserForm({
       )}
       <Box className="btn-wrap">
         {showLogout && onLogout && (
-          <Button variant="outline" size="3" onClick={onLogout} disabled={disabled}>
+          <Button variant="outline" size="3" onClick={onLogout}>
             로그아웃
           </Button>
         )}
-        <Button type="submit" size="3" disabled={disabled || loading} {...submitButtonProps}>
+        <Button type="submit" size="3" {...submitButtonProps}>
           {submitText}
         </Button>
       </Box>

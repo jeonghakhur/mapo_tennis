@@ -32,7 +32,6 @@ export default function WelcomePage() {
     clubs: string[];
   }) => {
     setError('');
-    console.log(data);
     try {
       await withLoading(async () => {
         const response = await fetch('/api/user', {
@@ -65,7 +64,6 @@ export default function WelcomePage() {
             onSubmit={handleSubmit}
             loading={loading}
             submitText="회원가입 완료"
-            mode="signup"
             submitButtonProps={{
               style: { marginTop: 16, width: '100%' },
             }}

@@ -1,17 +1,15 @@
 'use client';
+import { useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { getUserById } from '@/service/user';
+import { getClubMemberByUserAndClub } from '@/service/clubMember';
+import { useLoading } from '@/hooks/useLoading';
+import LoadingOverlay from '@/components/LoadingOverlay';
 import SkeletonCard from '@/components/SkeletonCard';
 import Container from '@/components/Container';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import LoadingOverlay from '@/components/LoadingOverlay';
-import { useLoading } from '@/hooks/useLoading';
-import { getUserById } from '@/service/user';
-import { isAdmin } from '@/lib/authUtils';
 import UserForm from '@/components/UserForm';
 import type { User } from '@/model/user';
-import { getClubMemberByUserAndClub } from '@/service/clubMember';
 
 // clubs의 타입을 명확히 지정
 interface ClubRef {
@@ -22,9 +20,7 @@ interface ClubRef {
 }
 
 export default function AdminUserEditPage() {
-  const router = useRouter();
   const params = useParams();
-  const { data: session } = useSession();
   const userId = params.id as string;
 
   const [user, setUser] = useState<User | null>(null);
@@ -33,12 +29,6 @@ export default function AdminUserEditPage() {
   const [isLoading, setIsLoading] = useState(true);
   const { loading, withLoading } = useLoading();
   const [approvedByAdmin, setApprovedByAdmin] = useState<boolean | undefined>(undefined);
-
-  useEffect(() => {
-    if (session && !isAdmin(session.user)) {
-      router.replace('/');
-    }
-  }, [session, router]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -129,7 +119,6 @@ export default function AdminUserEditPage() {
             onSubmit={handleSubmit}
             loading={loading}
             submitText="회원 정보 수정"
-            mode="adminEdit"
           />
         </>
       )}

@@ -67,7 +67,7 @@ export const clubMember = {
     },
     {
       name: 'status',
-      type: 'boolean',
+      type: 'string',
       title: '회원활동 여부',
       options: { list: ['정회원', '휴회원', '탈퇴회원'] },
     },

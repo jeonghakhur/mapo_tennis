@@ -126,9 +126,6 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         {actionLoading && <LoadingOverlay />}
         <form className="space-y-4">
           <Flex align="center" gap="3">
-            <Text as="div" weight="bold">
-              카테고리 *
-            </Text>
             <Select.Root
               size="3"
               value={formData.category}
@@ -154,9 +151,6 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                 <Select.Item value="tournament_info">대회요강</Select.Item>
               </Select.Content>
             </Select.Root>
-            <Text as="div" size="3" weight="bold">
-              메인 노출 순서
-            </Text>
             <Select.Root
               size="3"
               value={formData.mainPriority !== undefined ? String(formData.mainPriority) : '0'}

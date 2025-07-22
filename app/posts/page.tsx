@@ -1,5 +1,5 @@
 'use client';
-import { Box, Text, Button, Flex, Badge, Card, TextField, Select } from '@radix-ui/themes';
+import { Box, Text, Button, Badge, Card, TextField, Select } from '@radix-ui/themes';
 import Container from '@/components/Container';
 import { Edit, Trash2, Search, NotebookPen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -15,10 +15,9 @@ import LoadingOverlay from '@/components/LoadingOverlay';
 export default function PostsPage() {
   const { data: session } = useSession();
   const { user } = useUser(session?.user?.email);
-  const [showAll, setShowAll] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchKeyword, setSearchKeyword] = useState('');
-  const { posts, isLoading, deletePost } = usePosts(showAll);
+  const { posts, isLoading, deletePost } = usePosts();
   const router = useRouter();
   const [actionLoading, setActionLoading] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
@@ -183,26 +182,6 @@ export default function PostsPage() {
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
               />
             </div>
-
-            {/* 발행 상태 필터 (레벨 4 이상만) */}
-            {canManagePosts && (
-              <Flex align="center" gap="3">
-                <Button
-                  variant={showAll ? 'soft' : 'solid'}
-                  onClick={() => setShowAll(false)}
-                  size="2"
-                >
-                  발행된 포스트만
-                </Button>
-                <Button
-                  variant={showAll ? 'solid' : 'soft'}
-                  onClick={() => setShowAll(true)}
-                  size="2"
-                >
-                  모든 포스트
-                </Button>
-              </Flex>
-            )}
           </div>
 
           {/* 결과 개수 표시 */}

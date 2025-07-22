@@ -7,54 +7,65 @@ export function usePosts(showAll = false) {
   // 생성
   const createPost = async (newPost: PostInput) => {
     const previous: Post[] = data?.posts || [];
-    mutate([newPost, ...previous], false); // Optimistic
-    try {
-      await fetch('/api/posts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newPost),
-      });
-      mutate(); // 서버 동기화
-    } catch (e) {
-      mutate(previous, false); // 롤백
-      throw e;
-    }
+    await mutate(
+      async () => {
+        await fetch('/api/posts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newPost),
+        });
+        // 서버 동기화
+        return undefined;
+      },
+      {
+        optimisticData: { posts: [newPost, ...previous] },
+        rollbackOnError: true,
+        revalidate: true,
+        populateCache: true,
+      },
+    );
   };
 
   // 수정
   const updatePost = async (id: string, updatedFields: Partial<PostInput>) => {
     const previous: Post[] = data?.posts || [];
-    mutate(
-      previous.map((p: Post) => (p._id === id ? { ...p, ...updatedFields } : p)),
-      false,
+    await mutate(
+      async () => {
+        await fetch(`/api/posts?id=${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedFields),
+        });
+        return undefined;
+      },
+      {
+        optimisticData: {
+          posts: previous.map((p: Post) => (p._id === id ? { ...p, ...updatedFields } : p)),
+        },
+        rollbackOnError: true,
+        revalidate: true,
+        populateCache: true,
+      },
     );
-    try {
-      await fetch(`/api/posts?id=${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedFields),
-      });
-      mutate();
-    } catch (e) {
-      mutate(previous, false);
-      throw e;
-    }
   };
 
   // 삭제
   const deletePost = async (id: string) => {
     const previous: Post[] = data?.posts || [];
-    mutate(
-      previous.filter((p: Post) => p._id !== id),
-      false,
+    await mutate(
+      async () => {
+        await fetch(`/api/posts?id=${id}`, { method: 'DELETE' });
+        return undefined;
+      },
+      {
+        optimisticData: {
+          posts: previous.filter((p: Post) => p._id !== id),
+        },
+        rollbackOnError: true,
+        revalidate: true,
+        populateCache: true,
+      },
     );
-    try {
-      await fetch(`/api/posts?id=${id}`, { method: 'DELETE' });
-      mutate();
-    } catch (e) {
-      mutate(previous, false);
-      throw e;
-    }
   };
 
   return {

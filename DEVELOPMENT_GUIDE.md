@@ -304,6 +304,25 @@ export function useCustomHook() {
 }
 ```
 
+### 7. Optimistic Updates (즉각적인 UI 반영)
+
+- 서버와 동기화가 필요한 데이터 생성, 수정, 삭제 작업에서는 반드시 SWR의 `mutate`와 `optimisticData` 옵션을 활용해 낙관적 업데이트(Optimistic UI)를 구현해야 합니다.
+- mutate의 첫 번째 인자로 직접 데이터를 넘기는 방식은 사용하지 않습니다.
+- 일관된 UX와 코드 유지보수를 위해 아래 원칙을 반드시 준수해 주세요.
+- 예시:
+  ```ts
+  await mutate(
+    async () => { /* 서버 요청 */ },
+    {
+      optimisticData: /* UI에 미리 반영할 데이터 */,
+      rollbackOnError: true,
+      revalidate: true,
+    }
+  );
+  ```
+- 사용자 액션에 즉시 UI 반영 후 서버 동기화
+- 에러 발생 시 이전 상태로 롤백
+
 ### 4. 스타일링
 
 - Radix UI 컴포넌트 우선 사용
@@ -569,69 +588,22 @@ export default function UserEditPage() {
 
 ### 7. Optimistic Updates (즉각적인 UI 반영)
 
-- SWR의 `mutate`와 `optimisticData` 활용
+- 서버와 동기화가 필요한 데이터 생성, 수정, 삭제 작업에서는 반드시 SWR의 `mutate`와 `optimisticData` 옵션을 활용해 낙관적 업데이트(Optimistic UI)를 구현해야 합니다.
+- mutate의 첫 번째 인자로 직접 데이터를 넘기는 방식은 사용하지 않습니다.
+- 일관된 UX와 코드 유지보수를 위해 아래 원칙을 반드시 준수해 주세요.
+- 예시:
+  ```ts
+  await mutate(
+    async () => { /* 서버 요청 */ },
+    {
+      optimisticData: /* UI에 미리 반영할 데이터 */,
+      rollbackOnError: true,
+      revalidate: true,
+    }
+  );
+  ```
 - 사용자 액션에 즉시 UI 반영 후 서버 동기화
 - 에러 발생 시 이전 상태로 롤백
-
-```typescript
-// 예시: 토너먼트 신청 시 즉각적인 UI 반영
-const handleApply = async () => {
-  // 1. Optimistic update - 즉시 UI 반영
-  mutate(
-    `/api/tournament-applications/${tournamentId}`,
-    (currentData) => ({
-      ...currentData,
-      isApplied: true,
-      applicationCount: (currentData.applicationCount || 0) + 1,
-    }),
-    false, // 서버 요청 전에 즉시 반영
-  );
-
-  try {
-    // 2. 실제 서버 요청
-    await fetch(`/api/tournament-applications/${tournamentId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(applicationData),
-    });
-
-    // 3. 성공 시 서버 데이터로 동기화
-    mutate(`/api/tournament-applications/${tournamentId}`);
-  } catch (error) {
-    // 4. 실패 시 이전 상태로 롤백
-    mutate(`/api/tournament-applications/${tournamentId}`);
-    console.error('신청 실패:', error);
-  }
-};
-```
-
-#### Optimistic Updates 패턴
-
-```typescript
-// 일반적인 패턴
-const optimisticUpdate = async (action, optimisticData, apiCall) => {
-  // 1. Optimistic update
-  mutate(key, optimisticData, false);
-
-  try {
-    // 2. API 호출
-    await apiCall();
-    // 3. 성공 시 서버 데이터로 동기화
-    mutate(key);
-  } catch (error) {
-    // 4. 실패 시 롤백
-    mutate(key);
-    throw error;
-  }
-};
-```
-
-#### 사용 예시들
-
-- **좋아요/북마크**: 즉시 하트/별 아이콘 변경
-- **폼 제출**: 제출 버튼 비활성화 및 로딩 상태
-- **댓글 작성**: 즉시 댓글 목록에 추가
-- **상태 변경**: 토글 버튼 즉시 반영
 
 ## 파일 구조 규칙
 

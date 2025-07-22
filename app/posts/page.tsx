@@ -159,7 +159,7 @@ export default function PostsPage() {
           {/* 필터 및 검색 영역 */}
           <div className="flex items-center gap-4 mb-6">
             {/* 카테고리 필터 */}
-            <Select.Root value={selectedCategory} onValueChange={setSelectedCategory}>
+            <Select.Root size="3" value={selectedCategory} onValueChange={setSelectedCategory}>
               <Select.Trigger />
               <Select.Content>
                 {categoryOptions.map((option) => (
@@ -173,6 +173,7 @@ export default function PostsPage() {
             {/* 검색 */}
             <div className="relative flex-1">
               <TextField.Root
+                size="3"
                 placeholder="제목이나 내용으로 검색..."
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}

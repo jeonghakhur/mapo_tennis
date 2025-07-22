@@ -154,9 +154,6 @@ export default function CreatePostPage() {
         />
         <form onSubmit={handleSubmit} className="space-y-4">
           <Flex align="center" gap="3">
-            <Text as="div" size="3" weight="bold">
-              카테고리
-            </Text>
             <Select.Root
               size="3"
               value={formData.category}
@@ -172,7 +169,7 @@ export default function CreatePostPage() {
                 })
               }
             >
-              <Select.Trigger />
+              <Select.Trigger placeholder="카테고리" />
               <Select.Content>
                 <Select.Item value="general">일반</Select.Item>
                 <Select.Item value="notice">공지사항</Select.Item>
@@ -181,15 +178,12 @@ export default function CreatePostPage() {
                 <Select.Item value="tournament_info">대회요강</Select.Item>
               </Select.Content>
             </Select.Root>
-            <Text as="div" size="2" weight="bold" mb="3">
-              메인 노출 순서
-            </Text>
             <Select.Root
               size="3"
               value={formData.mainPriority !== undefined ? String(formData.mainPriority) : '0'}
               onValueChange={(value) => setFormData({ ...formData, mainPriority: Number(value) })}
             >
-              <Select.Trigger placeholder="메인 노출 안함" />
+              <Select.Trigger placeholder="메인노출순서" />
               <Select.Content>
                 <Select.Item value="0">메인 노출 안함</Select.Item>
                 <Select.Item value="1">1</Select.Item>
@@ -202,9 +196,6 @@ export default function CreatePostPage() {
           </Flex>
 
           <div>
-            <Text as="div" size="3" weight="bold" mb="2">
-              제목 *
-            </Text>
             <TextField.Root
               size="3"
               placeholder="포스트 제목을 입력하세요"

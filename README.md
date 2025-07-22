@@ -85,3 +85,22 @@ mapo_tennis/
 ## 📞 문의
 
 마포구 테니스 협회에 문의하세요.
+
+## 개발 가이드
+
+### SWR 훅 작성 시 낙관적 업데이트 원칙
+
+- 데이터 생성, 수정, 삭제 등 서버와 동기화가 필요한 작업에서는 반드시 SWR의 `optimisticData` 옵션을 활용해 낙관적 업데이트(Optimistic UI)를 구현해야 합니다.
+- 예시:
+  ```ts
+  await mutate(
+    async () => { /* 서버 요청 */ },
+    {
+      optimisticData: /* UI에 미리 반영할 데이터 */,
+      rollbackOnError: true,
+      revalidate: true,
+    }
+  );
+  ```
+- mutate의 첫 번째 인자로 직접 데이터를 넘기는 방식은 사용하지 않습니다.
+- 일관된 UX와 코드 유지보수를 위해 위 원칙을 반드시 준수해 주세요.

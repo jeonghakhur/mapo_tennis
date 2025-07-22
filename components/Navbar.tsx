@@ -6,7 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useUser } from '@/hooks/useUser';
 import { ArrowLeft, Menu, User, LogOut, BellRing, House } from 'lucide-react';
-import { isAdmin } from '@/lib/authUtils';
+import { isAdmin, hasPermissionLevel } from '@/lib/authUtils';
 
 export default function Navbar() {
   const { data: session, status } = useSession();
@@ -111,14 +111,22 @@ export default function Navbar() {
                   프로필
                 </DropdownMenu.Item>
               )}
-              <DropdownMenu.Item onClick={() => router.push('/club')}>클럽</DropdownMenu.Item>
-              <DropdownMenu.Item onClick={() => router.push('/club-member')}>
-                클럽멤버
-              </DropdownMenu.Item>
-              <DropdownMenu.Item onClick={() => router.push('/posts')}>포스트</DropdownMenu.Item>
-              <DropdownMenu.Item onClick={() => router.push('/expenses')}>
-                지출내역
-              </DropdownMenu.Item>
+              {hasPermissionLevel(user, 4) && (
+                <DropdownMenu.Item onClick={() => router.push('/club')}>클럽</DropdownMenu.Item>
+              )}
+              {hasPermissionLevel(user, 4) && (
+                <DropdownMenu.Item onClick={() => router.push('/club-member')}>
+                  클럽멤버
+                </DropdownMenu.Item>
+              )}
+              {hasPermissionLevel(user, 4) && (
+                <DropdownMenu.Item onClick={() => router.push('/posts')}>포스트</DropdownMenu.Item>
+              )}
+              {hasPermissionLevel(user, 4) && (
+                <DropdownMenu.Item onClick={() => router.push('/expenses')}>
+                  지출내역
+                </DropdownMenu.Item>
+              )}
               <DropdownMenu.Item onClick={() => router.push('/tournaments')}>
                 대회일정
               </DropdownMenu.Item>

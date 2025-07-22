@@ -11,6 +11,9 @@ import type { SanityImageSource } from '@sanity/image-url/lib/types/types';
 import SkeletonCard from '@/components/SkeletonCard';
 import { isHydrating } from '@/lib/isHydrating';
 import { useState, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
+import { useUser } from '@/hooks/useUser';
+import { hasPermissionLevel } from '@/lib/authUtils';
 
 const builder = imageUrlBuilder(client);
 
@@ -20,6 +23,8 @@ function urlFor(source: SanityImageSource) {
 
 export default function ClubPage() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const { user } = useUser(session?.user?.email);
   const { clubs, isLoading, error } = useClubs();
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
 
@@ -27,6 +32,22 @@ export default function ClubPage() {
   const handleImageLoad = useCallback((clubId: string) => {
     setLoadedImages((prev) => new Set([...prev, clubId]));
   }, []);
+
+  // 권한 체크 (레벨 4 이상)
+  if (session && !hasPermissionLevel(user, 4)) {
+    return (
+      <Container>
+        <Box>
+          <Text color="red" size="4" weight="bold">
+            접근 권한이 없습니다.
+          </Text>
+          <Text color="gray" size="3" style={{ marginTop: '8px' }}>
+            클럽 페이지는 레벨 4 이상의 사용자만 접근할 수 있습니다.
+          </Text>
+        </Box>
+      </Container>
+    );
+  }
 
   // 모든 이미지가 로드되었는지 확인
   const allImagesLoaded = clubs

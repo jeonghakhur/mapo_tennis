@@ -21,8 +21,13 @@ import SkeletonCard from '@/components/SkeletonCard';
 import Container from '@/components/Container';
 import { useRouter } from 'next/navigation';
 import { SlidersHorizontal } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { useUser } from '@/hooks/useUser';
+import { hasPermissionLevel } from '@/lib/authUtils';
 
 export default function ClubMemberListPage() {
+  const { data: session } = useSession();
+  const { user } = useUser(session?.user?.email);
   const { members, isLoading, error } = useClubMembers();
   const [selectedClub, setSelectedClub] = useState<string>('ALL');
   // const [deletingAll, setDeletingAll] = useState(false);
@@ -111,6 +116,22 @@ export default function ClubMemberListPage() {
       age--;
     }
     return age;
+  }
+
+  // 권한 체크 (레벨 4 이상)
+  if (session && !hasPermissionLevel(user, 4)) {
+    return (
+      <Container>
+        <Box>
+          <Text color="red" size="4" weight="bold">
+            접근 권한이 없습니다.
+          </Text>
+          <Text color="gray" size="3" style={{ marginTop: '8px' }}>
+            클럽멤버 페이지는 레벨 4 이상의 사용자만 접근할 수 있습니다.
+          </Text>
+        </Box>
+      </Container>
+    );
   }
 
   return (

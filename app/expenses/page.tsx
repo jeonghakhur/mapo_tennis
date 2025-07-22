@@ -9,6 +9,9 @@ import { useExpenses } from '@/hooks/useExpenses';
 import { useExpenseFilters } from '@/hooks/useExpenseFilters';
 import SkeletonCard from '@/components/SkeletonCard';
 import type { Expense } from '@/model/expense';
+import { useSession } from 'next-auth/react';
+import { useUser } from '@/hooks/useUser';
+import { hasPermissionLevel } from '@/lib/authUtils';
 
 // 통계 카드 컴포넌트
 function ExpenseStats({ totalAmount, count }: { totalAmount: number; count: number }) {
@@ -211,6 +214,8 @@ function ExpenseCard({ expense, onClick }: { expense: Expense; onClick: () => vo
 }
 
 export default function ExpensesPage() {
+  const { data: session } = useSession();
+  const { user } = useUser(session?.user?.email);
   const router = useRouter();
   const { expenses, loading, error } = useExpenses();
   const {
@@ -225,6 +230,22 @@ export default function ExpensesPage() {
     filteredExpenses,
     totalAmount,
   } = useExpenseFilters({ expenses });
+
+  // 권한 체크 (레벨 4 이상)
+  if (session && !hasPermissionLevel(user, 4)) {
+    return (
+      <Container>
+        <Box>
+          <Text color="red" size="4" weight="bold">
+            접근 권한이 없습니다.
+          </Text>
+          <Text color="gray" size="3" style={{ marginTop: '8px' }}>
+            지출내역 페이지는 레벨 4 이상의 사용자만 접근할 수 있습니다.
+          </Text>
+        </Box>
+      </Container>
+    );
+  }
 
   if (error) {
     return (

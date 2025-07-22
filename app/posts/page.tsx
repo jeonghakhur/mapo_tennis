@@ -7,14 +7,33 @@ import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { usePosts } from '@/hooks/usePosts';
 import type { Post } from '@/model/post';
+import { useUser } from '@/hooks/useUser';
+import { hasPermissionLevel } from '@/lib/authUtils';
 
 export default function PostsPage() {
   const { data: session } = useSession();
+  const { user } = useUser(session?.user?.email);
   const [showAll, setShowAll] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchKeyword, setSearchKeyword] = useState('');
   const { posts, isLoading } = usePosts(showAll);
   const router = useRouter();
+
+  // 권한 체크 (레벨 4 이상)
+  if (session && !hasPermissionLevel(user, 4)) {
+    return (
+      <Container>
+        <Box>
+          <Text color="red" size="4" weight="bold">
+            접근 권한이 없습니다.
+          </Text>
+          <Text color="gray" size="3" style={{ marginTop: '8px' }}>
+            포스트 페이지는 레벨 4 이상의 사용자만 접근할 수 있습니다.
+          </Text>
+        </Box>
+      </Container>
+    );
+  }
 
   // 회원 레벨 4 이상인지 확인
   const canManagePosts = session?.user?.level >= 4;

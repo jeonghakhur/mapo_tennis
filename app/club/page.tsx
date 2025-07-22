@@ -62,9 +62,6 @@ export default function ClubPage() {
           <Text color="red" size="4" weight="bold">
             접근 권한이 없습니다.
           </Text>
-          <Text color="gray" size="3" style={{ marginTop: '8px' }}>
-            클럽 페이지는 레벨 4 이상의 사용자만 접근할 수 있습니다.
-          </Text>
         </Box>
       </Container>
     );

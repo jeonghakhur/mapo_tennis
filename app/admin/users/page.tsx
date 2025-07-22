@@ -1,11 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Box, Text, TextField, Button, Flex, Badge, Select } from '@radix-ui/themes';
 import Container from '@/components/Container';
 import LoadingOverlay from '@/components/LoadingOverlay';
-import SkeletonCard from '@/components/SkeletonCard';
 import { useLoading } from '@/hooks/useLoading';
 import { useAdminUsers } from '@/hooks/useAdminUsers';
 
@@ -21,15 +20,13 @@ interface ClubWithApproval {
 export default function AdminUsersPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { loading } = useLoading();
 
-  // URL 쿼리 파라미터에서 초기값 가져오기
-  const [page, setPage] = useState(parseInt(searchParams.get('page') || '1'));
+  const [page, setPage] = useState(1);
   const [limit] = useState(20);
-  const [search, setSearch] = useState(searchParams.get('search') || '');
-  const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'createdAt');
-  const [sortOrder, setSortOrder] = useState(searchParams.get('sortOrder') || 'desc');
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortOrder, setSortOrder] = useState('desc');
   const [showFilter, setShowFilter] = useState(false);
 
   // 디바운싱된 검색어
@@ -65,50 +62,28 @@ export default function AdminUsersPage() {
     }
   }, [session, status, router]);
 
-  // URL 쿼리 파라미터 업데이트 함수
-  const updateURL = (newParams: Record<string, string>) => {
-    const params = new URLSearchParams(searchParams.toString());
-    Object.entries(newParams).forEach(([key, value]) => {
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
-    });
-    router.push(`/admin/users?${params.toString()}`);
-  };
-
   const handleSearch = () => {
     setPage(1);
-    updateURL({ search, page: '1' });
   };
 
-  // 검색어 입력 시 URL 업데이트하지 않음 (디바운싱만 적용)
   const handleSearchInputChange = (value: string) => {
     setSearch(value);
     setPage(1);
-    // URL 업데이트는 검색 버튼 클릭 시에만
   };
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    updateURL({ page: newPage.toString() });
   };
 
   const handleSortChange = (newSortBy: string, newSortOrder: string) => {
     setSortBy(newSortBy);
     setSortOrder(newSortOrder);
     setPage(1);
-    updateURL({ sortBy: newSortBy, sortOrder: newSortOrder, page: '1' });
   };
 
   // 로딩 중이거나 권한 확인 중일 때
-  if (status === 'loading' || (status === 'authenticated' && !session?.user?.level)) {
-    return (
-      <Container>
-        <SkeletonCard lines={4} />
-      </Container>
-    );
+  if (status === 'loading') {
+    return null; // 또는 <LoadingOverlay size="3" />
   }
 
   // 로그인하지 않은 경우

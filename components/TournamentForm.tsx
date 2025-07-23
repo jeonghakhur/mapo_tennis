@@ -83,8 +83,7 @@ export default function TournamentForm({
   const [alertMessage, setAlertMessage] = useState('');
   const [focusField, setFocusField] = useState<string>('');
 
-  const { posts: schedulePosts, isLoading: isLoadingSchedulePosts } =
-    usePostsByCategory('tournament_info');
+  // const { posts: schedulePosts, isLoading: isLoadingSchedulePosts } = usePostsByCategory('tournament_info');
   const { posts: infoPosts, isLoading: isLoadingInfoPosts } =
     usePostsByCategory('tournament_rules');
 
@@ -103,7 +102,7 @@ export default function TournamentForm({
     await onSubmit(e);
   };
 
-  if (isLoadingSchedulePosts || isLoadingInfoPosts) {
+  if (isLoadingInfoPosts) {
     return <SkeletonCard />;
   }
 
@@ -621,7 +620,7 @@ export default function TournamentForm({
         <div className="table-form">
           <table className="table-form">
             <tbody>
-              <tr>
+              {/* <tr>
                 <th>
                   <Text>대회 요강</Text>
                 </th>
@@ -649,7 +648,7 @@ export default function TournamentForm({
                     </Select.Content>
                   </Select.Root>
                 </td>
-              </tr>
+              </tr> */}
               <tr>
                 <th>
                   <Text>대회 규칙</Text>

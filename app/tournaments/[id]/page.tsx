@@ -260,14 +260,23 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
                 </table>
               </div>
 
+              {tournament.memo && (
+                <div className="tiptab-content">
+                  <div dangerouslySetInnerHTML={{ __html: tournament.memo }} />
+                </div>
+              )}
+
               {/* 참가부서 정보 */}
               {tournament.divisions && tournament.divisions.length > 0 && (
                 <Flex direction="column" gap="4" style={{ width: '100%' }}>
+                  <Text size="5" weight="bold" className="block">
+                    참가부서 정보
+                  </Text>
                   {tournament.divisions
                     .filter((division) => division.teamCount > 0)
                     .map((division, index) => (
                       <div key={division._key || index} className="table-view">
-                        <Text weight="bold" size="5" mb="2" as="div">
+                        <Text weight="bold" size="4" mb="2" as="div">
                           {getDivisionLabel(division.division)}
                         </Text>
                         <table>
@@ -334,12 +343,6 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
                       </div>
                     ))}
                 </Flex>
-              )}
-
-              {tournament.memo && (
-                <div className="tiptab-content">
-                  <div dangerouslySetInnerHTML={{ __html: tournament.memo }} />
-                </div>
               )}
             </Flex>
 

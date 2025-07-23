@@ -139,9 +139,16 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
                           {wrapTextWithSpans('대회명칭')}
                         </Flex>
                       </th>
+                      <td className="!text-left">{tournament.title}</td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <Flex justify="between" align="center" flexGrow="1">
+                          {wrapTextWithSpans('대회유형')}
+                        </Flex>
+                      </th>
                       <td className="!text-left">
-                        {tournament.title}({' '}
-                        {tournament.tournamentType === 'individual' ? '개인전' : '단체전'})
+                        {tournament.tournamentType === 'individual' ? '개인전' : '단체전'}
                       </td>
                     </tr>
                     <tr>
@@ -295,7 +302,11 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
                             </tr>
                             {division.prizes.first > 0 && (
                               <tr>
-                                <th>시상금</th>
+                                <th>
+                                  <Flex justify="between" align="center" flexGrow="1">
+                                    {wrapTextWithSpans('시상금')}
+                                  </Flex>
+                                </th>
                                 <td className="!text-left">
                                   <Flex align="center" gap="2">
                                     <Badge color="yellow" variant="soft" size="3">
@@ -325,7 +336,11 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
                 </Flex>
               )}
 
-              {tournament.memo && <div dangerouslySetInnerHTML={{ __html: tournament.memo }} />}
+              {tournament.memo && (
+                <div className="tiptab-content">
+                  <div dangerouslySetInnerHTML={{ __html: tournament.memo }} />
+                </div>
+              )}
             </Flex>
 
             {/* 대회 설명 포스트 내용 */}

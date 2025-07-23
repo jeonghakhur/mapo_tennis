@@ -74,6 +74,12 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  --tt-color-highlight-green: #dcfce7;
+  --tt-color-highlight-blue: #e0f2fe;
+  --tt-color-highlight-red: #ffe4e6;
+  --tt-color-highlight-purple: #f3e8ff;
+  --tt-color-highlight-yellow: #fef9c3;
 }
 
 .dark {
@@ -233,5 +239,12 @@ main .toastui-editor-contents {
       font-weight: 600;
       white-space: nowrap;
     }
+  }
+}
+
+.tiptab-content {
+  ul {
+    list-style: disc;
+    padding-left: 20px;
   }
 }

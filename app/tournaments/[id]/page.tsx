@@ -168,7 +168,6 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
               </Flex>
               <Flex align="center" gap="2">
                 <Calendar size={16} />
-
                 <Text weight="bold">등록 기간</Text>
                 <Text>
                   {formatDate(tournament?.registrationStartDate || '')}
@@ -176,12 +175,84 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
                     `~ ${formatDate(tournament.registrationDeadline)}`}
                 </Text>
               </Flex>
-
               <Flex align="center" gap="2">
                 <MapPin size={16} />
                 <Text weight="bold">장소</Text>
                 <Text>{tournament.location}</Text>
               </Flex>
+              <Flex align="center" gap="2">
+                <Users size={16} />
+                <Text weight="bold">대회 유형</Text>
+                <Text>{tournament.tournamentType === 'individual' ? '개인전' : '단체전'}</Text>
+              </Flex>
+              <Flex align="center" gap="2">
+                <Users size={16} />
+                <Text weight="bold">주최</Text>
+                <Text>{tournament.host || '-'}</Text>
+              </Flex>
+              <Flex align="center" gap="2">
+                <Users size={16} />
+                <Text weight="bold">주관</Text>
+                <Text>{tournament.organizer || '-'}</Text>
+              </Flex>
+              <Flex align="center" gap="2">
+                <Users size={16} />
+                <Text weight="bold">참가인원</Text>
+                <Text>{tournament.participants || '-'}</Text>
+              </Flex>
+              <Flex align="center" gap="2">
+                <NotebookPen size={16} />
+                <Text weight="bold">접수방법</Text>
+                <Text>{tournament.registrationMethod || '-'}</Text>
+              </Flex>
+              <Flex align="center" gap="2">
+                <NotebookPen size={16} />
+                <Text weight="bold">대진추첨</Text>
+                <Text>{tournament.drawMethod || '-'}</Text>
+              </Flex>
+              <Flex align="center" gap="2">
+                <NotebookPen size={16} />
+                <Text weight="bold">대회사용구</Text>
+                <Text>{tournament.equipment || '-'}</Text>
+              </Flex>
+              {tournament.entryFee && (
+                <Flex align="center" gap="2">
+                  <NotebookPen size={16} />
+                  <Text weight="bold">참가비</Text>
+                  <Text>{tournament.entryFee.toLocaleString()}원</Text>
+                </Flex>
+              )}
+              {tournament.bankAccount && (
+                <Flex align="center" gap="2">
+                  <NotebookPen size={16} />
+                  <Text weight="bold">입금계좌</Text>
+                  <Text>{tournament.bankAccount}</Text>
+                </Flex>
+              )}
+              {tournament.accountHolder && (
+                <Flex align="center" gap="2">
+                  <NotebookPen size={16} />
+                  <Text weight="bold">예금주</Text>
+                  <Text>{tournament.accountHolder}</Text>
+                </Flex>
+              )}
+              {tournament.memo && (
+                <Flex direction="column" gap="2" style={{ width: '100%' }}>
+                  <Flex align="center" gap="2">
+                    <NotebookPen size={16} />
+                    <Text weight="bold">메모</Text>
+                  </Flex>
+                  <div
+                    className="bg-gray-50 p-3 rounded-lg"
+                    style={{
+                      maxHeight: '400px',
+                      overflowY: 'auto',
+                      overflowX: 'hidden',
+                    }}
+                    dangerouslySetInnerHTML={{ __html: tournament.memo }}
+                  />
+                </Flex>
+              )}
             </Flex>
 
             {/* 대회 설명 포스트 내용 */}

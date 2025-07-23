@@ -88,7 +88,7 @@ export default function EditTournamentPage({ params }: EditTournamentPageProps) 
         title: tournament.title,
         startDate: tournament.startDate.split('T')[0],
         endDate: tournament.endDate.split('T')[0],
-        location: tournament.location,
+        location: tournament.location || '망원나들목테니스장 외 보조 경기장',
         tournamentType: tournament.tournamentType || 'individual',
         registrationStartDate: tournament.registrationStartDate
           ? tournament.registrationStartDate.split('T')[0]
@@ -98,6 +98,13 @@ export default function EditTournamentPage({ params }: EditTournamentPageProps) 
           : '',
         descriptionPostId: tournament.descriptionPostId || '',
         rulesPostId: tournament.rulesPostId || '',
+        host: tournament.host || '마포구청, 마포구 체육회',
+        organizer: tournament.organizer || '마포구테니스협회',
+        participants: tournament.participants || '',
+        registrationMethod: tournament.registrationMethod || '온라인접수',
+        drawMethod: tournament.drawMethod || '',
+        equipment: tournament.equipment || '낫소 볼',
+        memo: tournament.memo || '',
         divisions: parsedDivisions,
         entryFee: tournament.entryFee || 30000,
         bankAccount: tournament.bankAccount || '1001-8348-6182 (토스뱅크)',

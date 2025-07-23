@@ -17,6 +17,8 @@ import { usePostsByCategory } from '@/hooks/usePosts';
 import SkeletonCard from '@/components/SkeletonCard';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import LoadingOverlay from '@/components/LoadingOverlay';
+import { SimpleEditor } from '@/components/tiptap-templates/simple/simple-editor';
+
 import {
   DIVISION_OPTIONS,
   DIVISION_DEFAULTS,
@@ -82,8 +84,9 @@ export default function TournamentForm({
   const [focusField, setFocusField] = useState<string>('');
 
   const { posts: schedulePosts, isLoading: isLoadingSchedulePosts } =
-    usePostsByCategory('tournament_schedule');
-  const { posts: infoPosts, isLoading: isLoadingInfoPosts } = usePostsByCategory('tournament_info');
+    usePostsByCategory('tournament_info');
+  const { posts: infoPosts, isLoading: isLoadingInfoPosts } =
+    usePostsByCategory('tournament_rules');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,6 +186,48 @@ export default function TournamentForm({
                   />
                 </td>
               </tr>
+              <tr>
+                <th>
+                  <Text>접수방법</Text>
+                </th>
+                <td>
+                  <TextField.Root
+                    size="3"
+                    value={formData.registrationMethod || ''}
+                    onChange={(e) =>
+                      handleInputChange(setFormData, 'registrationMethod', e.target.value)
+                    }
+                    placeholder="대회 접수 방법을 입력하세요"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <Text>대진추첨</Text>
+                </th>
+                <td>
+                  <TextField.Root
+                    size="3"
+                    value={formData.drawMethod || ''}
+                    onChange={(e) => handleInputChange(setFormData, 'drawMethod', e.target.value)}
+                    placeholder="대진 추첨 방법을 입력하세요"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <Text>대회사용구</Text>
+                </th>
+                <td>
+                  <TextField.Root
+                    size="3"
+                    value={formData.equipment || ''}
+                    onChange={(e) => handleInputChange(setFormData, 'equipment', e.target.value)}
+                    placeholder="대회에서 사용할 구기류를 입력하세요"
+                  />
+                </td>
+              </tr>
+
               <tr>
                 <th>
                   <Text>대회 유형 *</Text>
@@ -323,6 +368,20 @@ export default function TournamentForm({
                       handleInputChange(setFormData, 'accountHolder', e.target.value)
                     }
                     placeholder="예금주 입력"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <Text>메모</Text>
+                </th>
+                <td>
+                  <SimpleEditor
+                    value={formData.memo || ''}
+                    onChange={(value) => handleInputChange(setFormData, 'memo', value)}
+                    height="400px"
+                    minHeight="300px"
+                    maxHeight="600px"
                   />
                 </td>
               </tr>
@@ -570,13 +629,14 @@ export default function TournamentForm({
                   <Select.Root
                     size="3"
                     value={formData.descriptionPostId || 'none'}
-                    onValueChange={(value) =>
+                    onValueChange={(value) => {
+                      if (!value) return;
                       handleInputChange(
                         setFormData,
                         'descriptionPostId',
                         value === 'none' ? '' : value,
-                      )
-                    }
+                      );
+                    }}
                   >
                     <Select.Trigger placeholder="대회 설명 포스트를 선택하세요" />
                     <Select.Content>
@@ -598,9 +658,10 @@ export default function TournamentForm({
                   <Select.Root
                     size="3"
                     value={formData.rulesPostId || 'none'}
-                    onValueChange={(value) =>
-                      handleInputChange(setFormData, 'rulesPostId', value === 'none' ? '' : value)
-                    }
+                    onValueChange={(value) => {
+                      if (!value) return;
+                      handleInputChange(setFormData, 'rulesPostId', value === 'none' ? '' : value);
+                    }}
                   >
                     <Select.Trigger placeholder="대회 규칙 포스트를 선택하세요" />
                     <Select.Content>

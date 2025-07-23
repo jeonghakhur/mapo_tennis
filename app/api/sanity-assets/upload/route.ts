@@ -21,9 +21,13 @@ export async function POST(req: NextRequest) {
     // 허용된 파일 타입
     const allowedTypes = [
       'image/jpeg',
+      'image/jpg',
       'image/png',
       'image/gif',
       'image/webp',
+      'image/heic', // 아이폰 HEIC 포맷
+      'image/heif', // 아이폰 HEIF 포맷
+      'image/avif', // 최신 이미지 포맷
       'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -32,7 +36,9 @@ export async function POST(req: NextRequest) {
       'text/plain',
     ];
 
-    if (!allowedTypes.includes(file.type)) {
+    // 파일 타입 검증 (허용된 타입 또는 이미지 파일)
+    const isValidType = allowedTypes.includes(file.type) || file.type.startsWith('image/');
+    if (!isValidType) {
       return NextResponse.json({ error: '지원하지 않는 파일 타입입니다.' }, { status: 400 });
     }
 

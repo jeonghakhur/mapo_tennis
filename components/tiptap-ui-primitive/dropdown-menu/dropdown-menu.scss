@@ -1,0 +1,72 @@
+.tiptap-dropdown-menu {
+  --tt-dropdown-menu-bg-color: #ffffff;
+  --tt-dropdown-menu-border-color: #e5e7eb;
+  --tt-dropdown-menu-text-color: #374151;
+  --tt-dropdown-menu-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+  .dark & {
+    --tt-dropdown-menu-border-color: #374151;
+    --tt-dropdown-menu-bg-color: #1f2937;
+    --tt-dropdown-menu-text-color: #f9fafb;
+    --tt-dropdown-menu-shadow:
+      0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* --------------------------------------------
+    --------- DROPDOWN MENU STYLING SETTINGS -----------
+    -------------------------------------------- */
+.tiptap-dropdown-menu {
+  z-index: 50;
+  outline: none;
+  transform-origin: var(--radix-dropdown-menu-content-transform-origin);
+  max-height: var(--radix-dropdown-menu-content-available-height);
+  background-color: var(--tt-dropdown-menu-bg-color);
+  border: 1px solid var(--tt-dropdown-menu-border-color);
+  border-radius: 6px;
+  box-shadow: var(--tt-dropdown-menu-shadow);
+  padding: 4px;
+
+  > * {
+    max-height: var(--radix-dropdown-menu-content-available-height);
+  }
+
+  /* Animation states */
+  &[data-state='open'] {
+    animation:
+      fadeIn 150ms cubic-bezier(0.16, 1, 0.3, 1),
+      zoomIn 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  &[data-state='closed'] {
+    animation:
+      fadeOut 150ms cubic-bezier(0.16, 1, 0.3, 1),
+      zoomOut 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Position-based animations */
+  &[data-side='top'],
+  &[data-side='top-start'],
+  &[data-side='top-end'] {
+    animation: slideFromBottom 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  &[data-side='right'],
+  &[data-side='right-start'],
+  &[data-side='right-end'] {
+    animation: slideFromLeft 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  &[data-side='bottom'],
+  &[data-side='bottom-start'],
+  &[data-side='bottom-end'] {
+    animation: slideFromTop 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  &[data-side='left'],
+  &[data-side='left-start'],
+  &[data-side='left-end'] {
+    animation: slideFromRight 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}

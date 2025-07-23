@@ -14,6 +14,10 @@ export interface Tournament {
   host?: string;
   organizer?: string;
   participants?: string;
+  registrationMethod?: string; // 접수방법
+  drawMethod?: string; // 대진추첨
+  equipment?: string; // 대회사용구
+  memo?: string; // 메모
   divisions?: Array<{
     _key: string; // Sanity Studio에서 필요한 고유 키
     division: string;
@@ -47,6 +51,10 @@ export interface TournamentFormData {
   host?: string;
   organizer?: string;
   participants?: string;
+  registrationMethod?: string; // 접수방법
+  drawMethod?: string; // 대진추첨
+  equipment?: string; // 대회사용구
+  memo?: string; // 메모
   divisions?: Array<{
     _key: string; // Sanity Studio에서 필요한 고유 키
     division: string;

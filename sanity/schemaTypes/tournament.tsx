@@ -116,6 +116,30 @@ export default defineType({
       description: '예: 100명(남 60, 여 40)',
     }),
     defineField({
+      name: 'registrationMethod',
+      title: '접수방법',
+      type: 'string',
+      description: '대회 접수 방법을 입력하세요',
+    }),
+    defineField({
+      name: 'drawMethod',
+      title: '대진추첨',
+      type: 'string',
+      description: '대진 추첨 방법을 입력하세요',
+    }),
+    defineField({
+      name: 'equipment',
+      title: '대회사용구',
+      type: 'string',
+      description: '대회에서 사용할 구기류를 입력하세요',
+    }),
+    defineField({
+      name: 'memo',
+      title: '메모',
+      type: 'text',
+      description: '기타 참고사항을 입력하세요',
+    }),
+    defineField({
       name: 'divisions',
       title: '참가부서 및 상세정보',
       type: 'array',

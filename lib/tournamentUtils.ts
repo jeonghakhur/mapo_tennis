@@ -223,12 +223,19 @@ export function createDefaultTournamentFormData(): TournamentFormData {
     title: '',
     startDate: '',
     endDate: '',
-    location: '',
+    location: '망원나들목테니스장 외 보조 경기장',
     tournamentType: 'individual',
     registrationStartDate: '',
     registrationDeadline: '',
     descriptionPostId: '',
     rulesPostId: '',
+    host: '마포구청, 마포구 체육회',
+    organizer: '마포구테니스협회',
+    participants: '',
+    registrationMethod: '온라인접수',
+    drawMethod: '',
+    equipment: '낫소 볼',
+    memo: '',
     divisions: DIVISION_OPTIONS.map((option) => ({
       _key: option.value,
       division: option.value,
@@ -386,6 +393,13 @@ export function parseTournamentFormData(
   const registrationDeadline = formData.get('registrationDeadline') as string;
   const descriptionPostId = formData.get('descriptionPostId') as string;
   const rulesPostId = formData.get('rulesPostId') as string;
+  const host = formData.get('host') as string;
+  const organizer = formData.get('organizer') as string;
+  const participants = formData.get('participants') as string;
+  const registrationMethod = formData.get('registrationMethod') as string;
+  const drawMethod = formData.get('drawMethod') as string;
+  const equipment = formData.get('equipment') as string;
+  const memo = formData.get('memo') as string;
   const status = formData.get('status') as string;
   const entryFee = formData.get('entryFee') as string;
   const bankAccount = formData.get('bankAccount') as string;
@@ -412,6 +426,13 @@ export function parseTournamentFormData(
     descriptionPostId:
       descriptionPostId === 'null' || descriptionPostId === '' ? null : descriptionPostId,
     rulesPostId: rulesPostId === 'null' || rulesPostId === '' ? null : rulesPostId,
+    host: host || undefined,
+    organizer: organizer || undefined,
+    participants: participants || undefined,
+    registrationMethod: registrationMethod || undefined,
+    drawMethod: drawMethod || undefined,
+    equipment: equipment || undefined,
+    memo: memo || undefined,
     entryFee: entryFee ? parseInt(entryFee) : undefined,
     bankAccount: bankAccount || undefined,
     accountHolder: accountHolder || undefined,

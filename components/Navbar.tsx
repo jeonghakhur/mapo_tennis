@@ -207,6 +207,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/club-member/')) return '클럽멤버 상세';
   if (pathname.startsWith('/expenses/')) return '지출내역 상세';
   if (pathname.startsWith('/tournaments/') && pathname.includes('/apply')) return '참가신청';
+  if (pathname.startsWith('/tournaments/') && pathname.includes('/edit')) return '대회 수정';
   if (pathname.startsWith('/tournaments/')) return '대회 상세';
   if (pathname.startsWith('/admin/users/')) return '회원 정보 수정';
 

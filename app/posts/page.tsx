@@ -118,7 +118,7 @@ export default function PostsPage() {
       notice: 'red',
       event: 'orange',
       general: 'blue',
-      tournament_schedule: 'green',
+      tournament_rules: 'green',
       tournament_info: 'purple',
     };
     return colors[category] || 'blue';
@@ -129,7 +129,7 @@ export default function PostsPage() {
       notice: '공지사항',
       event: '이벤트',
       general: '일반',
-      tournament_rules: '대회일정',
+      tournament_rules: '대회규칙',
       tournament_info: '대회요강',
     };
     return labels[category] || '일반';

@@ -439,3 +439,11 @@ export function parseTournamentFormData(
     divisions: parsedDivisions,
   };
 }
+
+/**
+ * 부서 value를 한글 label로 변환하는 함수
+ */
+export function getDivisionLabel(value: string): string {
+  const found = DIVISION_OPTIONS.find((option) => option.value === value);
+  return found ? found.label : value;
+}

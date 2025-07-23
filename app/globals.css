@@ -220,3 +220,18 @@
     }
   }
 }
+
+main .toastui-editor-contents {
+  font-size: 16px;
+
+  table {
+    width: 100%;
+
+    th {
+      background-color: #fff;
+      color: #000;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+  }
+}

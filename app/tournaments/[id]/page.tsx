@@ -1,7 +1,7 @@
 'use client';
 import { Box, Text, Button, Flex, Badge } from '@radix-ui/themes';
 import Container from '@/components/Container';
-import { Edit, Trash2, Calendar, MapPin, Users, NotebookPen } from 'lucide-react';
+import { Edit, Trash2, Users, NotebookPen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { use } from 'react';
 import { useTournament, useDeleteTournament } from '@/hooks/useTournaments';
@@ -19,6 +19,8 @@ import { mutate } from 'swr';
 import { Tournament } from '@/model/tournament';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { wrapTextWithSpans } from '@/lib/utils';
+import { getDivisionLabel } from '@/lib/tournamentUtils';
 
 interface TournamentDetailPageProps {
   params: Promise<{
@@ -109,26 +111,6 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
     }
   };
 
-  const getStatusColor = (status: string) => {
-    const colorMap: Record<string, 'red' | 'blue' | 'green' | 'gray'> = {
-      upcoming: 'blue',
-      ongoing: 'green',
-      completed: 'gray',
-      cancelled: 'red',
-    };
-    return colorMap[status] || 'gray';
-  };
-
-  const getStatusLabel = (status: string) => {
-    const labelMap: Record<string, string> = {
-      upcoming: '예정',
-      ongoing: '진행중',
-      completed: '완료',
-      cancelled: '취소',
-    };
-    return labelMap[status] || status;
-  };
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return format(date, 'yy.MM.dd(eee)', { locale: ko });
@@ -143,116 +125,207 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
           {loading && <LoadingOverlay size="3" />}
 
           <div className="space-y-6">
-            {/* 제목 */}
-            <Flex align="center" gap="2">
-              <Badge color={getStatusColor(tournament.status)}>
-                {getStatusLabel(tournament.status)}
-              </Badge>
-              <Text size="6" weight="bold" className="block mb-2">
-                {tournament.title}
-              </Text>
-            </Flex>
-
             {/* 기본 정보 */}
             <Flex direction="column" gap="4">
-              <Text size="4" weight="bold" className="block">
-                기본 정보
+              <Text size="6" weight="bold" className="block">
+                대회요강
               </Text>
+              <div className="table-view">
+                <table>
+                  <tbody>
+                    <tr>
+                      <th style={{ width: '120px' }}>
+                        <Flex justify="between" align="center" flexGrow="1">
+                          {wrapTextWithSpans('대회명칭')}
+                        </Flex>
+                      </th>
+                      <td className="!text-left">
+                        {tournament.title}({' '}
+                        {tournament.tournamentType === 'individual' ? '개인전' : '단체전'})
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <Flex justify="between" align="center" flexGrow="1">
+                          {wrapTextWithSpans('주최')}
+                        </Flex>
+                      </th>
+                      <td className="!text-left">{tournament.host || '-'}</td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <Flex justify="between" align="center" flexGrow="1">
+                          {wrapTextWithSpans('주관')}
+                        </Flex>
+                      </th>
+                      <td className="!text-left">{tournament.organizer || '-'}</td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <Flex justify="between" align="center" flexGrow="1">
+                          {wrapTextWithSpans('대회기간')}
+                        </Flex>
+                      </th>
+                      <td className="!text-left">
+                        {formatDate(tournament.startDate)} ~ {formatDate(tournament.endDate)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <Flex justify="between" align="center" flexGrow="1">
+                          {wrapTextWithSpans('개회식')}
+                        </Flex>
+                      </th>
+                      <td className="!text-left">없음</td>
+                    </tr>
 
-              <Flex align="center" gap="2">
-                <Calendar size={16} />
-                <Text weight="bold">대회 기간</Text>
-                <Text>
-                  {formatDate(tournament.startDate)} ~ {formatDate(tournament.endDate)}
-                </Text>
-              </Flex>
-              <Flex align="center" gap="2">
-                <Calendar size={16} />
-                <Text weight="bold">등록 기간</Text>
-                <Text>
-                  {formatDate(tournament?.registrationStartDate || '')}
-                  {tournament.registrationDeadline &&
-                    `~ ${formatDate(tournament.registrationDeadline)}`}
-                </Text>
-              </Flex>
-              <Flex align="center" gap="2">
-                <MapPin size={16} />
-                <Text weight="bold">장소</Text>
-                <Text>{tournament.location}</Text>
-              </Flex>
-              <Flex align="center" gap="2">
-                <Users size={16} />
-                <Text weight="bold">대회 유형</Text>
-                <Text>{tournament.tournamentType === 'individual' ? '개인전' : '단체전'}</Text>
-              </Flex>
-              <Flex align="center" gap="2">
-                <Users size={16} />
-                <Text weight="bold">주최</Text>
-                <Text>{tournament.host || '-'}</Text>
-              </Flex>
-              <Flex align="center" gap="2">
-                <Users size={16} />
-                <Text weight="bold">주관</Text>
-                <Text>{tournament.organizer || '-'}</Text>
-              </Flex>
-              <Flex align="center" gap="2">
-                <Users size={16} />
-                <Text weight="bold">참가인원</Text>
-                <Text>{tournament.participants || '-'}</Text>
-              </Flex>
-              <Flex align="center" gap="2">
-                <NotebookPen size={16} />
-                <Text weight="bold">접수방법</Text>
-                <Text>{tournament.registrationMethod || '-'}</Text>
-              </Flex>
-              <Flex align="center" gap="2">
-                <NotebookPen size={16} />
-                <Text weight="bold">대진추첨</Text>
-                <Text>{tournament.drawMethod || '-'}</Text>
-              </Flex>
-              <Flex align="center" gap="2">
-                <NotebookPen size={16} />
-                <Text weight="bold">대회사용구</Text>
-                <Text>{tournament.equipment || '-'}</Text>
-              </Flex>
-              {tournament.entryFee && (
-                <Flex align="center" gap="2">
-                  <NotebookPen size={16} />
-                  <Text weight="bold">참가비</Text>
-                  <Text>{tournament.entryFee.toLocaleString()}원</Text>
+                    <tr>
+                      <th>
+                        <Flex justify="between" align="center" flexGrow="1">
+                          {wrapTextWithSpans('대회장소')}
+                        </Flex>
+                      </th>
+                      <td className="!text-left">{tournament.location}</td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <Flex justify="between" align="center" flexGrow="1">
+                          {wrapTextWithSpans('참가신청')}
+                        </Flex>
+                      </th>
+                      <td className="!text-left">
+                        {formatDate(tournament?.registrationStartDate || '')}
+                        {tournament.registrationDeadline &&
+                          `~ ${formatDate(tournament.registrationDeadline)}`}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <Flex justify="between" align="center" flexGrow="1">
+                          {wrapTextWithSpans('접수방법')}
+                        </Flex>
+                      </th>
+                      <td className="!text-left">{tournament.registrationMethod || '-'}</td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <Flex justify="between" align="center" flexGrow="1">
+                          {wrapTextWithSpans('대진추첨')}
+                        </Flex>
+                      </th>
+                      <td className="!text-left">{tournament.drawMethod || '-'}</td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <Flex justify="between" align="center" flexGrow="1">
+                          {wrapTextWithSpans('대회사용구')}
+                        </Flex>
+                      </th>
+                      <td className="!text-left">{tournament.equipment || '-'}</td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <Flex justify="between" align="center" flexGrow="1">
+                          {wrapTextWithSpans('참가비')}
+                        </Flex>
+                      </th>
+                      <td className="!text-left">
+                        {`${tournament.entryFee?.toLocaleString()}원 ` || '-'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <Flex justify="between" align="center" flexGrow="1">
+                          {wrapTextWithSpans('입금계좌')}
+                        </Flex>
+                      </th>
+                      <td className="!text-left">{tournament.bankAccount}</td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <Flex justify="between" align="center" flexGrow="1">
+                          {wrapTextWithSpans('예금주')}
+                        </Flex>
+                      </th>
+                      <td className="!text-left">{tournament.accountHolder}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* 참가부서 정보 */}
+              {tournament.divisions && tournament.divisions.length > 0 && (
+                <Flex direction="column" gap="4" style={{ width: '100%' }}>
+                  {tournament.divisions
+                    .filter((division) => division.teamCount > 0)
+                    .map((division, index) => (
+                      <div key={division._key || index} className="table-view">
+                        <Text weight="bold" size="5" mb="2" as="div">
+                          {getDivisionLabel(division.division)}
+                        </Text>
+                        <table>
+                          <tbody>
+                            <tr>
+                              <th style={{ width: '120px' }}>
+                                <Flex justify="between" align="center" flexGrow="1">
+                                  {wrapTextWithSpans('참가팀')}
+                                </Flex>
+                              </th>
+                              <td className="!text-left">{division.teamCount}팀</td>
+                            </tr>
+                            <tr>
+                              <th>
+                                <Flex justify="between" align="center" flexGrow="1">
+                                  {wrapTextWithSpans('경기일정')}
+                                </Flex>
+                              </th>
+                              <td className="!text-left">
+                                {division.matchDates.map((date, dateIndex) => (
+                                  <Text key={dateIndex}>{formatDate(date)}</Text>
+                                ))}
+                              </td>
+                            </tr>
+                            <tr>
+                              <th>
+                                <Flex justify="between" align="center" flexGrow="1">
+                                  {wrapTextWithSpans('시작시간')}
+                                </Flex>
+                              </th>
+                              <td className="!text-left">{division.startTime}</td>
+                            </tr>
+                            {division.prizes.first > 0 && (
+                              <tr>
+                                <th>시상금</th>
+                                <td className="!text-left">
+                                  <Flex align="center" gap="2">
+                                    <Badge color="yellow" variant="soft" size="3">
+                                      1위
+                                    </Badge>
+                                    <Text>{division.prizes.first.toLocaleString()}원</Text>
+                                  </Flex>
+                                  <Flex align="center" gap="2" mt="2">
+                                    <Badge color="gray" variant="soft" size="3">
+                                      2위
+                                    </Badge>
+                                    <Text>{division.prizes.second.toLocaleString()}원</Text>
+                                  </Flex>
+                                  <Flex align="center" gap="2" mt="2">
+                                    <Badge color="brown" variant="soft" size="3">
+                                      3위
+                                    </Badge>
+                                    <Text>{division.prizes.third.toLocaleString()}원</Text>
+                                  </Flex>
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    ))}
                 </Flex>
               )}
-              {tournament.bankAccount && (
-                <Flex align="center" gap="2">
-                  <NotebookPen size={16} />
-                  <Text weight="bold">입금계좌</Text>
-                  <Text>{tournament.bankAccount}</Text>
-                </Flex>
-              )}
-              {tournament.accountHolder && (
-                <Flex align="center" gap="2">
-                  <NotebookPen size={16} />
-                  <Text weight="bold">예금주</Text>
-                  <Text>{tournament.accountHolder}</Text>
-                </Flex>
-              )}
-              {tournament.memo && (
-                <Flex direction="column" gap="2" style={{ width: '100%' }}>
-                  <Flex align="center" gap="2">
-                    <NotebookPen size={16} />
-                    <Text weight="bold">메모</Text>
-                  </Flex>
-                  <div
-                    className="bg-gray-50 p-3 rounded-lg"
-                    style={{
-                      maxHeight: '400px',
-                      overflowY: 'auto',
-                      overflowX: 'hidden',
-                    }}
-                    dangerouslySetInnerHTML={{ __html: tournament.memo }}
-                  />
-                </Flex>
-              )}
+
+              {tournament.memo && <div dangerouslySetInnerHTML={{ __html: tournament.memo }} />}
             </Flex>
 
             {/* 대회 설명 포스트 내용 */}
@@ -274,13 +347,8 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
             {/* 대회 규칙 포스트 내용 */}
             {tournament.rulesPostId && (
               <div className="pt-4 border-t">
-                <Text size="4" weight="bold" className="block mb-3">
-                  대회 규칙
-                </Text>
                 {rulesPost ? (
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <MarkdownRenderer content={rulesPost.content} />
-                  </div>
+                  <MarkdownRenderer content={rulesPost.content} />
                 ) : (
                   <Text>대회 규칙을 찾을 수 없습니다.</Text>
                 )}

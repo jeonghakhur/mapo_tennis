@@ -2,12 +2,18 @@ import useSWR, { mutate } from 'swr';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-export function useNotifications(userId?: string) {
+const DEFAULT_REFRESH_INTERVAL =
+  typeof window !== 'undefined' && process.env.NEXT_PUBLIC_NOTI_REFRESH_INTERVAL
+    ? Number(process.env.NEXT_PUBLIC_NOTI_REFRESH_INTERVAL)
+    : 10000;
+
+export function useNotifications(userId?: string, options?: { pause?: boolean }) {
+  const { pause } = options || {};
   const { data, error, isLoading } = useSWR(
     `/api/notifications${userId ? `?userId=${userId}` : ''}`,
     fetcher,
     {
-      refreshInterval: 10000, // 10초마다 폴링
+      refreshInterval: pause ? 0 : DEFAULT_REFRESH_INTERVAL,
       revalidateOnFocus: true,
     },
   );

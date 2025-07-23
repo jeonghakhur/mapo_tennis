@@ -14,9 +14,15 @@ export default function Navbar() {
   const pathname = usePathname();
   const { user } = useUser(session?.user?.email);
 
+  // 알림이 필요 없는 페이지 목록
+  const notificationExcludedPaths = ['/simple', '/studio', '/tiptap'];
+  const isNotificationPage = !notificationExcludedPaths.some((path) => pathname.startsWith(path));
+
   // 관리자 권한 확인
   const admin = isAdmin(user);
-  const { unreadCount } = useNotifications(admin ? undefined : user?._id);
+  const { unreadCount } = useNotifications(admin ? undefined : user?._id, {
+    pause: !isNotificationPage,
+  });
 
   // 뒤로가기 가능한 페이지인지 확인
   const canGoBack = pathname !== '/' && !pathname.startsWith('/auth');

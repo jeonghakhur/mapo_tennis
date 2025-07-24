@@ -70,13 +70,29 @@ export default function AuthButton() {
         variant="soft"
         onClick={async () => {
           try {
+            // PWA 관련 문제 방지를 위한 추가 처리
+            if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+              // 서비스 워커가 있다면 정리
+              const registrations = await navigator.serviceWorker.getRegistrations();
+              for (const registration of registrations) {
+                await registration.unregister();
+              }
+            }
+
             await signOut({
               callbackUrl: '/',
               redirect: true,
             });
           } catch (error) {
             console.error('로그아웃 실패:', error);
-            window.location.href = '/';
+            // 강제로 홈페이지로 이동
+            try {
+              window.location.href = '/';
+            } catch (fallbackError) {
+              console.error('홈페이지 이동 실패:', fallbackError);
+              // 최후의 수단으로 페이지 새로고침
+              window.location.reload();
+            }
           }
         }}
       >

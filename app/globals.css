@@ -80,6 +80,13 @@
   --tt-color-highlight-red: #ffe4e6;
   --tt-color-highlight-purple: #f3e8ff;
   --tt-color-highlight-yellow: #fef9c3;
+  --default-font-size: 20px !important;
+}
+
+.radix-themes {
+  &:where([data-scaling='110%']) {
+    --scaling: 1.2;
+  }
 }
 
 .dark {

@@ -7,12 +7,15 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useUser } from '@/hooks/useUser';
 import { ArrowLeft, Menu, User, LogOut, BellRing, House } from 'lucide-react';
 import { isAdmin, hasPermissionLevel } from '@/lib/authUtils';
+import { useState, useEffect } from 'react';
 
 export default function Navbar() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useUser(session?.user?.email);
+  const [bigFont, setBigFont] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // 알림이 필요 없는 페이지 목록
   const notificationExcludedPaths = ['/simple', '/studio', '/tiptap'];
@@ -32,6 +35,55 @@ export default function Navbar() {
       router.back();
     }
   };
+
+  // 큰글씨 모드 토글 함수
+  const toggleBigFont = () => {
+    const newBigFont = !bigFont;
+    setBigFont(newBigFont);
+
+    // Theme의 scaling 변경 - radix-themes 클래스명 사용
+    const themeElement = document.querySelector('.radix-themes');
+    if (themeElement) {
+      themeElement.setAttribute('data-scaling', newBigFont ? '110%' : '100%');
+    }
+
+    // localStorage에 저장
+    localStorage.setItem('bigFontMode', newBigFont ? 'true' : 'false');
+  };
+
+  // 컴포넌트 마운트 시 localStorage에서 값 복원
+  useEffect(() => {
+    const saved = localStorage.getItem('bigFontMode');
+    if (saved === 'true') {
+      setBigFont(true);
+      // 초기 렌더링 시 scaling 설정
+      const themeElement = document.querySelector('.radix-themes');
+      if (themeElement) {
+        themeElement.setAttribute('data-scaling', '110%');
+      }
+    }
+    setIsInitialized(true);
+  }, []);
+
+  // 초기화가 완료되지 않았으면 로딩 상태 표시
+  if (!isInitialized) {
+    return (
+      <nav
+        style={{
+          borderBottom: '1px solid #eee',
+          background: '#fff',
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          height: '56px',
+        }}
+      >
+        <Flex align="center" px="4" py="3" justify="center">
+          <div>Loading...</div>
+        </Flex>
+      </nav>
+    );
+  }
 
   return (
     <nav
@@ -112,52 +164,96 @@ export default function Navbar() {
             </DropdownMenu.Trigger>
             <DropdownMenu.Content>
               {status === 'authenticated' && session && (
-                <DropdownMenu.Item onClick={() => router.push('/profile')}>
+                <DropdownMenu.Item
+                  onClick={() => router.push('/profile')}
+                  style={{ fontSize: '16px' }}
+                >
                   <User size={14} />
                   프로필
                 </DropdownMenu.Item>
               )}
               {hasPermissionLevel(user, 4) && (
-                <DropdownMenu.Item onClick={() => router.push('/club')}>클럽</DropdownMenu.Item>
+                <DropdownMenu.Item
+                  onClick={() => router.push('/club')}
+                  style={{ fontSize: '16px' }}
+                >
+                  클럽
+                </DropdownMenu.Item>
               )}
               {hasPermissionLevel(user, 4) && (
-                <DropdownMenu.Item onClick={() => router.push('/club-member')}>
+                <DropdownMenu.Item
+                  onClick={() => router.push('/club-member')}
+                  style={{ fontSize: '16px' }}
+                >
                   클럽멤버
                 </DropdownMenu.Item>
               )}
               {hasPermissionLevel(user, 4) && (
-                <DropdownMenu.Item onClick={() => router.push('/posts')}>포스트</DropdownMenu.Item>
+                <DropdownMenu.Item
+                  onClick={() => router.push('/posts')}
+                  style={{ fontSize: '16px' }}
+                >
+                  포스트
+                </DropdownMenu.Item>
               )}
               {hasPermissionLevel(user, 4) && (
-                <DropdownMenu.Item onClick={() => router.push('/expenses')}>
+                <DropdownMenu.Item
+                  onClick={() => router.push('/expenses')}
+                  style={{ fontSize: '16px' }}
+                >
                   지출내역
                 </DropdownMenu.Item>
               )}
-              <DropdownMenu.Item onClick={() => router.push('/tournaments')}>
+              <DropdownMenu.Item
+                onClick={() => router.push('/tournaments')}
+                style={{ fontSize: '16px' }}
+              >
                 대회일정
               </DropdownMenu.Item>
               {!admin && (
-                <DropdownMenu.Item onClick={() => router.push('/tournament-applications')}>
+                <DropdownMenu.Item
+                  onClick={() => router.push('/tournament-applications')}
+                  style={{ fontSize: '16px' }}
+                >
                   내 참가신청
                 </DropdownMenu.Item>
               )}
               {admin && (
-                <DropdownMenu.Item onClick={() => router.push('/tournament-applications/admin')}>
+                <DropdownMenu.Item
+                  onClick={() => router.push('/tournament-applications/admin')}
+                  style={{ fontSize: '16px' }}
+                >
                   전체 참가신청 목록
                 </DropdownMenu.Item>
               )}
               {admin && (
-                <DropdownMenu.Item onClick={() => router.push('/admin/users')}>
+                <DropdownMenu.Item
+                  onClick={() => router.push('/admin/users')}
+                  style={{ fontSize: '16px' }}
+                >
                   회원 관리
                 </DropdownMenu.Item>
               )}
+              <DropdownMenu.CheckboxItem
+                checked={bigFont}
+                onClick={toggleBigFont}
+                style={{ fontSize: '16px' }}
+              >
+                큰글씨 모드
+              </DropdownMenu.CheckboxItem>
               <DropdownMenu.Separator />
               {status === 'loading' ? null : !session ? (
                 <>
-                  <DropdownMenu.Item onClick={() => router.push('/auth/signin')}>
+                  <DropdownMenu.Item
+                    onClick={() => router.push('/auth/signin')}
+                    style={{ fontSize: '16px' }}
+                  >
                     로그인
                   </DropdownMenu.Item>
-                  <DropdownMenu.Item onClick={() => router.push('/auth/signup')}>
+                  <DropdownMenu.Item
+                    onClick={() => router.push('/auth/signup')}
+                    style={{ fontSize: '16px' }}
+                  >
                     회원가입
                   </DropdownMenu.Item>
                 </>
@@ -175,6 +271,7 @@ export default function Navbar() {
                       window.location.href = '/';
                     }
                   }}
+                  style={{ fontSize: '16px' }}
                 >
                   <LogOut size={14} />
                   로그아웃

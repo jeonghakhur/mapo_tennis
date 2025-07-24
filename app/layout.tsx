@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
-import './globals.css';
+
 import '@radix-ui/themes/styles.css';
+import './globals.css';
 import SessionProviderWrapper from '../components/SessionProviderWrapper';
 import { Theme } from '@radix-ui/themes';
 import SWRConfigContext from '../context/SWRConfigContext';
@@ -43,7 +44,7 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Theme>
+        <Theme scaling="100%">
           <SessionProviderWrapper>
             <SWRConfigContext>{children}</SWRConfigContext>
           </SessionProviderWrapper>

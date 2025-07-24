@@ -261,3 +261,9 @@ main .toastui-editor-contents {
     margin-bottom: 0.5rem;
   }
 }
+
+.navbar-dropdown-menu {
+  [role='menuitem'] {
+    margin: 0.3rem 0;
+  }
+}

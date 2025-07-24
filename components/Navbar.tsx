@@ -5,7 +5,25 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useUser } from '@/hooks/useUser';
-import { ArrowLeft, Menu, User, LogOut, BellRing, House } from 'lucide-react';
+import {
+  User,
+  Users,
+  UserCheck,
+  FileText,
+  Receipt,
+  Calendar,
+  Trophy,
+  ClipboardList,
+  UserCog,
+  LogIn,
+  UserPlus,
+  ArrowLeft,
+  Menu,
+  LogOut,
+  BellRing,
+  House,
+  ZoomIn,
+} from 'lucide-react';
 import { isAdmin, hasPermissionLevel } from '@/lib/authUtils';
 import { useState, useEffect } from 'react';
 
@@ -162,11 +180,11 @@ export default function Navbar() {
                 <Menu size={28} strokeWidth={2} className="text-gray-800" />
               </Button>
             </DropdownMenu.Trigger>
-            <DropdownMenu.Content>
+            <DropdownMenu.Content className="navbar-dropdown-menu">
               {status === 'authenticated' && session && (
                 <DropdownMenu.Item
                   onClick={() => router.push('/profile')}
-                  style={{ fontSize: '16px' }}
+                  style={{ fontSize: '18px', fontWeight: 'bold' }}
                 >
                   <User size={14} />
                   프로필
@@ -175,70 +193,79 @@ export default function Navbar() {
               {hasPermissionLevel(user, 4) && (
                 <DropdownMenu.Item
                   onClick={() => router.push('/club')}
-                  style={{ fontSize: '16px' }}
+                  style={{ fontSize: '18px', fontWeight: 'bold' }}
                 >
+                  <Users size={14} />
                   클럽
                 </DropdownMenu.Item>
               )}
               {hasPermissionLevel(user, 4) && (
                 <DropdownMenu.Item
                   onClick={() => router.push('/club-member')}
-                  style={{ fontSize: '16px' }}
+                  style={{ fontSize: '18px', fontWeight: 'bold' }}
                 >
+                  <UserCheck size={14} />
                   클럽멤버
                 </DropdownMenu.Item>
               )}
               {hasPermissionLevel(user, 4) && (
                 <DropdownMenu.Item
                   onClick={() => router.push('/posts')}
-                  style={{ fontSize: '16px' }}
+                  style={{ fontSize: '18px', fontWeight: 'bold' }}
                 >
+                  <FileText size={14} />
                   포스트
                 </DropdownMenu.Item>
               )}
               {hasPermissionLevel(user, 4) && (
                 <DropdownMenu.Item
                   onClick={() => router.push('/expenses')}
-                  style={{ fontSize: '16px' }}
+                  style={{ fontSize: '18px', fontWeight: 'bold' }}
                 >
+                  <Receipt size={14} />
                   지출내역
                 </DropdownMenu.Item>
               )}
               <DropdownMenu.Item
                 onClick={() => router.push('/tournaments')}
-                style={{ fontSize: '16px' }}
+                style={{ fontSize: '18px', fontWeight: 'bold' }}
               >
+                <Calendar size={14} />
                 대회일정
               </DropdownMenu.Item>
 
               <DropdownMenu.Item
                 onClick={() => router.push('/awards')}
-                style={{ fontSize: '16px' }}
+                style={{ fontSize: '18px', fontWeight: 'bold' }}
               >
+                <Trophy size={14} />
                 대회결과
               </DropdownMenu.Item>
 
               {!admin && (
                 <DropdownMenu.Item
                   onClick={() => router.push('/tournament-applications')}
-                  style={{ fontSize: '16px' }}
+                  style={{ fontSize: '18px', fontWeight: 'bold' }}
                 >
+                  <ClipboardList size={14} />
                   내참가신청
                 </DropdownMenu.Item>
               )}
               {admin && (
                 <DropdownMenu.Item
                   onClick={() => router.push('/tournament-applications/admin')}
-                  style={{ fontSize: '16px' }}
+                  style={{ fontSize: '18px', fontWeight: 'bold' }}
                 >
+                  <ClipboardList size={14} />
                   전체참가신청목록
                 </DropdownMenu.Item>
               )}
               {admin && (
                 <DropdownMenu.Item
                   onClick={() => router.push('/admin/users')}
-                  style={{ fontSize: '16px' }}
+                  style={{ fontSize: '18px', fontWeight: 'bold' }}
                 >
+                  <UserCog size={14} />
                   회원관리
                 </DropdownMenu.Item>
               )}
@@ -246,8 +273,9 @@ export default function Navbar() {
               <DropdownMenu.CheckboxItem
                 checked={bigFont}
                 onClick={toggleBigFont}
-                style={{ fontSize: '16px' }}
+                style={{ fontSize: '18px', fontWeight: 'bold' }}
               >
+                <ZoomIn size={14} />
                 큰글씨모드
               </DropdownMenu.CheckboxItem>
               <DropdownMenu.Separator />
@@ -255,14 +283,16 @@ export default function Navbar() {
                 <>
                   <DropdownMenu.Item
                     onClick={() => router.push('/auth/signin')}
-                    style={{ fontSize: '16px' }}
+                    style={{ fontSize: '18px', fontWeight: 'bold' }}
                   >
+                    <LogIn size={14} />
                     로그인
                   </DropdownMenu.Item>
                   <DropdownMenu.Item
                     onClick={() => router.push('/auth/signup')}
-                    style={{ fontSize: '16px' }}
+                    style={{ fontSize: '18px', fontWeight: 'bold' }}
                   >
+                    <UserPlus size={14} />
                     회원가입
                   </DropdownMenu.Item>
                 </>
@@ -280,7 +310,7 @@ export default function Navbar() {
                       window.location.href = '/';
                     }
                   }}
-                  style={{ fontSize: '16px' }}
+                  style={{ fontSize: '18px', fontWeight: 'bold' }}
                 >
                   <LogOut size={14} />
                   로그아웃

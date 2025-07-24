@@ -104,3 +104,30 @@ mapo_tennis/
   ```
 - mutate의 첫 번째 인자로 직접 데이터를 넘기는 방식은 사용하지 않습니다.
 - 일관된 UX와 코드 유지보수를 위해 위 원칙을 반드시 준수해 주세요.
+
+---
+
+### Next.js Route Handler 시그니처 주의사항 (자주 발생하는 오류)
+
+- Next.js 13/14 App Router의 API Route(Handler)에서 두 번째 인자(context)의 타입과 사용법에 주의해야 합니다.
+- 아래와 같이 두 번째 인자를 구조분해({ params })로 바로 받으면 타입 에러가 발생할 수 있습니다.
+
+  ```ts
+  // ❌ 잘못된 예시 (빌드 에러 발생)
+  export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+    // ...
+  }
+  ```
+
+- 반드시 context 전체 객체로 받고, 내부에서 context.params.id로 접근해야 합니다.
+
+  ```ts
+  // ✅ 올바른 예시
+  export async function GET(request: NextRequest, context: { params: { id: string } }) {
+    const { id } = context.params;
+    // ...
+  }
+  ```
+
+- PUT, DELETE 등 다른 메서드도 동일하게 적용해 주세요.
+- 이 규칙을 지키지 않으면 "Type ... is not a valid type for the function's second argument"와 같은 빌드 에러가 발생합니다.

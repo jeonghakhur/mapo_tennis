@@ -3,9 +3,10 @@ import { withPermission, UserWithLevel } from '@/lib/apiUtils';
 import { awardService } from '@/service/award';
 
 // GET: 개별 수상 결과 조회
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function GET(request: NextRequest, context: any) {
   try {
-    const award = await awardService.getAwardById(params.id);
+    const award = await awardService.getAwardById(context.params.id);
     if (!award) {
       return NextResponse.json({ error: '수상 결과를 찾을 수 없습니다.' }, { status: 404 });
     }
@@ -30,8 +31,9 @@ async function updateAwardHandler(req: NextRequest, user: UserWithLevel, params:
 }
 
 // PUT: 수상 결과 수정 (권한 체크 포함)
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-  return withPermission(req, 3, (req, user) => updateAwardHandler(req, user, params));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function PUT(req: NextRequest, context: any) {
+  return withPermission(req, 3, (req, user) => updateAwardHandler(req, user, context.params));
 }
 
 // DELETE: 수상 결과 삭제 핸들러
@@ -47,6 +49,7 @@ async function deleteAwardHandler(req: NextRequest, user: UserWithLevel, params:
 }
 
 // DELETE: 수상 결과 삭제 (권한 체크 포함)
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  return withPermission(req, 3, (req, user) => deleteAwardHandler(req, user, params));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function DELETE(req: NextRequest, context: any) {
+  return withPermission(req, 3, (req, user) => deleteAwardHandler(req, user, context.params));
 }

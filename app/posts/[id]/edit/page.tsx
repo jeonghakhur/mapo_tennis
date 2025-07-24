@@ -53,7 +53,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
       setFormData({
         title: post.title,
         content: post.content,
-        author: typeof post.author === 'string' ? { _ref: post.author } : post.author, // 항상 객체 형태로
+        author: { _ref: post.author_id },
         category: post.category,
         isPublished: post.isPublished,
         attachments: post.attachments || [],
@@ -67,9 +67,6 @@ export default function EditPostPage({ params }: EditPostPageProps) {
 
     if (!formData.title.trim()) {
       newErrors.title = '제목을 입력해 주세요.';
-    }
-    if (!formData.author || !(' _ref' in formData.author) || !formData.author._ref) {
-      newErrors.author = '작성자 정보가 올바르지 않습니다.';
     }
 
     setErrors(newErrors);

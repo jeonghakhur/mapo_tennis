@@ -662,9 +662,9 @@ export default function TournamentForm({
                       handleInputChange(setFormData, 'rulesPostId', value === 'none' ? '' : value);
                     }}
                   >
-                    <Select.Trigger placeholder="대회 규칙 포스트를 선택하세요" />
+                    <Select.Trigger />
                     <Select.Content>
-                      <Select.Item value="none">선택하지 않음</Select.Item>
+                      <Select.Item value="none">선택 안함</Select.Item>
                       {infoPosts.map((post) => (
                         <Select.Item key={post._id} value={post._id}>
                           {post.title}

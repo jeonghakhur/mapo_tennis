@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { usePost } from '@/hooks/usePosts';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import type { Attachment } from '@/model/post';
-import { use } from 'react';
+import { use, useEffect } from 'react';
 import SkeletonCard from '@/components/SkeletonCard';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import { useState } from 'react';
@@ -43,6 +43,8 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
       notice: '공지사항',
       event: '이벤트',
       general: '일반',
+      tournament_rules: '대회규칙',
+      tournament_info: '대회요강',
     };
     return categoryMap[category as keyof typeof categoryMap] || category;
   };
@@ -73,6 +75,10 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
+
+  useEffect(() => {
+    console.log(post);
+  }, [post]);
 
   if (isLoading) {
     return (
@@ -118,15 +124,16 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
 
             {/* 제목 */}
             <div>
-              <Text size="6" weight="bold" className="block mb-2">
+              <Text weight="bold" className="block mb-2 text-2xl">
                 {post.title}
               </Text>
             </div>
 
             {/* 메타 정보 */}
+
             <div className="flex flex-wrap gap-4 text-sm text-gray-600 border-b pb-4">
               <span>
-                작성자: {typeof post.author === 'string' ? post.author : post.author?.name || ''}
+                작성자: {typeof post.author === 'string' ? post.author : post.author?.name}
               </span>
               <span>생성일: {formatDate(post.createdAt)}</span>
               {post.updatedAt && <span>수정일: {formatDate(post.updatedAt)}</span>}

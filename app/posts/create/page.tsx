@@ -31,7 +31,7 @@ export default function CreatePostPage() {
     attachments: [],
   });
   const { loading, withLoading } = useLoading();
-  const [errors, setErrors] = useState<{ title?: string }>({});
+  const [errors, setErrors] = useState<{ title?: string; author?: string }>({});
   const [dialog, setDialog] = useState<{
     open: boolean;
     title: string;
@@ -77,10 +77,13 @@ export default function CreatePostPage() {
   }
 
   const validateForm = () => {
-    const newErrors: { title?: string } = {};
+    const newErrors: { title?: string; author?: string } = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = '제목을 입력해주세요.';
+      newErrors.title = '제목을 입력해 주세요.';
+    }
+    if (!formData.author || !formData.author._ref) {
+      newErrors.author = '작성자 정보가 올바르지 않습니다.';
     }
 
     setErrors(newErrors);
@@ -212,6 +215,11 @@ export default function CreatePostPage() {
             {errors.title && (
               <Text size="1" color="red" mt="1">
                 {errors.title}
+              </Text>
+            )}
+            {errors.author && (
+              <Text size="1" color="red" mt="1">
+                {errors.author}
               </Text>
             )}
           </div>

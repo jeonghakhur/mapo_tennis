@@ -48,6 +48,9 @@ export async function POST(req: NextRequest) {
       if (!data.title || !data.title.trim()) {
         return NextResponse.json({ error: '제목은 필수 입력 사항입니다.' }, { status: 400 });
       }
+      if (!data.author || !data.author._ref) {
+        return NextResponse.json({ error: '작성자 정보가 올바르지 않습니다.' }, { status: 400 });
+      }
 
       console.log(data);
 
@@ -93,6 +96,14 @@ export async function PATCH(req: NextRequest) {
         return NextResponse.json({ ok: true, post: result });
       } else {
         const updateFields: Partial<PostInput> = await req.json();
+        // author가 string이면 {_ref: author}로 변환
+        if (updateFields.author && typeof updateFields.author === 'string') {
+          updateFields.author = { _ref: updateFields.author };
+        }
+        // author._ref가 없으면 에러 반환
+        if (updateFields.author && !updateFields.author._ref) {
+          return NextResponse.json({ error: '작성자 정보가 올바르지 않습니다.' }, { status: 400 });
+        }
         const result = await updatePost(id, updateFields);
 
         // 알림 생성

@@ -38,7 +38,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     attachments: [],
   });
   const [isSaving, setIsSaving] = useState(false);
-  const [errors, setErrors] = useState<{ title?: string }>({});
+  const [errors, setErrors] = useState<{ title?: string; author?: string }>({});
   const [actionLoading, setActionLoading] = useState(false);
 
   // 권한이 없는 경우 포스트 목록으로 리다이렉트
@@ -53,7 +53,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
       setFormData({
         title: post.title,
         content: post.content,
-        author: post.author, // 기존 작성자 정보 유지
+        author: typeof post.author === 'string' ? { _ref: post.author } : post.author, // 항상 객체 형태로
         category: post.category,
         isPublished: post.isPublished,
         attachments: post.attachments || [],
@@ -63,10 +63,13 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   }, [post]);
 
   const validateForm = () => {
-    const newErrors: { title?: string } = {};
+    const newErrors: { title?: string; author?: string } = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = '제목을 입력해주세요.';
+      newErrors.title = '제목을 입력해 주세요.';
+    }
+    if (!formData.author || !(' _ref' in formData.author) || !formData.author._ref) {
+      newErrors.author = '작성자 정보가 올바르지 않습니다.';
     }
 
     setErrors(newErrors);
@@ -78,7 +81,10 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     setActionLoading(true);
     setIsSaving(true);
     try {
-      await updatePost(id, { ...formData, isPublished: publish });
+      // author가 string이면 {_ref: author}로 변환
+      const authorObj =
+        typeof formData.author === 'string' ? { _ref: formData.author } : formData.author;
+      await updatePost(id, { ...formData, author: authorObj, isPublished: publish });
       alert(publish ? '포스트가 발행되었습니다.' : '포스트가 저장되었습니다.');
       router.push('/posts');
     } catch {
@@ -184,6 +190,11 @@ export default function EditPostPage({ params }: EditPostPageProps) {
             {errors.title && (
               <Text size="1" color="red" mt="1">
                 {errors.title}
+              </Text>
+            )}
+            {errors.author && (
+              <Text size="1" color="red" mt="1">
+                {errors.author}
               </Text>
             )}
           </div>

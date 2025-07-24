@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
+import { Box } from '@radix-ui/themes';
 
 // Toast UI Editor Viewer를 동적으로 import
 const Viewer = dynamic(
@@ -46,11 +47,10 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
   }, [content, isClient]);
 
   // 디버깅을 위한 콘솔 로그
-  console.log('MarkdownRenderer content:', content);
 
   return (
-    <div className="markdown-content">
+    <Box className="markdown-content" style={{ fontSize: '2rem' }}>
       {isClient && <Viewer ref={viewerRef} initialValue={content || ''} />}
-    </div>
+    </Box>
   );
 }

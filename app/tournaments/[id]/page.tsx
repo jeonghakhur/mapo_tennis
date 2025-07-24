@@ -127,7 +127,7 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
           <div className="space-y-6">
             {/* 기본 정보 */}
             <Flex direction="column" gap="4">
-              <Text size="6" weight="bold" className="block">
+              <Text weight="bold" className="block text-2xl">
                 대회요강
               </Text>
               <div className="table-view">

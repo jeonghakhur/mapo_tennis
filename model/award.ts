@@ -8,6 +8,7 @@ export interface Award {
   players: string[];
   club: string;
   order: number;
+  gameType: '단체전' | '개인전';
   _createdAt: string;
   _updatedAt: string;
   _rev: string;
@@ -21,6 +22,7 @@ export interface AwardInput {
   players: string[];
   club: string;
   order: number;
+  gameType: '단체전' | '개인전';
 }
 
 // 부서 구분 상수 (참고용)

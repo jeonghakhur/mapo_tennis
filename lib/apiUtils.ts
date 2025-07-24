@@ -15,7 +15,7 @@ export const PERMISSION_LEVELS = {
 } as const;
 
 // 사용자 타입 정의
-type UserWithLevel = {
+export type UserWithLevel = {
   id: string;
   name?: string | null;
   email?: string | null;

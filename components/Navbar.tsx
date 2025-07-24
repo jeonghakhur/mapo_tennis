@@ -210,12 +210,20 @@ export default function Navbar() {
               >
                 대회일정
               </DropdownMenu.Item>
+
+              <DropdownMenu.Item
+                onClick={() => router.push('/awards')}
+                style={{ fontSize: '16px' }}
+              >
+                대회결과
+              </DropdownMenu.Item>
+
               {!admin && (
                 <DropdownMenu.Item
                   onClick={() => router.push('/tournament-applications')}
                   style={{ fontSize: '16px' }}
                 >
-                  내 참가신청
+                  내참가신청
                 </DropdownMenu.Item>
               )}
               {admin && (
@@ -223,7 +231,7 @@ export default function Navbar() {
                   onClick={() => router.push('/tournament-applications/admin')}
                   style={{ fontSize: '16px' }}
                 >
-                  전체 참가신청 목록
+                  전체참가신청목록
                 </DropdownMenu.Item>
               )}
               {admin && (
@@ -231,15 +239,16 @@ export default function Navbar() {
                   onClick={() => router.push('/admin/users')}
                   style={{ fontSize: '16px' }}
                 >
-                  회원 관리
+                  회원관리
                 </DropdownMenu.Item>
               )}
+
               <DropdownMenu.CheckboxItem
                 checked={bigFont}
                 onClick={toggleBigFont}
                 style={{ fontSize: '16px' }}
               >
-                큰글씨 모드
+                큰글씨모드
               </DropdownMenu.CheckboxItem>
               <DropdownMenu.Separator />
               {status === 'loading' ? null : !session ? (
@@ -290,29 +299,31 @@ function getPageTitle(pathname: string): string {
     '/club': '클럽',
     '/club-member': '클럽멤버',
     '/posts': '포스트',
-    '/posts/create': '포스트 작성',
+    '/posts/create': '포스트작성',
     '/expenses': '지출내역',
     '/tournaments': '대회일정',
     '/notifications': '알림',
     '/profile': '프로필',
-    '/tournament-applications/admin': '전체 참가신청 목록',
-    '/admin/users': '회원 관리',
-    '/welcome': '회원 가입',
+    '/tournament-applications/admin': '전체참가신청목록',
+    '/admin/users': '회원관리',
+    '/welcome': '회원가입',
+    '/awards': '대회결과',
+    '/awards/create': '대회결과등록',
   };
 
   // 1. 정확히 일치하는 경로 우선
   if (titleMap[pathname]) return titleMap[pathname];
 
   // 2. 동적 라우트 처리
-  if (pathname.startsWith('/posts/') && pathname.includes('/edit')) return '포스트 수정';
-  if (pathname.startsWith('/posts/')) return '포스트 상세';
-  if (pathname.startsWith('/club/')) return '클럽 상세';
-  if (pathname.startsWith('/club-member/')) return '클럽멤버 상세';
-  if (pathname.startsWith('/expenses/')) return '지출내역 상세';
+  if (pathname.startsWith('/posts/') && pathname.includes('/edit')) return '포스트수정';
+  if (pathname.startsWith('/posts/')) return '포스트상세';
+  if (pathname.startsWith('/club/')) return '클럽상세';
+  if (pathname.startsWith('/club-member/')) return '클럽멤버상세';
+  if (pathname.startsWith('/expenses/')) return '지출내역상세';
   if (pathname.startsWith('/tournaments/') && pathname.includes('/apply')) return '참가신청';
-  if (pathname.startsWith('/tournaments/') && pathname.includes('/edit')) return '대회 수정';
-  if (pathname.startsWith('/tournaments/')) return '대회 상세';
-  if (pathname.startsWith('/admin/users/')) return '회원 정보 수정';
+  if (pathname.startsWith('/tournaments/') && pathname.includes('/edit')) return '대회수정';
+  if (pathname.startsWith('/tournaments/')) return '대회상세';
+  if (pathname.startsWith('/admin/users/')) return '회원정보수정';
 
   return '페이지';
 }

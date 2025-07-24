@@ -1,113 +1,63 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { defineField, defineType } from 'sanity';
 
-import Image from 'next/image';
-
-export const user = {
+export default defineType({
   name: 'user',
+  title: '사용자',
   type: 'document',
   fields: [
-    {
-      name: 'name',
-      type: 'string',
-    },
-    {
+    defineField({
       name: 'email',
+      title: '이메일',
       type: 'string',
-    },
-    {
-      name: 'level',
+      validation: (Rule) => Rule.required().email(),
+    }),
+    defineField({
+      name: 'name',
+      title: '이름',
+      type: 'string',
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'image',
+      title: '프로필 이미지',
+      type: 'image',
+      options: {
+        hotspot: true,
+      },
+    }),
+    defineField({
+      name: 'role',
+      title: '역할',
+      type: 'string',
+      options: {
+        list: [
+          { title: '일반 사용자', value: 'user' },
+          { title: '관리자', value: 'admin' },
+        ],
+      },
+      initialValue: 'user',
+    }),
+    defineField({
+      name: 'permissionLevel',
+      title: '권한 레벨',
       type: 'number',
+      description: '0: 일반 사용자, 1: 클럽 회원, 2: 클럽 관리자, 3: 협회 임원, 4: 최고 관리자',
       initialValue: 0,
-    },
-    {
-      name: 'birth',
-      type: 'string',
-      title: '생일',
-    },
-    {
-      name: 'phone',
-      type: 'string',
-      title: '핸드폰번호',
-    },
-    {
-      name: 'address',
-      type: 'string',
-      title: '거주지',
-    },
-    {
-      name: 'gender',
-      type: 'string',
-      title: '성별',
-    },
-    {
-      name: 'score',
-      type: 'number',
-      title: '점수',
-    },
-    {
-      name: 'isApprovedUser',
-      title: '승인 회원 여부',
-      type: 'boolean',
-      initialValue: false,
-    },
-    {
-      name: 'clubs',
-      type: 'array',
-      title: '가입 클럽',
-      description: '사용자가 가입한 클럽 목록',
-      of: [
-        {
-          type: 'reference',
-          to: [{ type: 'club' }],
-        },
-      ],
-    },
-    // {
-    //   name: 'following',
-    //   type: 'array',
-    //   of: [
-    //     {
-    //       type: 'reference',
-    //       to: [{ type: 'user' }],
-    //     },
-    //   ],
-    //   validation: (Rule: any) => Rule.unique(),
-    // },
-    // {
-    //   name: 'followers',
-    //   type: 'array',
-    //   of: [
-    //     {
-    //       type: 'reference',
-    //       to: [{ type: 'user' }],
-    //     },
-    //   ],
-    //   validation: (Rule: any) => Rule.unique(),
-    // },
-    // {
-    //   name: 'bookmarks',
-    //   type: 'array',
-    //   of: [
-    //     {
-    //       type: 'reference',
-    //       to: [{ type: 'post' }],
-    //     },
-    //   ],
-    //   validation: (Rule: any) => Rule.unique(),
-    // },
+      validation: (Rule) => Rule.required().min(0).max(4),
+    }),
   ],
   preview: {
     select: {
       title: 'name',
-      subtitle: 'username',
+      subtitle: 'email',
       media: 'image',
     },
-    prepare({ title, subtitle, media }: any) {
+    prepare({ title, subtitle, media }) {
       return {
-        title,
-        subtitle,
-        media: media ? <Image src={media} alt="" width={20} height={20} /> : '',
+        title: title || '이름 없음',
+        subtitle: subtitle || '이메일 없음',
+        media: media,
       };
     },
   },
-};
+});

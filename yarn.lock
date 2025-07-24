@@ -9027,6 +9027,11 @@ react-focus-lock@^2.13.6:
     use-callback-ref "^1.3.3"
     use-sidecar "^1.1.3"
 
+react-hook-form@^7.61.0:
+  version "7.61.0"
+  resolved "https://registry.npmjs.org/react-hook-form/-/react-hook-form-7.61.0.tgz"
+  integrity sha512-o8S/HcCeuaAQVib36fPCgOLaaQN/v7Anj8zlYjcLMcz+4FnNfMsoDAEvVCefLb3KDnS43wq3pwcifehhkwowuQ==
+
 react-hotkeys-hook@^5.1.0:
   version "5.1.0"
   resolved "https://registry.npmjs.org/react-hotkeys-hook/-/react-hotkeys-hook-5.1.0.tgz"

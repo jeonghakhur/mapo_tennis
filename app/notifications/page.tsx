@@ -122,7 +122,7 @@ export default function NotificationsPage() {
         <Flex align="center" justify="between" mb="4">
           <Flex align="center" gap="2">
             <Bell size={24} />
-            <Text size="6" weight="bold">
+            <Text weight="bold" className="text-xl">
               알림
             </Text>
             {unreadCount > 0 && (

@@ -133,6 +133,11 @@ export default function AwardForm({
       return;
     }
 
+    // 대회명에 따라 gameType 자동 분류
+    let gameType: '단체전' | '개인전' = '단체전';
+    if (competition.includes('개인전')) gameType = '개인전';
+    else if (competition.includes('단체전')) gameType = '단체전';
+
     setFocusMoveFn(null);
     await onSubmit({
       competition,
@@ -142,6 +147,7 @@ export default function AwardForm({
       players: players.filter((p) => p.trim()),
       club,
       order: Number(order),
+      gameType,
     });
   };
 

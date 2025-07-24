@@ -2,7 +2,9 @@
 import { useState, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Card, Tabs, Button } from '@radix-ui/themes';
+import { Card, Tabs, Flex, TextField } from '@radix-ui/themes';
+import { Button } from '@/components/ui/button';
+import { Combobox } from '@/components/ui/combobox';
 import { Plus } from 'lucide-react';
 import AwardList from '@/components/AwardList';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -18,9 +20,20 @@ export default function AwardsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('전체');
+  const [deleteAllOpen, setDeleteAllOpen] = useState(false);
+
+  const categoryOptions = [
+    { value: '전체', label: '전체' },
+    { value: '우승', label: '우승' },
+    { value: '준우승', label: '준우승' },
+    { value: '3위', label: '3위' },
+    { value: '공동3위', label: '공동3위' },
+  ];
 
   const { user } = useUser(session?.user?.email);
-  const { awards, isLoading, deleteAward } = useAwards();
+  const { awards, isLoading, deleteAward, deleteAllAwards } = useAwards();
   const { loading: actionLoading, withLoading } = useLoading();
 
   const canManage = user ? hasPermissionLevel(user, 3) : false;
@@ -37,11 +50,36 @@ export default function AwardsPage() {
     });
   };
   const handleCreate = () => router.push('/awards/create');
+  const handleDeleteAll = async () => {
+    await withLoading(async () => {
+      try {
+        await deleteAllAwards();
+        setDeleteAllOpen(false);
+      } catch (error) {
+        alert(error instanceof Error ? error.message : '전체 삭제에 실패했습니다.');
+      }
+    });
+  };
 
   // 요약 데이터(예시: 대회/년도/부서/수상구분별 그룹핑)
   // 실제 요약 로직은 SummaryTable 내부에서 처리하는 것이 더 깔끔할 수 있습니다.
   // 아래는 awards를 그대로 넘기는 예시입니다.
   const summaryAwards = useMemo(() => awards, [awards]);
+
+  // 필터링 로직
+  const filteredAwards = useMemo(() => {
+    return awards.filter((award) => {
+      const keyword = search.trim().toLowerCase();
+      const matchKeyword =
+        !keyword ||
+        award.competition.toLowerCase().includes(keyword) ||
+        award.division.toLowerCase().includes(keyword) ||
+        award.club.toLowerCase().includes(keyword) ||
+        award.players.some((player) => player.toLowerCase().includes(keyword));
+      const matchCategory = category === '전체' || award.awardCategory === category;
+      return matchKeyword && matchCategory;
+    });
+  }, [awards, search, category]);
 
   // 1. 세션/데이터 로딩 중
   if (isLoading || status === 'loading') {
@@ -67,21 +105,58 @@ export default function AwardsPage() {
 
   return (
     <Container>
-      <Tabs.Root defaultValue="summary">
-        <Tabs.List>
-          <Tabs.Trigger value="summary">요약 보기</Tabs.Trigger>
-          <Tabs.Trigger value="all">전체 보기</Tabs.Trigger>
+      <Tabs.Root defaultValue="all">
+        <Tabs.List className="w-full" style={{ width: '100%' }}>
+          <Tabs.Trigger value="all" style={{ flex: 1, fontSize: '16px' }}>
+            전체 보기
+          </Tabs.Trigger>
+          <Tabs.Trigger value="summary" style={{ flex: 1, fontSize: '16px' }}>
+            요약 보기
+          </Tabs.Trigger>
         </Tabs.List>
-        <Tabs.Content value="summary">
-          <SummaryTable awards={summaryAwards} />
-        </Tabs.Content>
-        <Tabs.Content value="all">
+        <Tabs.Content value="all" className="pt-4">
+          <Flex direction="row" gap="2" mb="4">
+            <TextField.Root
+              placeholder="대회명, 부서명, 클럽명 검색"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              size="3"
+              radius="large"
+              style={{ minWidth: 200, fontSize: 16 }}
+            />
+            <Combobox
+              options={categoryOptions}
+              value={category}
+              onValueChange={(v) => {
+                if (!v) return;
+                setCategory(v);
+              }}
+              placeholder="수상구분"
+              className="flex-1"
+            />
+            {/* {canManage && awards.length > 0 && (
+              <Button
+                variant="outline"
+                color="red"
+                size="sm"
+                onClick={() => setDeleteAllOpen(true)}
+                disabled={actionLoading}
+                style={{ marginLeft: 8, height: 40 }}
+              >
+                <Trash2 size={18} style={{ marginRight: 4 }} />
+                {actionLoading ? '삭제 중...' : '전체 삭제'}
+              </Button>
+            )} */}
+          </Flex>
           <AwardList
-            awards={awards}
+            awards={filteredAwards}
             onEdit={handleEdit}
             onDelete={(id) => setDeleteId(id)}
             canManage={canManage}
           />
+        </Tabs.Content>
+        <Tabs.Content value="summary" className="pt-4">
+          <SummaryTable awards={summaryAwards} />
         </Tabs.Content>
       </Tabs.Root>
 
@@ -89,7 +164,7 @@ export default function AwardsPage() {
       {canManage && (
         <div className="fixed bottom-6 right-6 z-50">
           <Button
-            size="4"
+            size="lg"
             onClick={handleCreate}
             disabled={actionLoading}
             style={{
@@ -120,6 +195,17 @@ export default function AwardsPage() {
         }}
         onCancel={() => setDeleteId(null)}
         confirmText={actionLoading ? '삭제 중...' : '삭제'}
+        confirmColor="red"
+        disabled={actionLoading}
+      />
+      {/* 전체 삭제 확인 다이얼로그 */}
+      <ConfirmDialog
+        open={deleteAllOpen}
+        title="전체 삭제"
+        description="정말로 모든 수상 결과를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        onConfirm={handleDeleteAll}
+        onCancel={() => setDeleteAllOpen(false)}
+        confirmText={actionLoading ? '삭제 중...' : '전체 삭제'}
         confirmColor="red"
         disabled={actionLoading}
       />

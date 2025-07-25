@@ -242,6 +242,15 @@ export default function Navbar() {
                 대회결과
               </DropdownMenu.Item>
 
+              {status === 'authenticated' && session && (
+                <DropdownMenu.Item
+                  onClick={() => router.push('/questions')}
+                  style={{ fontSize: '18px', fontWeight: 'bold' }}
+                >
+                  <FileText size={14} />
+                  1:1 문의
+                </DropdownMenu.Item>
+              )}
               {!admin && (
                 <DropdownMenu.Item
                   onClick={() => router.push('/tournament-applications')}

@@ -6,5 +6,16 @@ import post from './post';
 import tournament from './tournament';
 import award from './award';
 import user from './user';
+import question from './question';
 
-export const schemaTypes = [club, clubMember, expense, notification, post, tournament, award, user];
+export const schemaTypes = [
+  club,
+  clubMember,
+  expense,
+  notification,
+  post,
+  tournament,
+  award,
+  user,
+  question,
+];

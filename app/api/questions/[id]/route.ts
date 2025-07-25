@@ -39,18 +39,66 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
         return NextResponse.json({ error: '유저 정보 없음' }, { status: 400 });
       }
       const body = await req.json();
-      const { answer } = body;
-      if (!answer) {
-        return NextResponse.json({ error: '답변 내용을 입력해 주세요.' }, { status: 400 });
+      // 답변 등록(관리자) vs 본인 글 수정 분기
+      if ('answer' in body) {
+        if (!body.answer) {
+          return NextResponse.json({ error: '답변 내용을 입력해 주세요.' }, { status: 400 });
+        }
+        // 답변 등록(관리자만)
+        if (!fullUser.level || fullUser.level < 4) {
+          return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 });
+        }
+        const question = await answerQuestion({
+          questionId: id,
+          answer: body.answer,
+          answeredById: fullUser._id,
+        });
+        return NextResponse.json({ question });
+      } else {
+        // 본인 글 수정
+        const question = await getQuestionById(id);
+        if (!question) {
+          return NextResponse.json({ error: '문의가 존재하지 않습니다.' }, { status: 404 });
+        }
+        const isOwner =
+          (typeof question.author === 'object' && question.author._id === fullUser._id) ||
+          (typeof question.author === 'string' && question.author === fullUser._id);
+        if (!isOwner) {
+          return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 });
+        }
+        // 벨리데이션: 제목/내용 필수
+        if (!body.title || !body.content) {
+          return NextResponse.json({ error: '제목과 내용을 입력해 주세요.' }, { status: 400 });
+        }
+        // 첨부파일 3MB 이하, 최대 3개, 이미지만
+        if (body.attachments && Array.isArray(body.attachments)) {
+          if (body.attachments.length > 3) {
+            return NextResponse.json(
+              { error: '첨부파일은 최대 3개까지 등록할 수 있습니다.' },
+              { status: 400 },
+            );
+          }
+          for (const file of body.attachments) {
+            if (!file.type?.startsWith('image/')) {
+              return NextResponse.json(
+                { error: '이미지 파일만 첨부할 수 있습니다.' },
+                { status: 400 },
+              );
+            }
+            if (file.size > 3 * 1024 * 1024) {
+              return NextResponse.json(
+                { error: '각 첨부파일은 3MB 이하만 등록할 수 있습니다.' },
+                { status: 400 },
+              );
+            }
+          }
+        }
+        // 실제 수정
+        const updated = await import('@/service/question').then((m) => m.updateQuestion(id, body));
+        return NextResponse.json({ question: updated });
       }
-      const question = await answerQuestion({
-        questionId: id,
-        answer,
-        answeredById: fullUser._id,
-      });
-      return NextResponse.json({ question });
     } catch (error) {
-      console.error('문의 답변 등록/수정 오류:', error);
+      console.error('문의 수정/답변 오류:', error);
       return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
     }
   });

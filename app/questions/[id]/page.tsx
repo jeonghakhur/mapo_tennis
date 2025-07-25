@@ -31,13 +31,11 @@ export default function QuestionDetailPage() {
   if (isError || !question) return <Text>문의 정보를 불러올 수 없습니다.</Text>;
 
   // 삭제 권한: 작성자 또는 레벨 4 이상
-  const canDelete =
-    data?.user &&
-    ((typeof question.author === 'object' && question.author._id === data.user.id) ||
-      data.user.level >= 4);
+  const isOwner =
+    data?.user && typeof question.author === 'object' && question.author._id === data.user.id;
+  const canDelete = isOwner || (data?.user && data.user.level >= 4);
 
   const handleDelete = async () => {
-    console.log('handleDelete', question);
     try {
       await deleteQuestion(question._id, '/api/questions');
       setDialog({
@@ -62,6 +60,16 @@ export default function QuestionDetailPage() {
         <Button asChild size="2" variant="soft">
           <Link href="/questions">← 목록으로</Link>
         </Button>
+        {isOwner && (
+          <Button
+            size="2"
+            variant="soft"
+            color="blue"
+            onClick={() => router.push(`/questions/${question._id}/edit`)}
+          >
+            수정
+          </Button>
+        )}
         {canDelete && (
           <Button size="2" color="red" variant="soft" onClick={() => setShowDelete(true)}>
             삭제

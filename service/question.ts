@@ -36,6 +36,16 @@ export async function getQuestionById(id: string): Promise<Question | null> {
   return await client.fetch(query, { id });
 }
 
+// 문의 수정 (작성자)
+export async function updateQuestion(id: string, data: Partial<QuestionInput>): Promise<Question> {
+  const patch: Partial<QuestionInput> = {};
+  if (data.title !== undefined) patch.title = data.title;
+  if (data.content !== undefined) patch.content = data.content;
+  if (data.attachments !== undefined) patch.attachments = data.attachments;
+  const updated = await client.patch(id).set(patch).commit();
+  return updated as unknown as Question;
+}
+
 // 답변 등록/수정 (관리자)
 export async function answerQuestion({
   questionId,

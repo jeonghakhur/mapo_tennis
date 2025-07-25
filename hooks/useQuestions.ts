@@ -131,6 +131,59 @@ export function useDeleteQuestion() {
   return { remove, isMutating };
 }
 
+// 문의 수정 (Optimistic Update)
+export function useUpdateQuestion() {
+  const { trigger, isMutating } = useSWRMutation(
+    '/api/questions/update', // dummy key
+    async (url, { arg }: { arg: { id: string; data: QuestionInput } }) => {
+      const res = await fetch(`/api/questions/${arg.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(arg.data),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
+      }
+      return res.json();
+    },
+  );
+
+  const update = useCallback(
+    async (id: string, data: QuestionInput, optimisticDetailKey: string) => {
+      await mutate(
+        optimisticDetailKey,
+        async (current: { question: Question } | undefined) => {
+          const safeCurrent = current ?? { question: undefined };
+          const result = await trigger({ id, data });
+          return { ...safeCurrent, question: result.question as Question };
+        },
+        {
+          optimisticData: (current: { question: Question } | undefined) => {
+            const safeCurrent = current ?? { question: undefined };
+            return {
+              ...safeCurrent,
+              question: {
+                ...safeCurrent.question,
+                ...data,
+                author:
+                  typeof data.author === 'string'
+                    ? data.author
+                    : { _id: data.author._ref, name: '' },
+              } as Question,
+            };
+          },
+          rollbackOnError: true,
+          revalidate: true,
+        },
+      );
+    },
+    [trigger],
+  );
+
+  return { update, isMutating };
+}
+
 // 답변 등록/수정 (Optimistic Update)
 export function useAnswerQuestion() {
   const { trigger, isMutating } = useSWRMutation(

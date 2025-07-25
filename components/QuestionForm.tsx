@@ -14,11 +14,17 @@ interface QuestionFormProps {
   onSubmit: (data: QuestionFormValues) => Promise<void>;
   isSubmitting?: boolean;
   onError?: (errors: Record<string, { message?: string }>) => void;
+  defaultValues?: QuestionFormValues;
 }
 
-export default function QuestionForm({ onSubmit, isSubmitting, onError }: QuestionFormProps) {
+export default function QuestionForm({
+  onSubmit,
+  isSubmitting,
+  onError,
+  defaultValues,
+}: QuestionFormProps) {
   const { register, handleSubmit, control, setValue, watch } = useForm<QuestionFormValues>({
-    defaultValues: {
+    defaultValues: defaultValues ?? {
       title: '',
       content: '',
       attachments: [],

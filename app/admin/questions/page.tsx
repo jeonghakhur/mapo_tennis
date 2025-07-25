@@ -1,49 +1,32 @@
-import { useEffect, useState } from 'react';
+'use client';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Box, Text } from '@radix-ui/themes';
-
-interface QuestionListItem {
-  _id: string;
-  title: string;
-  createdAt: string;
-  answer?: string;
-  author?: { name?: string };
-}
+import { useQuestionsList } from '@/hooks/useQuestions';
 
 export default function AdminQuestionListPage() {
   const router = useRouter();
   const { status, data } = useSession();
-  const [questions, setQuestions] = useState<QuestionListItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { questions, isLoading, isError } = useQuestionsList(true);
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.replace('/auth/signin');
-      return;
-    }
-    // 관리자만 접근 (level 5)
-    if (status === 'authenticated' && data?.user?.level < 5) {
-      router.replace('/');
-      return;
-    }
-    if (status === 'authenticated') {
-      fetch('/api/questions/admin')
-        .then((res) => res.json())
-        .then((data) => {
-          setQuestions(data.questions || []);
-        })
-        .finally(() => setLoading(false));
-    }
-  }, [status, data, router]);
+  if (status === 'unauthenticated') {
+    router.replace('/auth/signin');
+    return null;
+  }
+  if (status === 'authenticated' && data?.user?.level < 4) {
+    router.replace('/');
+    return null;
+  }
 
   return (
     <Box maxWidth="700px" mx="auto" mt="6">
       <Text size="5" weight="bold" mb="4">
         전체 1:1 문의 목록
       </Text>
-      {loading ? (
+      {isLoading ? (
         <Text>로딩 중...</Text>
+      ) : isError ? (
+        <Text>오류가 발생했습니다.</Text>
       ) : questions.length === 0 ? (
         <Text>등록된 문의가 없습니다.</Text>
       ) : (
@@ -69,7 +52,7 @@ export default function AdminQuestionListPage() {
                 <Text size="2" color={q.answer ? 'green' : 'red'} ml="3">
                   {q.answer ? '답변 완료' : '미답변'}
                 </Text>
-                {q.author?.name && (
+                {typeof q.author === 'object' && q.author?.name && (
                   <Text size="2" color="gray" ml="3">
                     작성자: {q.author.name}
                   </Text>

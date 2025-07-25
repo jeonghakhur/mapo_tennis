@@ -1,5 +1,5 @@
 import { useForm, Controller } from 'react-hook-form';
-import { Box, Text, Button, TextField } from '@radix-ui/themes';
+import { Box, Button, TextField } from '@radix-ui/themes';
 import { SimpleEditor } from '@/components/tiptap-templates/simple/simple-editor';
 import FileUpload from '@/components/FileUpload';
 import type { QuestionAttachment } from '@/model/question';
@@ -13,17 +13,11 @@ export interface QuestionFormValues {
 interface QuestionFormProps {
   onSubmit: (data: QuestionFormValues) => Promise<void>;
   isSubmitting?: boolean;
+  onError?: (errors: Record<string, { message?: string }>) => void;
 }
 
-export default function QuestionForm({ onSubmit, isSubmitting }: QuestionFormProps) {
-  const {
-    register,
-    handleSubmit,
-    control,
-    setValue,
-    formState: { errors },
-    watch,
-  } = useForm<QuestionFormValues>({
+export default function QuestionForm({ onSubmit, isSubmitting, onError }: QuestionFormProps) {
+  const { register, handleSubmit, control, setValue, watch } = useForm<QuestionFormValues>({
     defaultValues: {
       title: '',
       content: '',
@@ -53,51 +47,44 @@ export default function QuestionForm({ onSubmit, isSubmitting }: QuestionFormPro
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <Box>
-        <Text as="label" size="1" weight="bold" htmlFor="title">
-          제목
-        </Text>
-        <TextField.Root
-          id="title"
+    <form onSubmit={handleSubmit(onSubmit, onError)} noValidate>
+      <TextField.Root
+        id="title"
+        size="3"
+        placeholder="제목을 입력하세요"
+        {...register('title', { required: '제목을 입력해 주세요.' })}
+        mb="3"
+      />
+
+      <Controller
+        name="content"
+        control={control}
+        rules={{
+          required: '내용을 입력해 주세요.',
+          validate: (value) => {
+            // HTML 태그 제거 후 공백만 남으면 에러
+            const text = value.replace(/<[^>]*>/g, '').trim();
+            return text.length > 0 || '내용을 입력해 주세요.';
+          },
+        }}
+        render={({ field }) => (
+          <SimpleEditor
+            value={field.value}
+            onChange={field.onChange}
+            minHeight="200px"
+            maxHeight="400px"
+          />
+        )}
+      />
+
+      <Box position="relative" mt="4">
+        <FileUpload attachments={attachments} onAttachmentsChange={handleAttachmentsChange} />
+        <Button
+          type="submit"
           size="3"
-          placeholder="제목을 입력하세요"
-          {...register('title', { required: '제목을 입력해 주세요.' })}
-          mb="3"
-        />
-        {errors.title && (
-          <Text size="1" color="red">
-            {errors.title.message}
-          </Text>
-        )}
-
-        <Text as="label" size="1" weight="bold" htmlFor="content">
-          내용
-        </Text>
-        <Controller
-          name="content"
-          control={control}
-          rules={{ required: '내용을 입력해 주세요.' }}
-          render={({ field }) => (
-            <SimpleEditor
-              value={field.value}
-              onChange={field.onChange}
-              minHeight="200px"
-              maxHeight="400px"
-            />
-          )}
-        />
-        {errors.content && (
-          <Text size="1" color="red">
-            {errors.content.message}
-          </Text>
-        )}
-
-        <Box mt="4">
-          <FileUpload attachments={attachments} onAttachmentsChange={handleAttachmentsChange} />
-        </Box>
-
-        <Button type="submit" size="3" mt="4" disabled={isSubmitting}>
+          disabled={isSubmitting}
+          style={{ position: 'absolute', top: 0, right: 0 }}
+        >
           {isSubmitting ? '등록 중...' : '문의 등록'}
         </Button>
       </Box>

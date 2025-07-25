@@ -315,6 +315,7 @@ export function useCustomHook() {
     async () => { /* 서버 요청 */ },
     {
       optimisticData: /* UI에 미리 반영할 데이터 */,
+      populateCache: true,
       rollbackOnError: true,
       revalidate: true,
     }

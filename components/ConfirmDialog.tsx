@@ -21,7 +21,7 @@ export default function ConfirmDialog({
   title,
   description,
   confirmText = '확인',
-  cancelText = '취소',
+  cancelText = '',
   confirmVariant = 'solid',
   confirmColor,
   onConfirm,
@@ -63,17 +63,22 @@ export default function ConfirmDialog({
         <AlertDialog.Title>{title}</AlertDialog.Title>
         <AlertDialog.Description>{description}</AlertDialog.Description>
         <Flex gap="3" mt="4" justify="end">
-          <AlertDialog.Cancel onClick={handleCancel}>
-            <Button variant="soft" color="gray" disabled={isLoading}>
-              {cancelText}
-            </Button>
-          </AlertDialog.Cancel>
+          {cancelText && (
+            <AlertDialog.Cancel onClick={handleCancel}>
+              <Button variant="soft" size="3" color="gray" disabled={isLoading} style={{ flex: 1 }}>
+                {cancelText}
+              </Button>
+            </AlertDialog.Cancel>
+          )}
+
           <AlertDialog.Action>
             <Button
               variant={confirmVariant}
               color={confirmColor || 'red'}
               disabled={isLoading}
               onClick={handleConfirm}
+              size="3"
+              style={{ flex: 1 }}
             >
               {isLoading ? '처리 중...' : confirmText}
             </Button>

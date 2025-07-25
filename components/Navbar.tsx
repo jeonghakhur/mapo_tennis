@@ -278,6 +278,15 @@ export default function Navbar() {
                   회원관리
                 </DropdownMenu.Item>
               )}
+              {admin && (
+                <DropdownMenu.Item
+                  onClick={() => router.push('/admin/questions')}
+                  style={{ fontSize: '18px', fontWeight: 'bold' }}
+                >
+                  <FileText size={14} />
+                  1:1 문의(전체)
+                </DropdownMenu.Item>
+              )}
 
               <DropdownMenu.CheckboxItem
                 checked={bigFont}
@@ -364,6 +373,9 @@ function getPageTitle(pathname: string): string {
     '/welcome': '회원가입',
     '/awards': '대회결과',
     '/awards/create': '대회결과등록',
+    '/questions': '문의내역',
+    '/questions/create': '문의작성',
+    // '/admin/questions': '1:1 문의(전체)',
   };
 
   // 1. 정확히 일치하는 경로 우선
@@ -379,6 +391,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/tournaments/') && pathname.includes('/edit')) return '대회수정';
   if (pathname.startsWith('/tournaments/')) return '대회상세';
   if (pathname.startsWith('/admin/users/')) return '회원정보수정';
+  if (pathname.startsWith('/questions/')) return '1:1 문의상세';
 
   return '페이지';
 }

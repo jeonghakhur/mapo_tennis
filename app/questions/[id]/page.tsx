@@ -1,52 +1,73 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Box, Text, Button, Flex } from '@radix-ui/themes';
 import Link from 'next/link';
-// import { SimpleEditor } from '@/components/tiptap-templates/simple/simple-editor';
 import Image from 'next/image';
-
-interface QuestionDetail {
-  _id: string;
-  title: string;
-  content: string;
-  attachments?: { filename: string; url: string }[];
-  createdAt: string;
-  answer?: string;
-  answeredAt?: string;
-}
+import ConfirmDialog from '@/components/ConfirmDialog';
+import { useQuestionDetail, useDeleteQuestion } from '@/hooks/useQuestions';
 
 export default function QuestionDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const { status } = useSession();
-  const [question, setQuestion] = useState<QuestionDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { status, data } = useSession();
+  const { question, isLoading, isError } = useQuestionDetail(params?.id as string);
+  const { remove: deleteQuestion } = useDeleteQuestion();
+  const [showDelete, setShowDelete] = useState(false);
+  const [dialog, setDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    color: 'green' | 'red';
+  }>({ open: false, title: '', description: '', color: 'green' });
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.replace('/auth/signin');
-      return;
-    }
-    if (status === 'authenticated' && params?.id) {
-      fetch(`/api/questions/${params.id}`)
-        .then((res) => res.json())
-        .then((data) => {
-          setQuestion(data.question || null);
-        })
-        .finally(() => setLoading(false));
-    }
-  }, [status, params, router]);
+  if (status === 'unauthenticated') {
+    if (typeof window !== 'undefined') router.replace('/auth/signin');
+    return null;
+  }
 
-  if (loading) return <Text>로딩 중...</Text>;
-  if (!question) return <Text>문의 정보를 불러올 수 없습니다.</Text>;
+  if (isLoading) return <Text>로딩 중...</Text>;
+  if (isError || !question) return <Text>문의 정보를 불러올 수 없습니다.</Text>;
+
+  // 삭제 권한: 작성자 또는 레벨 4 이상
+  const canDelete =
+    data?.user &&
+    ((typeof question.author === 'object' && question.author._id === data.user.id) ||
+      data.user.level >= 4);
+
+  const handleDelete = async () => {
+    console.log('handleDelete', question);
+    try {
+      await deleteQuestion(question._id, '/api/questions');
+      setDialog({
+        open: true,
+        title: '삭제 완료',
+        description: '문의가 삭제되었습니다.',
+        color: 'green',
+      });
+    } catch {
+      setDialog({
+        open: true,
+        title: '오류 발생',
+        description: '삭제 중 오류가 발생했습니다.',
+        color: 'red',
+      });
+    }
+  };
 
   return (
     <Box maxWidth="600px" mx="auto" mt="6">
-      <Button asChild size="2" variant="soft" mb="4">
-        <Link href="/questions">← 목록으로</Link>
-      </Button>
+      <Flex justify="between" align="center" mb="4">
+        <Button asChild size="2" variant="soft">
+          <Link href="/questions">← 목록으로</Link>
+        </Button>
+        {canDelete && (
+          <Button size="2" color="red" variant="soft" onClick={() => setShowDelete(true)}>
+            삭제
+          </Button>
+        )}
+      </Flex>
       <Text size="5" weight="bold" mb="2">
         {question.title}
       </Text>
@@ -85,6 +106,31 @@ export default function QuestionDetailPage() {
           </Box>
         )}
       </Box>
+      <ConfirmDialog
+        title="삭제 확인"
+        description="정말로 이 문의를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        confirmText="삭제"
+        cancelText="취소"
+        confirmColor="red"
+        open={showDelete}
+        onOpenChange={setShowDelete}
+        onConfirm={handleDelete}
+      />
+      <ConfirmDialog
+        title={dialog.title}
+        description={dialog.description}
+        confirmText="확인"
+        confirmColor={dialog.color}
+        open={dialog.open}
+        onOpenChange={(open) => {
+          setDialog((d) => ({ ...d, open }));
+          if (!open && dialog.color === 'green') router.push('/questions');
+        }}
+        onConfirm={() => {
+          setDialog((d) => ({ ...d, open: false }));
+          if (dialog.color === 'green') router.push('/questions');
+        }}
+      />
     </Box>
   );
 }

@@ -70,10 +70,6 @@ export default function FileUpload({ attachments, onAttachmentsChange }: FileUpl
 
   return (
     <Box>
-      <Text as="div" size="2" weight="bold" mb="2">
-        첨부파일
-      </Text>
-
       <input
         ref={fileInputRef}
         type="file"
@@ -91,8 +87,8 @@ export default function FileUpload({ attachments, onAttachmentsChange }: FileUpl
           fileInputRef.current?.click();
         }}
         disabled={isUploading}
-        size="2"
         mb="3"
+        size="3"
       >
         <Upload size={16} />
         {isUploading ? '업로드 중...' : '파일 선택'}
@@ -111,7 +107,7 @@ export default function FileUpload({ attachments, onAttachmentsChange }: FileUpl
                   <Text size="2" weight="bold">
                     {attachment.filename}
                   </Text>
-                  <Text size="1" color="gray">
+                  <Text size="1" color="gray" ml="2">
                     {formatFileSize(attachment.size)}
                   </Text>
                 </div>

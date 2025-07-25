@@ -28,7 +28,11 @@ export async function getAllQuestions(): Promise<Question[]> {
 
 // 문의 상세 조회 (본인/관리자)
 export async function getQuestionById(id: string): Promise<Question | null> {
-  const query = `*[_type == "question" && _id == $id][0]`;
+  const query = `*[_type == "question" && _id == $id][0]{
+    ...,
+    author->{_id, name},
+    answeredBy->{_id, name}
+  }`;
   return await client.fetch(query, { id });
 }
 
@@ -60,3 +64,9 @@ export async function answerQuestion({
 // export async function notifyUserOnAnswer(_question: Question) {
 //   // TODO: question.author에게 알림 생성
 // }
+
+// 문의 삭제 (작성자 또는 관리자)
+export async function deleteQuestion(questionId: string): Promise<boolean> {
+  await client.delete(questionId);
+  return true;
+}

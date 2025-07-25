@@ -1,38 +1,25 @@
 'use client';
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Button, Text } from '@radix-ui/themes';
 import Link from 'next/link';
 import Container from '@/components/Container';
-
-interface QuestionListItem {
-  _id: string;
-  title: string;
-  createdAt: string;
-  answer?: string;
-}
+import { useQuestionsList } from '@/hooks/useQuestions';
 
 export default function QuestionListPage() {
   const router = useRouter();
   const { status } = useSession();
-  const [questions, setQuestions] = useState<QuestionListItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { questions, isLoading, isError } = useQuestionsList();
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.replace('/auth/signin');
-      return;
-    }
-    if (status === 'authenticated') {
-      fetch('/api/questions')
-        .then((res) => res.json())
-        .then((data) => {
-          setQuestions(data.questions || []);
-        })
-        .finally(() => setLoading(false));
-    }
-  }, [status, router]);
+  if (status === 'unauthenticated') {
+    if (typeof window !== 'undefined') router.replace('/auth/signin');
+    return null;
+  }
+
+  // 삭제 핸들러 예시 (상세에서만 사용 가능, 목록에서는 필요시 구현)
+  // const handleDelete = async (id: string) => {
+  //   await deleteQuestion(id, '/api/questions');
+  // };
 
   return (
     <Container>
@@ -51,8 +38,10 @@ export default function QuestionListPage() {
           <Link href="/questions/create">문의 작성</Link>
         </Button>
       </div>
-      {loading ? (
+      {isLoading ? (
         <Text>로딩 중...</Text>
+      ) : isError ? (
+        <Text>오류가 발생했습니다.</Text>
       ) : questions.length === 0 ? (
         <Text>등록된 문의가 없습니다.</Text>
       ) : (

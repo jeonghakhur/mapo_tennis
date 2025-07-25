@@ -1,3 +1,4 @@
+'use client';
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -5,25 +6,18 @@ import { Box, Text, Button, Flex } from '@radix-ui/themes';
 import { SimpleEditor } from '@/components/tiptap-templates/simple/simple-editor';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import Image from 'next/image';
-
-interface QuestionDetail {
-  _id: string;
-  title: string;
-  content: string;
-  attachments?: { filename: string; url: string }[];
-  createdAt: string;
-  answer?: string;
-  answeredAt?: string;
-}
+import { useQuestionDetail, useAnswerQuestion, useDeleteQuestion } from '@/hooks/useQuestions';
 
 export default function AdminQuestionDetailPage() {
   const router = useRouter();
   const params = useParams();
   const { status, data } = useSession();
-  const [question, setQuestion] = useState<QuestionDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { question, isLoading, isError } = useQuestionDetail(params?.id as string);
+  const { answer: answerQuestion, isMutating: isAnswering } = useAnswerQuestion();
+  const { remove: deleteQuestion } = useDeleteQuestion();
   const [answer, setAnswer] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
   const [dialog, setDialog] = useState<{
     open: boolean;
     title: string;
@@ -32,25 +26,22 @@ export default function AdminQuestionDetailPage() {
   }>({ open: false, title: '', description: '', color: 'green' });
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.replace('/auth/signin');
-      return;
-    }
-    // 관리자만 접근 (level 5)
-    if (status === 'authenticated' && data?.user?.level < 5) {
-      router.replace('/');
-      return;
-    }
-    if (status === 'authenticated' && params?.id) {
-      fetch(`/api/questions/${params.id}`)
-        .then((res) => res.json())
-        .then((data) => {
-          setQuestion(data.question || null);
-          setAnswer(data.question?.answer || '');
-        })
-        .finally(() => setLoading(false));
-    }
-  }, [status, data, params, router]);
+    if (question && question.answer) setAnswer(question.answer);
+  }, [question]);
+
+  if (status === 'unauthenticated') {
+    router.replace('/auth/signin');
+    return null;
+  }
+  if (status === 'authenticated' && data?.user?.level < 4) {
+    router.replace('/');
+    return null;
+  }
+  if (isLoading) return <Text>로딩 중...</Text>;
+  if (isError || !question) return <Text>문의 정보를 불러올 수 없습니다.</Text>;
+
+  // 삭제 권한: 레벨 4 이상만
+  const canDelete = data?.user && data.user.level >= 4;
 
   const handleSubmit = async () => {
     if (!answer) {
@@ -64,32 +55,18 @@ export default function AdminQuestionDetailPage() {
     }
     setIsSubmitting(true);
     try {
-      const res = await fetch(`/api/questions/${params.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ answer }),
+      await answerQuestion(question._id, answer, `/api/questions/${question._id}`);
+      setDialog({
+        open: true,
+        title: '등록 완료',
+        description: '답변이 성공적으로 등록되었습니다.',
+        color: 'green',
       });
-      if (res.ok) {
-        setDialog({
-          open: true,
-          title: '등록 완료',
-          description: '답변이 성공적으로 등록되었습니다.',
-          color: 'green',
-        });
-      } else {
-        const err = await res.json();
-        setDialog({
-          open: true,
-          title: '오류 발생',
-          description: err.error || '답변 등록 중 오류가 발생했습니다.',
-          color: 'red',
-        });
-      }
     } catch {
       setDialog({
         open: true,
         title: '오류 발생',
-        description: '네트워크 오류가 발생했습니다.',
+        description: '답변 등록 중 오류가 발생했습니다.',
         color: 'red',
       });
     } finally {
@@ -97,14 +74,37 @@ export default function AdminQuestionDetailPage() {
     }
   };
 
-  if (loading) return <Text>로딩 중...</Text>;
-  if (!question) return <Text>문의 정보를 불러올 수 없습니다.</Text>;
+  const handleDelete = async () => {
+    try {
+      await deleteQuestion(question._id, '/api/questions/admin');
+      setDialog({
+        open: true,
+        title: '삭제 완료',
+        description: '문의가 삭제되었습니다.',
+        color: 'green',
+      });
+    } catch {
+      setDialog({
+        open: true,
+        title: '오류 발생',
+        description: '삭제 중 오류가 발생했습니다.',
+        color: 'red',
+      });
+    }
+  };
 
   return (
     <Box maxWidth="700px" mx="auto" mt="6">
-      <Button asChild size="2" variant="soft" mb="4">
-        <span onClick={() => router.push('/admin/questions')}>← 목록으로</span>
-      </Button>
+      <Flex justify="between" align="center" mb="4">
+        <Button asChild size="2" variant="soft">
+          <span onClick={() => router.push('/admin/questions')}>← 목록으로</span>
+        </Button>
+        {canDelete && (
+          <Button size="2" color="red" variant="soft" onClick={() => setShowDelete(true)}>
+            삭제
+          </Button>
+        )}
+      </Flex>
       <Text size="5" weight="bold" mb="2">
         {question.title}
       </Text>
@@ -128,15 +128,25 @@ export default function AdminQuestionDetailPage() {
           </Flex>
         </Box>
       )}
-      <Box mt="6" p="4">
+      <Box mt="6" p="4" style={{ borderRadius: 8, background: '#f8fafc' }}>
         <Text size="4" weight="bold" color="green" mb="2">
           답변 작성
         </Text>
         <SimpleEditor value={answer} onChange={setAnswer} minHeight="120px" maxHeight="300px" />
-        <Button size="3" mt="4" onClick={handleSubmit} disabled={isSubmitting}>
-          {isSubmitting ? '등록 중...' : '답변 등록'}
+        <Button size="3" mt="4" onClick={handleSubmit} disabled={isSubmitting || isAnswering}>
+          {isSubmitting || isAnswering ? '등록 중...' : '답변 등록'}
         </Button>
       </Box>
+      <ConfirmDialog
+        title="삭제 확인"
+        description="정말로 이 문의를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        confirmText="삭제"
+        cancelText="취소"
+        confirmColor="red"
+        open={showDelete}
+        onOpenChange={setShowDelete}
+        onConfirm={handleDelete}
+      />
       <ConfirmDialog
         title={dialog.title}
         description={dialog.description}

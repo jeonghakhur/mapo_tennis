@@ -5,18 +5,19 @@ import QuestionForm, { QuestionFormValues } from '@/components/QuestionForm';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useSession } from 'next-auth/react';
 import Container from '@/components/Container';
+import { useCreateQuestion } from '@/hooks/useQuestions';
 
 export default function QuestionCreatePage() {
   const router = useRouter();
   const { status } = useSession();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [dialog, setDialog] = useState<{
     open: boolean;
     title: string;
     description: string;
     color: 'green' | 'red';
   }>({ open: false, title: '', description: '', color: 'green' });
-
+  const { create, isMutating } = useCreateQuestion();
+  const { data: session } = useSession();
   // 로그인 체크
   if (status === 'unauthenticated') {
     if (typeof window !== 'undefined') router.replace('/auth/signin');
@@ -24,52 +25,72 @@ export default function QuestionCreatePage() {
   }
 
   const handleSubmit = async (data: QuestionFormValues) => {
-    setIsSubmitting(true);
     try {
-      const res = await fetch('/api/questions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+      await create(
+        {
+          ...data,
+          author: { _ref: session?.user?._id },
+        },
+        '/api/questions',
+      );
+      setDialog({
+        open: true,
+        title: '등록 완료',
+        description: '문의가 성공적으로 등록되었습니다.',
+        color: 'green',
       });
-      if (res.ok) {
+    } catch (e: unknown) {
+      let message = '';
+      if (
+        typeof e === 'object' &&
+        e &&
+        'message' in e &&
+        typeof (e as { message?: unknown }).message === 'string'
+      ) {
+        message = (e as { message: string }).message;
+      }
+      if (message && message.includes('validation')) {
         setDialog({
           open: true,
-          title: '등록 완료',
-          description: '문의가 성공적으로 등록되었습니다.',
-          color: 'green',
+          title: '입력 오류',
+          description: message,
+          color: 'red',
         });
       } else {
-        const err = await res.json();
         setDialog({
           open: true,
           title: '오류 발생',
-          description: err.error || '문의 등록 중 오류가 발생했습니다.',
+          description: '문의 등록 중 오류가 발생했습니다.',
           color: 'red',
         });
       }
-    } catch {
-      setDialog({
-        open: true,
-        title: '오류 발생',
-        description: '네트워크 오류가 발생했습니다.',
-        color: 'red',
-      });
-    } finally {
-      setIsSubmitting(false);
     }
+  };
+
+  const handleError = (errors: Record<string, { message?: string }>) => {
+    const messages = Object.values(errors)
+      .map((e) => e.message)
+      .filter(Boolean)
+      .join('\n');
+    setDialog({
+      open: true,
+      title: '입력 오류',
+      description: messages || '필수 입력값을 확인해 주세요.',
+      color: 'red',
+    });
   };
 
   return (
     <Container>
       <h1 style={{ fontWeight: 700, fontSize: '2rem', marginBottom: '1.5rem' }}>1:1 문의 작성</h1>
-      <QuestionForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+      <QuestionForm onSubmit={handleSubmit} onError={handleError} isSubmitting={isMutating} />
       <ConfirmDialog
         title={dialog.title}
         description={dialog.description}
         confirmText="확인"
         confirmColor={dialog.color}
         open={dialog.open}
-        onOpenChange={(open) => {
+        onOpenChange={(open: boolean) => {
           setDialog((d) => ({ ...d, open }));
           if (!open && dialog.color === 'green') router.push('/questions');
         }}

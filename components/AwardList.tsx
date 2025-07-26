@@ -18,18 +18,33 @@ export default function AwardList({
   isLoading,
   canManage = false,
 }: AwardListProps) {
-  const getAwardCategoryLabel = (category: string) => {
+  const getAwardCategoryInfo = (category: string) => {
     switch (category) {
       case '우승':
-        return { label: '우승', color: 'gold' as const };
+        return {
+          label: '우승',
+          color: 'gold' as const,
+        };
       case '준우승':
-        return { label: '준우승', color: 'gray' as const };
+        return {
+          label: '준우승',
+          color: 'gray' as const,
+        };
       case '3위':
-        return { label: '3위', color: 'bronze' as const };
+        return {
+          label: '3위',
+          color: 'bronze' as const,
+        };
       case '공동3위':
-        return { label: '공동3위', color: 'bronze' as const };
+        return {
+          label: '공동3위',
+          color: 'bronze' as const,
+        };
       default:
-        return { label: category, color: 'gray' as const };
+        return {
+          label: category,
+          color: 'gray' as const,
+        };
     }
   };
 
@@ -63,7 +78,7 @@ export default function AwardList({
   return (
     <div className="space-y-4">
       {safeAwards.map((award) => {
-        const categoryInfo = getAwardCategoryLabel(award.awardCategory);
+        const categoryInfo = getAwardCategoryInfo(award.awardCategory);
 
         return (
           <Card key={award._id} className="p-4">

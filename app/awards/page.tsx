@@ -107,10 +107,10 @@ export default function AwardsPage() {
     <Container>
       <Tabs.Root defaultValue="all">
         <Tabs.List className="w-full" style={{ width: '100%' }}>
-          <Tabs.Trigger value="all" style={{ flex: 1, fontSize: '16px' }}>
+          <Tabs.Trigger value="all" style={{ flex: 1, fontSize: '16px', fontWeight: 'bold' }}>
             전체 보기
           </Tabs.Trigger>
-          <Tabs.Trigger value="summary" style={{ flex: 1, fontSize: '16px' }}>
+          <Tabs.Trigger value="summary" style={{ flex: 1, fontSize: '16px', fontWeight: 'bold' }}>
             요약 보기
           </Tabs.Trigger>
         </Tabs.List>

@@ -393,6 +393,8 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/tournaments/')) return '대회상세';
   if (pathname.startsWith('/admin/users/')) return '회원정보수정';
   if (pathname.startsWith('/questions/')) return '1:1 문의상세';
+  if (pathname.startsWith('/tournament-applications/') && pathname.includes('/edit'))
+    return '참가신청수정';
 
   return '페이지';
 }

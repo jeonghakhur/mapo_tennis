@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Box, Text, Button, Flex, Badge, Select } from '@radix-ui/themes';
+import { Box, Text, Button, Flex, Badge, Select, Popover, TextField } from '@radix-ui/themes';
+import { Filter } from 'lucide-react';
 import Container from '@/components/Container';
 import { useUser } from '@/hooks/useUser';
 import { isAdmin } from '@/lib/authUtils';
@@ -152,12 +153,13 @@ export default function TournamentApplicationsAdminPage() {
         <SkeletonCard />
       ) : (
         <Box>
-          <Flex gap="3" mb="4" align="center" wrap="wrap">
+          <Flex gap="3" mb="4" align="center" justify="between">
+            {/* 기본 대회 필터 */}
             <Flex gap="3" align="center">
-              <Text size="2" weight="bold">
+              <Text size="3" weight="bold">
                 대회:
               </Text>
-              <Select.Root value={tournamentFilter} onValueChange={setTournamentFilter}>
+              <Select.Root size="3" value={tournamentFilter} onValueChange={setTournamentFilter}>
                 <Select.Trigger placeholder="전체 대회" />
                 <Select.Content>
                   <Select.Item value="all">전체</Select.Item>
@@ -169,50 +171,73 @@ export default function TournamentApplicationsAdminPage() {
                 </Select.Content>
               </Select.Root>
             </Flex>
-            <Flex gap="3" align="center">
-              <Text size="2" weight="bold">
-                상태:
-              </Text>
-              <Select.Root value={filterStatus} onValueChange={setFilterStatus}>
-                <Select.Trigger placeholder="전체" />
-                <Select.Content>
-                  <Select.Item value="all">전체</Select.Item>
-                  <Select.Item value="pending">대기중</Select.Item>
-                  <Select.Item value="approved">승인</Select.Item>
-                  <Select.Item value="rejected">거절</Select.Item>
-                  <Select.Item value="cancelled">취소</Select.Item>
-                </Select.Content>
-              </Select.Root>
-            </Flex>
-            <Flex gap="3" align="center">
-              <Text size="2" weight="bold">
-                클럽 불일치:
-              </Text>
-              <Select.Root
-                value={clubMismatchFilter}
-                onValueChange={(v) => setClubMismatchFilter(v as 'all' | 'only' | 'exclude')}
-              >
-                <Select.Trigger placeholder="전체" />
-                <Select.Content>
-                  <Select.Item value="all">전체</Select.Item>
-                  <Select.Item value="only">불일치만</Select.Item>
-                  <Select.Item value="exclude">불일치 제외</Select.Item>
-                </Select.Content>
-              </Select.Root>
-            </Flex>
-            <Flex gap="3" align="center">
-              <Text size="2" weight="bold">
-                참가자 이름:
-              </Text>
-              <input
-                type="text"
-                value={participantNameSearch}
-                onChange={(e) => setParticipantNameSearch(e.target.value)}
-                placeholder="이름 검색"
-                className="border rounded px-2 py-1 text-sm"
-                style={{ minWidth: 120 }}
-              />
-            </Flex>
+
+            {/* 필터 아이콘 */}
+            <Popover.Root>
+              <Popover.Trigger>
+                <Button variant="soft" size="3">
+                  <Filter size={16} />
+                  <Text size="2">필터</Text>
+                </Button>
+              </Popover.Trigger>
+              <Popover.Content className="w-80">
+                <div className="space-y-4 p-2">
+                  <Text size="3" weight="bold">
+                    고급 필터
+                  </Text>
+
+                  {/* 상태 필터 */}
+                  <div className="flex items-center pt-3">
+                    <Text size="3" weight="bold" mr="4">
+                      상태
+                    </Text>
+                    <Select.Root size="3" value={filterStatus} onValueChange={setFilterStatus}>
+                      <Select.Trigger placeholder="전체" />
+                      <Select.Content>
+                        <Select.Item value="all">전체</Select.Item>
+                        <Select.Item value="pending">대기중</Select.Item>
+                        <Select.Item value="approved">승인</Select.Item>
+                        <Select.Item value="rejected">거절</Select.Item>
+                        <Select.Item value="cancelled">취소</Select.Item>
+                      </Select.Content>
+                    </Select.Root>
+                  </div>
+
+                  {/* 클럽 불일치 필터 */}
+                  <div className="flex items-center">
+                    <Text size="3" weight="bold" mr="4">
+                      클럽
+                    </Text>
+                    <Select.Root
+                      size="3"
+                      value={clubMismatchFilter}
+                      onValueChange={(v) => setClubMismatchFilter(v as 'all' | 'only' | 'exclude')}
+                    >
+                      <Select.Trigger placeholder="전체" />
+                      <Select.Content>
+                        <Select.Item value="all">전체</Select.Item>
+                        <Select.Item value="only">불일치만</Select.Item>
+                        <Select.Item value="exclude">불일치 제외</Select.Item>
+                      </Select.Content>
+                    </Select.Root>
+                  </div>
+
+                  {/* 참가자 이름 검색 */}
+                  <div className="flex items-center">
+                    <Text size="3" weight="bold" mr="4">
+                      이름
+                    </Text>
+                    <TextField.Root
+                      size="3"
+                      type="text"
+                      value={participantNameSearch}
+                      onChange={(e) => setParticipantNameSearch(e.target.value)}
+                      placeholder="이름을 입력하세요"
+                    />
+                  </div>
+                </div>
+              </Popover.Content>
+            </Popover.Root>
           </Flex>
 
           {filteredApplications.length === 0 ? (
@@ -275,7 +300,7 @@ export default function TournamentApplicationsAdminPage() {
                         <Text size="3" weight="bold">
                           참가자 목록 ({application.teamMembers.length}명)
                         </Text>
-                        <div className="grid gap-2">
+                        <div className="grid gap-2 pt-3">
                           {application.teamMembers.map((member, index) => (
                             <div
                               key={index}
@@ -324,32 +349,28 @@ export default function TournamentApplicationsAdminPage() {
                     </div>
 
                     {/* 연락처 정보와 참가비 납부 여부를 좌우로 배치 */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="flex gap-4 flex-col ">
                       {/* 연락처 정보 */}
                       <div className="space-y-2">
                         <Text size="3" weight="bold">
                           연락처 정보
                         </Text>
-                        <div className="space-y-2">
+                        <div className="flex items-center justify-between mt-2">
+                          <Text weight="bold">연락처</Text>
+                          <Text>{application.contact}</Text>
+                        </div>
+                        {application.email && (
                           <div>
                             <Text size="2" weight="bold" color="gray">
-                              연락처
+                              이메일
                             </Text>
-                            <Text size="3">{application.contact}</Text>
+                            <Text size="3">{application.email}</Text>
                           </div>
-                          {application.email && (
-                            <div>
-                              <Text size="2" weight="bold" color="gray">
-                                이메일
-                              </Text>
-                              <Text size="3">{application.email}</Text>
-                            </div>
-                          )}
-                        </div>
+                        )}
                       </div>
 
                       {/* 참가비 납부 여부 */}
-                      <div className="space-y-2">
+                      <div className="flex items-center justify-between">
                         <Text size="3" weight="bold">
                           참가비 납부
                         </Text>

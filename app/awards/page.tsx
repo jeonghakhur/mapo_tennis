@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, Tabs, Flex, TextField } from '@radix-ui/themes';
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import AwardList from '@/components/AwardList';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import Container from '@/components/Container';
@@ -134,7 +134,7 @@ export default function AwardsPage() {
               placeholder="수상구분"
               className="flex-1"
             />
-            {canManage && awards.length > 0 && (
+            {/* {canManage && awards.length > 0 && (
               <Button
                 variant="outline"
                 color="red"
@@ -146,7 +146,7 @@ export default function AwardsPage() {
                 <Trash2 size={18} style={{ marginRight: 4 }} />
                 {actionLoading ? '삭제 중...' : '전체 삭제'}
               </Button>
-            )}
+            )} */}
           </Flex>
           <AwardList
             awards={filteredAwards}

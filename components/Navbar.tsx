@@ -368,6 +368,7 @@ function getPageTitle(pathname: string): string {
     '/tournaments': '대회일정',
     '/notifications': '알림',
     '/profile': '프로필',
+    '/tournament-applications': '참가신청목록',
     '/tournament-applications/admin': '전체참가신청목록',
     '/admin/users': '회원관리',
     '/welcome': '회원가입',

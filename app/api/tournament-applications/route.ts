@@ -89,6 +89,7 @@ export async function POST(req: NextRequest) {
       }
 
       teamMembers.push({
+        _key: `member_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name,
         clubId,
         clubName,

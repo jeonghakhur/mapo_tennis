@@ -1,17 +1,17 @@
-import type { Rule } from 'sanity';
+import { defineType, defineField } from 'sanity';
 
-export const tournamentApplication = {
+export default defineType({
   name: 'tournamentApplication',
   type: 'document',
   title: '대회 참가 신청',
   fields: [
-    {
+    defineField({
       name: 'tournamentId',
       type: 'string',
       title: '대회 ID',
-      validation: (Rule: Rule) => Rule.required(),
-    },
-    {
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
       name: 'division',
       type: 'string',
       title: '참가부서',
@@ -24,9 +24,9 @@ export const tournamentApplication = {
           { title: '개나리부', value: 'forsythia' },
         ],
       },
-      validation: (Rule: Rule) => Rule.required(),
-    },
-    {
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
       name: 'tournamentType',
       type: 'string',
       title: '대회 유형',
@@ -36,14 +36,14 @@ export const tournamentApplication = {
           { title: '단체전', value: 'team' },
         ],
       },
-      validation: (Rule: Rule) => Rule.required(),
-    },
-    {
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
       name: 'teamMembers',
       type: 'array',
       title: '참가자 목록',
       description: '개인전은 2명, 단체전은 6-8명의 참가자를 입력하세요',
-      validation: (Rule: Rule) => Rule.required().min(1),
+      validation: (Rule) => Rule.required().min(1),
       of: [
         {
           type: 'object',
@@ -52,19 +52,19 @@ export const tournamentApplication = {
               name: 'name',
               type: 'string',
               title: '이름',
-              validation: (Rule: Rule) => Rule.required(),
+              validation: (Rule) => Rule.required(),
             },
             {
               name: 'clubId',
               type: 'string',
               title: '클럽 ID',
-              validation: (Rule: Rule) => Rule.required(),
+              validation: (Rule) => Rule.required(),
             },
             {
               name: 'clubName',
               type: 'string',
               title: '클럽명',
-              validation: (Rule: Rule) => Rule.required(),
+              validation: (Rule) => Rule.required(),
             },
             {
               name: 'birth',
@@ -94,19 +94,19 @@ export const tournamentApplication = {
           ],
         },
       ],
-    },
-    {
+    }),
+    defineField({
       name: 'contact',
       type: 'string',
       title: '연락처',
-      validation: (Rule: Rule) => Rule.required(),
-    },
-    {
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
       name: 'email',
       type: 'string',
       title: '이메일',
-    },
-    {
+    }),
+    defineField({
       name: 'status',
       type: 'string',
       title: '신청 상태',
@@ -119,37 +119,37 @@ export const tournamentApplication = {
         ],
       },
       initialValue: 'pending',
-      validation: (Rule: Rule) => Rule.required(),
-    },
-    {
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
       name: 'memo',
       type: 'text',
       title: '메모',
-    },
-    {
+    }),
+    defineField({
       name: 'isFeePaid',
       type: 'boolean',
       title: '참가비 납부 여부',
       initialValue: false,
-    },
-    {
+    }),
+    defineField({
       name: 'createdAt',
       type: 'datetime',
       title: '신청일',
       readOnly: true,
-    },
-    {
+    }),
+    defineField({
       name: 'updatedAt',
       type: 'datetime',
       title: '수정일',
       readOnly: true,
-    },
-    {
+    }),
+    defineField({
       name: 'createdBy',
       type: 'string',
       title: '신청자 ID',
       readOnly: true,
-    },
+    }),
   ],
   preview: {
     select: {
@@ -187,4 +187,4 @@ export const tournamentApplication = {
       };
     },
   },
-};
+});

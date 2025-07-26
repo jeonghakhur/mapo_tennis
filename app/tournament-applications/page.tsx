@@ -103,21 +103,6 @@ export default function TournamentApplicationsPage() {
         <SkeletonCard />
       ) : (
         <Box>
-          <Flex align="center" justify="between" mb="4">
-            <Text size="5" weight="bold">
-              참가신청목록
-            </Text>
-            {canManageApplications && (
-              <Button
-                variant="soft"
-                size="2"
-                onClick={() => router.push('/tournament-applications/admin')}
-              >
-                전체 목록 보기
-              </Button>
-            )}
-          </Flex>
-
           <Flex gap="3" mb="4" align="center" wrap="wrap">
             <Flex gap="3" align="center">
               <Text size="2" weight="bold">
@@ -174,58 +159,111 @@ export default function TournamentApplicationsPage() {
 
                     {/* 참가자 정보 */}
                     <div className="space-y-3">
-                      <Text size="4" weight="bold">
+                      <Text size="4" weight="bold" mb="2" as="div">
                         {application.tournament?.title || `대회 ID: ${application.tournamentId}`} -{' '}
                         {getDivisionLabel(application.division)}
                       </Text>
 
-                      {application.teamMembers.map((member, index) => (
-                        <div
-                          key={index}
-                          className="grid grid-cols-1 md:grid-cols-3 gap-4 p-3 bg-gray-50 rounded"
-                        >
-                          <div>
-                            <Text size="2" weight="bold" color="gray">
-                              {index + 1}번째 참가자
-                            </Text>
-                            <Text size="3">{member.name}</Text>
-                          </div>
-                          <div>
-                            <Text size="2" weight="bold" color="gray">
-                              클럽
-                            </Text>
-                            <Text size="3">{member.clubName}</Text>
-                          </div>
-                          <div>
-                            <Text size="2" weight="bold" color="gray">
-                              점수
-                            </Text>
-                            <Text size="3">{member.score || '-'}</Text>
-                          </div>
+                      {/* 단체전인 경우 클럽명을 한 번만 표시 */}
+                      {application.tournamentType === 'team' && (
+                        <div className="p-3 bg-blue-50 rounded border-l-4 border-blue-500">
+                          <Text size="2" weight="bold" color="gray">
+                            참가 클럽
+                          </Text>
+                          <Text size="3" weight="bold" color="blue">
+                            {application.teamMembers[0]?.clubName || '-'}
+                          </Text>
                         </div>
-                      ))}
+                      )}
+
+                      {/* 참가자 목록 */}
+                      <div className="space-y-2">
+                        <Text size="3" weight="bold">
+                          참가자 목록 ({application.teamMembers.length}명)
+                        </Text>
+                        <div className="grid gap-2">
+                          {application.teamMembers.map((member, index) => (
+                            <div
+                              key={index}
+                              className={`p-3 rounded ${
+                                application.tournamentType === 'individual'
+                                  ? 'bg-gray-50 grid grid-cols-1 md:grid-cols-3 gap-4'
+                                  : 'bg-gray-50 flex items-center justify-between'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <Text size="2" weight="bold" color="gray">
+                                  {index + 1}번
+                                </Text>
+                                <Text size="3" weight="bold">
+                                  {member.name}
+                                </Text>
+                              </div>
+
+                              {/* 개인전인 경우에만 클럽명 표시 */}
+                              {application.tournamentType === 'individual' && (
+                                <div>
+                                  <Text size="2" weight="bold" color="gray">
+                                    클럽
+                                  </Text>
+                                  <Text size="3">{member.clubName}</Text>
+                                </div>
+                              )}
+
+                              <div>
+                                <Text size="2" weight="bold" color="gray">
+                                  점수
+                                </Text>
+                                <Text size="3">{member.score || '-'}</Text>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
 
-                    {/* 연락처 정보 */}
-                    <div className="space-y-2">
-                      <Text size="3" weight="bold">
-                        연락처 정보
-                      </Text>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Text size="2" weight="bold" color="gray">
-                            연락처
-                          </Text>
-                          <Text size="3">{application.contact}</Text>
-                        </div>
-                        {application.email && (
-                          <div>
+                    {/* 연락처 정보와 참가비 납부 여부를 좌우로 배치 */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* 연락처 정보 */}
+                      <div className="space-y-2">
+                        <Text size="3" weight="bold">
+                          연락처 정보
+                        </Text>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
                             <Text size="2" weight="bold" color="gray">
-                              이메일
+                              연락처
                             </Text>
-                            <Text size="3">{application.email}</Text>
+                            <Text size="3">{application.contact}</Text>
                           </div>
-                        )}
+                          {application.email && (
+                            <div>
+                              <Text size="2" weight="bold" color="gray">
+                                이메일
+                              </Text>
+                              <Text size="3">{application.email}</Text>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 참가비 납부 여부 */}
+                      <div className="flex items-center justify-between">
+                        <Text size="3" weight="bold">
+                          참가비 납부
+                        </Text>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`w-4 h-4 rounded-full ${application.isFeePaid ? 'bg-green-500' : 'bg-red-500'}`}
+                          />
+                          <Text
+                            size="3"
+                            weight="bold"
+                            color={application.isFeePaid ? 'green' : 'red'}
+                          >
+                            {application.isFeePaid ? '납부 완료' : '미납'}
+                          </Text>
+                        </div>
                       </div>
                     </div>
 
@@ -240,21 +278,6 @@ export default function TournamentApplicationsPage() {
                         </Text>
                       </div>
                     )}
-
-                    {/* 참가비 납부 여부 */}
-                    <div>
-                      <Text size="3" weight="bold">
-                        참가비 납부
-                      </Text>
-                      <div className="flex items-center gap-2 mt-1">
-                        <div
-                          className={`w-3 h-3 rounded-full ${application.isFeePaid ? 'bg-green-500' : 'bg-red-500'}`}
-                        />
-                        <Text size="3" color={application.isFeePaid ? 'green' : 'red'}>
-                          {application.isFeePaid ? '납부 완료' : '미납'}
-                        </Text>
-                      </div>
-                    </div>
 
                     {/* 액션 버튼 */}
                     <Flex gap="3" justify="end" pt="4" className="border-t">

@@ -1,5 +1,5 @@
 'use client';
-import { Box, Text, Button, Flex, Badge, Card, Select } from '@radix-ui/themes';
+import { Box, Text, Button, Flex, Badge, Card, Select, Separator } from '@radix-ui/themes';
 import Container from '@/components/Container';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -164,62 +164,77 @@ export default function TournamentApplicationsPage() {
                         {getDivisionLabel(application.division)}
                       </Text>
 
-                      {/* 단체전인 경우 클럽명을 한 번만 표시 */}
-                      {application.tournamentType === 'team' && (
-                        <div className="p-3 bg-blue-50 rounded border-l-4 border-blue-500">
-                          <Text size="2" weight="bold" color="gray">
-                            참가 클럽
-                          </Text>
-                          <Text size="3" weight="bold" color="blue">
-                            {application.teamMembers[0]?.clubName || '-'}
-                          </Text>
+                      {/* 단체전과 개인전 UI 분리 */}
+                      {application.tournamentType === 'team' ? (
+                        // 단체전 UI
+                        <div className="space-y-3">
+                          {/* 단체전 클럽 정보 */}
+                          <div className="p-3 bg-blue-50 rounded border-l-4 border-blue-500">
+                            <Text size="2" weight="bold" color="gray">
+                              참가 클럽
+                            </Text>
+                            <Text size="3" weight="bold" color="blue">
+                              {application.teamMembers[0]?.clubName || '-'}
+                            </Text>
+                          </div>
+
+                          {/* 단체전 참가자 목록 */}
+                          <div className="space-y-2">
+                            <Text size="3" weight="bold">
+                              참가자 목록 ({application.teamMembers.length}명)
+                            </Text>
+                            <div className="grid gap-2">
+                              {application.teamMembers.map((member, index) => (
+                                <div
+                                  key={index}
+                                  className="p-3 bg-gray-50 rounded flex items-center justify-between"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <Text size="2" weight="bold" color="gray">
+                                      {index + 1}번
+                                    </Text>
+                                    <Text size="3" weight="bold">
+                                      {member.name}
+                                    </Text>
+                                  </div>
+                                  <div>
+                                    <Text size="2" weight="bold" color="gray">
+                                      점수
+                                    </Text>
+                                    <Text size="3">{member.score || '-'}</Text>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        // 개인전 UI
+                        <div className="space-y-3">
+                          {/* 개인전 참가자 목록 */}
+                          <div className="space-y-2">
+                            <div className="grid gap-2">
+                              {application.teamMembers.map((member, index) => (
+                                <div key={index} className="flex gap-2">
+                                  <Text size="3" weight="bold">
+                                    {member.name}
+                                  </Text>
+                                  <Separator orientation="vertical" />
+
+                                  <Text size="3">{member.clubName}</Text>
+
+                                  <Separator orientation="vertical" />
+
+                                  <Text size="2" weight="bold" color="gray">
+                                    점수
+                                  </Text>
+                                  <Text size="3">{member.score || '-'}</Text>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       )}
-
-                      {/* 참가자 목록 */}
-                      <div className="space-y-2">
-                        <Text size="3" weight="bold">
-                          참가자 목록 ({application.teamMembers.length}명)
-                        </Text>
-                        <div className="grid gap-2">
-                          {application.teamMembers.map((member, index) => (
-                            <div
-                              key={index}
-                              className={`p-3 rounded ${
-                                application.tournamentType === 'individual'
-                                  ? 'bg-gray-50 grid grid-cols-1 md:grid-cols-3 gap-4'
-                                  : 'bg-gray-50 flex items-center justify-between'
-                              }`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <Text size="2" weight="bold" color="gray">
-                                  {index + 1}번
-                                </Text>
-                                <Text size="3" weight="bold">
-                                  {member.name}
-                                </Text>
-                              </div>
-
-                              {/* 개인전인 경우에만 클럽명 표시 */}
-                              {application.tournamentType === 'individual' && (
-                                <div>
-                                  <Text size="2" weight="bold" color="gray">
-                                    클럽
-                                  </Text>
-                                  <Text size="3">{member.clubName}</Text>
-                                </div>
-                              )}
-
-                              <div>
-                                <Text size="2" weight="bold" color="gray">
-                                  점수
-                                </Text>
-                                <Text size="3">{member.score || '-'}</Text>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
                     </div>
 
                     {/* 연락처 정보와 참가비 납부 여부를 좌우로 배치 */}

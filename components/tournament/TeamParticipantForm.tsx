@@ -21,6 +21,8 @@ export function TeamParticipantForm({
         </Text>
         <Text size="2" color="gray" mb="3" className="block">
           단체전은 모든 참가자가 같은 클럽에 속해야 합니다.
+          <br />
+          참가부서가 한 팀 이상인 경우 메모란에 팀 순번을 입력해주세요. 예)클럽-가
         </Text>
         <div className="w-full max-w-md">
           <Combobox

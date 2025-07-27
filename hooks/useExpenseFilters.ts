@@ -3,6 +3,8 @@ import type { Expense } from '@/model/expense';
 
 interface UseExpenseFiltersOptions {
   expenses: Expense[];
+  startDate?: string;
+  endDate?: string;
 }
 
 interface UseExpenseFiltersReturn {
@@ -20,7 +22,11 @@ interface UseExpenseFiltersReturn {
 
 type SortField = 'date' | 'amount' | 'title' | 'createdAt';
 
-export function useExpenseFilters({ expenses }: UseExpenseFiltersOptions): UseExpenseFiltersReturn {
+export function useExpenseFilters({
+  expenses,
+  startDate = '',
+  endDate = '',
+}: UseExpenseFiltersOptions): UseExpenseFiltersReturn {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortBy, setSortBy] = useState<SortField>('date');
@@ -43,6 +49,19 @@ export function useExpenseFilters({ expenses }: UseExpenseFiltersOptions): UseEx
     // 카테고리 필터링
     if (categoryFilter !== 'all') {
       filtered = filtered.filter((expense) => expense.category === categoryFilter);
+    }
+
+    // 기간 필터링 추가
+    if (startDate) {
+      const startDateObj = new Date(startDate);
+      startDateObj.setHours(0, 0, 0, 0); // 시작일의 시작 시간으로 설정
+      filtered = filtered.filter((expense) => new Date(expense.date) >= startDateObj);
+    }
+
+    if (endDate) {
+      const endDateObj = new Date(endDate);
+      endDateObj.setHours(23, 59, 59, 999); // 종료일의 마지막 시간으로 설정
+      filtered = filtered.filter((expense) => new Date(expense.date) <= endDateObj);
     }
 
     // 정렬
@@ -78,7 +97,7 @@ export function useExpenseFilters({ expenses }: UseExpenseFiltersOptions): UseEx
     });
 
     return filtered;
-  }, [expenses, searchTerm, categoryFilter, sortBy, sortOrder]);
+  }, [expenses, searchTerm, categoryFilter, startDate, endDate, sortBy, sortOrder]);
 
   const totalAmount = useMemo(() => {
     return filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);

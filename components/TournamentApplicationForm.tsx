@@ -42,6 +42,10 @@ export default function TournamentApplicationForm({
   const { user } = useUser(session?.user?.email);
   const { clubs, isLoading: clubsLoading } = useClubs();
 
+  // 전체 클럽 회원 데이터 상태
+  const [allClubMembers, setAllClubMembers] = useState<ClubMember[]>([]);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(true);
+
   // 폼 상태
   const [division, setDivision] = useState<string>('');
   const [contact, setContact] = useState<string>('');
@@ -72,6 +76,28 @@ export default function TournamentApplicationForm({
     [tournament.divisions],
   );
 
+  // 페이지 진입 시 전체 클럽 회원 데이터 로드
+  useEffect(() => {
+    const loadAllClubMembers = async () => {
+      try {
+        setIsLoadingMembers(true);
+        const response = await fetch('/api/club-member');
+        if (response.ok) {
+          const data = await response.json();
+          setAllClubMembers(data.members || []);
+        } else {
+          console.error('클럽 회원 데이터 로드 실패');
+        }
+      } catch (error) {
+        console.error('클럽 회원 데이터 로드 오류:', error);
+      } finally {
+        setIsLoadingMembers(false);
+      }
+    };
+
+    loadAllClubMembers();
+  }, []);
+
   // 수정 모드일 때 초기 데이터 로드
   useEffect(() => {
     if (isEdit && initialData) {
@@ -83,25 +109,21 @@ export default function TournamentApplicationForm({
     }
   }, [isEdit, initialData]);
 
-  // 클럽 회원 검색 (메모이제이션)
+  // 클라이언트 사이드 클럽 회원 검색 (메모이제이션)
   const searchClubMember = useCallback(
-    async (name: string, clubId: string): Promise<ClubMember | null> => {
-      if (!name.trim() || !clubId) return null;
+    (name: string, clubId: string): ClubMember | null => {
+      if (!name.trim() || !clubId || allClubMembers.length === 0) return null;
 
-      try {
-        const response = await fetch(
-          `/api/club-members/search?name=${encodeURIComponent(name.trim())}&clubId=${clubId}`,
-        );
-        if (response.ok) {
-          const result = await response.json();
-          return result.found ? result.member : null;
-        }
-      } catch (error) {
-        console.error('클럽 회원 검색 오류:', error);
-      }
-      return null;
+      const trimmedName = name.trim();
+      const member = allClubMembers.find(
+        (member) =>
+          member.club._id === clubId &&
+          member.user.toLowerCase().includes(trimmedName.toLowerCase()),
+      );
+
+      return member || null;
     },
-    [],
+    [allClubMembers],
   );
 
   // 참가자 관리
@@ -360,7 +382,7 @@ export default function TournamentApplicationForm({
 
   return (
     <Box>
-      {(loading || clubsLoading) && <LoadingOverlay size="3" />}
+      {(loading || clubsLoading || isLoadingMembers) && <LoadingOverlay size="3" />}
       <Heading as="h2" size="4" mb="3">
         {tournament.title} - {isEdit ? '참가 신청 수정' : '참가 신청'}
       </Heading>

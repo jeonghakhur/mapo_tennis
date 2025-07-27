@@ -2,7 +2,10 @@ import { useState, useRef, useCallback } from 'react';
 import type { ClubMember, ParticipantHookReturn } from '@/types/tournament';
 
 export function useParticipant(
-  searchClubMember: (name: string, clubId: string) => Promise<ClubMember | null>,
+  searchClubMember: (
+    name: string,
+    clubId: string,
+  ) => ClubMember | null | Promise<ClubMember | null>,
 ): ParticipantHookReturn {
   const [name, setName] = useState('');
   const [clubId, setClubId] = useState('');

@@ -17,14 +17,17 @@ export function TeamMemberCountSelector({
           <Button
             key={count}
             type="button"
-            variant="soft"
+            variant={teamMemberCount === count ? 'solid' : 'soft'}
+            color={teamMemberCount === count ? 'blue' : 'gray'}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               onTeamMemberCountChange(count);
             }}
             size="3"
-            className={teamMemberCount === count ? 'bg-blue-500 text-white' : ''}
+            className={
+              teamMemberCount === count ? 'ring-2 ring-blue-300 ring-offset-2' : 'hover:bg-gray-200'
+            }
           >
             {count}명
           </Button>

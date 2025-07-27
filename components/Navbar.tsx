@@ -222,7 +222,7 @@ export default function Navbar() {
                   onClick={() => router.push('/expenses')}
                   style={{ fontSize: '18px', fontWeight: 'bold' }}
                 >
-                  <Receipt size={14} />
+                  <Receipt size="14" />
                   지출내역
                 </DropdownMenu.Item>
               )}

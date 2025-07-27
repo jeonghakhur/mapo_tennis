@@ -26,24 +26,45 @@ export default defineType({
       },
     }),
     defineField({
-      name: 'role',
-      title: '역할',
+      name: 'address',
+      title: '주소',
       type: 'string',
-      options: {
-        list: [
-          { title: '일반 사용자', value: 'user' },
-          { title: '관리자', value: 'admin' },
-        ],
-      },
-      initialValue: 'user',
     }),
     defineField({
-      name: 'permissionLevel',
-      title: '권한 레벨',
+      name: 'birth',
+      title: '생년월일',
+      type: 'string',
+    }),
+    defineField({
+      name: 'clubs',
+      title: '클럽',
+      type: 'array',
+      of: [{ type: 'reference', to: [{ type: 'club' }] }],
+    }),
+    defineField({
+      name: 'gender',
+      title: '성별',
+      type: 'string',
+    }),
+    defineField({
+      name: 'isApprovedUser',
+      title: '승인된 유저',
+      type: 'boolean',
+    }),
+    defineField({
+      name: 'level',
+      title: '레벨',
       type: 'number',
-      description: '0: 일반 사용자, 1: 클럽 회원, 2: 클럽 관리자, 3: 협회 임원, 4: 최고 관리자',
-      initialValue: 0,
-      validation: (Rule) => Rule.required().min(0).max(4),
+    }),
+    defineField({
+      name: 'phone',
+      title: '전화번호',
+      type: 'string',
+    }),
+    defineField({
+      name: 'score',
+      title: '점수',
+      type: 'number',
     }),
   ],
   preview: {

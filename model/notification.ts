@@ -9,7 +9,8 @@ export interface Notification {
     | 'TOURNAMENT_APPLICATION'
     | 'USER'
     | 'EXPENSE'
-    | 'TOURNAMENT';
+    | 'TOURNAMENT'
+    | 'QUESTION';
   entityId: string;
   title: string;
   message: string;
@@ -36,7 +37,8 @@ export interface NotificationInput {
     | 'TOURNAMENT_APPLICATION'
     | 'USER'
     | 'EXPENSE'
-    | 'TOURNAMENT';
+    | 'TOURNAMENT'
+    | 'QUESTION';
   entityId: string;
   title: string;
   message: string;

@@ -7,8 +7,10 @@ export function createNotificationLink(
     | 'TOURNAMENT_APPLICATION'
     | 'USER'
     | 'EXPENSE'
-    | 'TOURNAMENT',
+    | 'TOURNAMENT'
+    | 'QUESTION', // 추가
   entityId: string,
+  options?: { admin?: boolean },
 ): string {
   switch (entityType) {
     case 'CLUB_MEMBER':
@@ -25,13 +27,19 @@ export function createNotificationLink(
       return `/tournament-applications/${entityId}/edit`;
 
     case 'USER':
-      return `/profile`; // 사용자 정보는 프로필 페이지로
+      return `/profile`; // 사용자 정보는 프로필 페이지git로
 
     case 'EXPENSE':
       return `/expenses/${entityId}`;
 
     case 'TOURNAMENT':
       return `/tournaments/${entityId}`;
+
+    case 'QUESTION':
+      if (options?.admin) {
+        return `/admin/questions/${entityId}`;
+      }
+      return `/questions/${entityId}`;
 
     default:
       return '/';

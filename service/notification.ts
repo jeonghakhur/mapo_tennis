@@ -218,6 +218,12 @@ export function createNotificationMessage(
   entityType: string,
   entityName: string,
 ): { title: string; message: string } {
+  if (entityType === 'QUESTION' && type === 'UPDATE') {
+    return {
+      title: '문의 답변 등록',
+      message: `"${entityName}"에 대한 답변이 등록되었습니다.`,
+    };
+  }
   const entityTypeMap = {
     CLUB_MEMBER: '회원',
     CLUB: '클럽',
@@ -226,6 +232,7 @@ export function createNotificationMessage(
     USER: '사용자',
     EXPENSE: '지출내역',
     TOURNAMENT: '토너먼트',
+    QUESTION: '문의',
   };
 
   const typeMap = {
@@ -235,9 +242,7 @@ export function createNotificationMessage(
   };
 
   const title = `${entityTypeMap[entityType as keyof typeof entityTypeMap]} ${typeMap[type]}`;
-
   const message = `${entityName}이(가) ${typeMap[type]}되었습니다.`;
-
   return { title, message };
 }
 

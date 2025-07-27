@@ -94,6 +94,7 @@ export default function NotificationsPage() {
   };
 
   const getNotificationIcon = (type: string) => {
+    if (!admin && type === 'UPDATE') return null;
     switch (type) {
       case 'CREATE':
         return <Badge color="green">생성</Badge>;

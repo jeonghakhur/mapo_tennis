@@ -82,7 +82,6 @@ export default function QuestionCreatePage() {
 
   return (
     <Container>
-      <h1 style={{ fontWeight: 700, fontSize: '2rem', marginBottom: '1.5rem' }}>1:1 문의 작성</h1>
       <QuestionForm onSubmit={handleSubmit} onError={handleError} isSubmitting={isMutating} />
       <ConfirmDialog
         title={dialog.title}

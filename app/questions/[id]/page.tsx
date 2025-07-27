@@ -3,10 +3,10 @@ import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Box, Text, Button, Flex } from '@radix-ui/themes';
-import Link from 'next/link';
 import Image from 'next/image';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useQuestionDetail, useDeleteQuestion } from '@/hooks/useQuestions';
+import Container from '@/components/Container';
 
 export default function QuestionDetailPage() {
   const router = useRouter();
@@ -55,14 +55,11 @@ export default function QuestionDetailPage() {
   };
 
   return (
-    <Box maxWidth="600px" mx="auto" mt="6">
-      <Flex justify="between" align="center" mb="4">
-        <Button asChild size="2" variant="soft">
-          <Link href="/questions">← 목록으로</Link>
-        </Button>
-        {isOwner && (
+    <Container>
+      <Flex justify="end" gap="2" align="center" mb="4">
+        {isOwner && !question.answer && (
           <Button
-            size="2"
+            size="3"
             variant="soft"
             color="blue"
             onClick={() => router.push(`/questions/${question._id}/edit`)}
@@ -70,8 +67,8 @@ export default function QuestionDetailPage() {
             수정
           </Button>
         )}
-        {canDelete && (
-          <Button size="2" color="red" variant="soft" onClick={() => setShowDelete(true)}>
+        {canDelete && !question.answer && (
+          <Button size="3" color="red" variant="soft" onClick={() => setShowDelete(true)}>
             삭제
           </Button>
         )}
@@ -139,6 +136,6 @@ export default function QuestionDetailPage() {
           if (dialog.color === 'green') router.push('/questions');
         }}
       />
-    </Box>
+    </Container>
   );
 }

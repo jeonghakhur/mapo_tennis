@@ -79,6 +79,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/awards/create': '대회결과등록',
   '/questions': '문의내역',
   '/questions/create': '문의작성',
+  '/admin/questions': '1:1 문의(전체)',
 };
 
 // 동적 라우트 제목 매핑
@@ -93,7 +94,9 @@ const DYNAMIC_ROUTE_TITLES = [
   { pattern: /^\/tournaments\/.*\/edit$/, title: '대회수정' },
   { pattern: /^\/tournaments\/.*$/, title: '대회상세' },
   { pattern: /^\/admin\/users\/.*$/, title: '회원정보수정' },
+  { pattern: /^\/questions\/.*\/edit$/, title: '1:1 문의수정' },
   { pattern: /^\/questions\/.*$/, title: '1:1 문의상세' },
+  { pattern: /^\/admin\/questions\/.*$/, title: '1:1 문의(상세)' },
   { pattern: /^\/tournament-applications\/.*\/edit$/, title: '참가신청수정' },
 ];
 
@@ -306,7 +309,7 @@ export default function Navbar() {
 
         {/* 중앙: 페이지 제목 */}
         {canGoBack && (
-          <Flex align="center" className="text-xl font-bold">
+          <Flex align="center" className="text-xl font-bold absolute left-1/2 -translate-x-1/2">
             {getPageTitle(pathname)}
           </Flex>
         )}

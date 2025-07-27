@@ -80,7 +80,6 @@ export default function QuestionEditPage() {
 
   return (
     <Container>
-      <h1 style={{ fontWeight: 700, fontSize: '2rem', marginBottom: '1.5rem' }}>1:1 문의 수정</h1>
       <QuestionForm
         onSubmit={handleSubmit}
         isSubmitting={isMutating}

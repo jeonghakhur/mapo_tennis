@@ -138,3 +138,10 @@ export async function updateUser(
 export async function setUserApproved(userId: string) {
   return await client.patch(userId).set({ isApprovedUser: true }).commit();
 }
+
+// 레벨 4 이상 회원 조회
+export async function getUsersLevel4AndAbove(): Promise<User[]> {
+  return await client.fetch<User[]>(
+    `*[_type == "user" && level >= 4]{ ... } | order(createdAt desc)`,
+  );
+}

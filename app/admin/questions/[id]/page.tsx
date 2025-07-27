@@ -7,6 +7,7 @@ import { SimpleEditor } from '@/components/tiptap-templates/simple/simple-editor
 import ConfirmDialog from '@/components/ConfirmDialog';
 import Image from 'next/image';
 import { useQuestionDetail, useAnswerQuestion, useDeleteQuestion } from '@/hooks/useQuestions';
+import Container from '@/components/Container';
 
 export default function AdminQuestionDetailPage() {
   const router = useRouter();
@@ -94,13 +95,10 @@ export default function AdminQuestionDetailPage() {
   };
 
   return (
-    <Box maxWidth="700px" mx="auto" mt="6">
-      <Flex justify="between" align="center" mb="4">
-        <Button asChild size="2" variant="soft">
-          <span onClick={() => router.push('/admin/questions')}>← 목록으로</span>
-        </Button>
+    <Container>
+      <Flex justify="end" align="center" mb="4">
         {canDelete && (
-          <Button size="2" color="red" variant="soft" onClick={() => setShowDelete(true)}>
+          <Button size="3" color="red" variant="soft" onClick={() => setShowDelete(true)}>
             삭제
           </Button>
         )}
@@ -162,6 +160,6 @@ export default function AdminQuestionDetailPage() {
           if (dialog.color === 'green') router.push('/admin/questions');
         }}
       />
-    </Box>
+    </Container>
   );
 }

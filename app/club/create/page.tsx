@@ -1,5 +1,5 @@
 'use client';
-import { Text, Button, TextField, Flex, Switch, Separator } from '@radix-ui/themes';
+import { Text, Button, TextField, Flex, Switch, Separator, Checkbox } from '@radix-ui/themes';
 import { useSession } from 'next-auth/react';
 import { useDropzone } from 'react-dropzone';
 import Image from 'next/image';
@@ -20,6 +20,7 @@ export default function ClubCreatePage() {
   const [description, setDescription] = useState('');
   const [workDays, setWorkDays] = useState('');
   const [location, setLocation] = useState('');
+  const [isMangwonChecked, setIsMangwonChecked] = useState(false);
   const [isPublic, setIsPublic] = useState(true);
   const [contact, setContact] = useState('');
   const [image, setImage] = useState<File | null>(null);
@@ -107,12 +108,32 @@ export default function ClubCreatePage() {
               mb="3"
               size="3"
             />
+            {/* 망원나들목 체크박스 UI */}
+            <Flex align="center" gap="2" mb="2">
+              <Checkbox
+                size="3"
+                checked={isMangwonChecked}
+                onCheckedChange={(checked) => {
+                  setIsMangwonChecked(!!checked);
+                  if (checked) {
+                    setLocation('망원나들목');
+                  } else {
+                    setLocation('');
+                  }
+                }}
+                id="mangwon"
+              />
+              <label htmlFor="mangwon" style={{ cursor: 'pointer' }}>
+                망원나들목
+              </label>
+            </Flex>
             <TextField.Root
               placeholder="운동장소 (예: 마포구민체육센터)"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               mb="3"
               size="3"
+              readOnly={isMangwonChecked}
             />
             <TextField.Root
               placeholder="연락처 (선택)"

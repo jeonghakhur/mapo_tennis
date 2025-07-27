@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Text, Button, TextField, Flex, Switch, Separator } from '@radix-ui/themes';
+import { Text, Button, TextField, Flex, Switch, Separator, Checkbox } from '@radix-ui/themes';
 import Container from '@/components/Container';
 import Image from 'next/image';
 import { useClub } from '@/hooks/useClubs';
@@ -27,6 +27,7 @@ export default function ClubEditPage({ params }: { params: Promise<{ id: string 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [imageRemoved, setImageRemoved] = useState(false);
+  const [isMangwonChecked, setIsMangwonChecked] = useState(false);
   const { loading, withLoading } = useLoading();
 
   useEffect(() => {
@@ -40,6 +41,7 @@ export default function ClubEditPage({ params }: { params: Promise<{ id: string 
       if (club.image?.asset?._ref) {
         setPreview(urlFor(club.image).url());
       }
+      setIsMangwonChecked(club.location === '망원나들목');
     }
   }, [club]);
 
@@ -121,12 +123,32 @@ export default function ClubEditPage({ params }: { params: Promise<{ id: string 
               mb="3"
               size="3"
             />
+            {/* 망원나들목 체크박스 UI */}
+            <Flex align="center" gap="2" mb="2">
+              <Checkbox
+                size="3"
+                checked={isMangwonChecked}
+                onCheckedChange={(checked) => {
+                  setIsMangwonChecked(!!checked);
+                  if (checked) {
+                    setLocation('망원나들목');
+                  } else {
+                    setLocation('');
+                  }
+                }}
+                id="mangwon"
+              />
+              <label htmlFor="mangwon" style={{ cursor: 'pointer' }}>
+                망원나들목
+              </label>
+            </Flex>
             <TextField.Root
               placeholder="운동장소 (예: 마포구민체육센터)"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               mb="3"
               size="3"
+              readOnly={isMangwonChecked}
             />
             <TextField.Root
               placeholder="연락처 (선택)"

@@ -10,6 +10,8 @@ import {
   useUpdateApplicationStatus,
 } from '@/hooks/useTournamentApplications';
 import { isModerator } from '@/lib/authUtils';
+import { getAllTournamentApplications } from '@/service/tournamentApplication';
+import { useEffect } from 'react';
 
 import SkeletonCard from '@/components/SkeletonCard';
 import { format } from 'date-fns';
@@ -29,6 +31,19 @@ export default function TournamentApplicationsPage() {
     null,
   );
   const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [allApplications, setAllApplications] = useState<TournamentApplication[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const all = await getAllTournamentApplications();
+      setAllApplications(all);
+    })();
+  }, []);
+
+  // 대회ID+부서별 전체 참가팀 수 계산
+  const getDivisionTeamCount = (tournamentId: string, division: string) =>
+    allApplications.filter((app) => app.tournamentId === tournamentId && app.division === division)
+      .length;
 
   // 중간 관리자 권한 확인 (레벨 4 이상)
   const canManageApplications = isModerator(user);
@@ -105,10 +120,8 @@ export default function TournamentApplicationsPage() {
         <Box>
           <Flex gap="3" mb="4" align="center" wrap="wrap">
             <Flex gap="3" align="center">
-              <Text size="2" weight="bold">
-                상태 필터:
-              </Text>
-              <Select.Root value={filterStatus} onValueChange={setFilterStatus}>
+              <Text weight="bold">상태 필터:</Text>
+              <Select.Root size="3" value={filterStatus} onValueChange={setFilterStatus}>
                 <Select.Trigger placeholder="전체" />
                 <Select.Content>
                   <Select.Item value="all">전체</Select.Item>
@@ -142,19 +155,20 @@ export default function TournamentApplicationsPage() {
                   <div className="space-y-4">
                     {/* 헤더 */}
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Badge color={getStatusColor(application.status)} size="2">
+                      <div className="flex items-center gap-2">
+                        <Badge color={getStatusColor(application.status)}>
                           {getStatusLabel(application.status)}
                         </Badge>
                         {application.applicationOrder && (
-                          <Badge color="blue" size="2">
-                            {application.applicationOrder}번째 신청
-                          </Badge>
+                          <Badge color="blue">{application.applicationOrder}번째 신청</Badge>
                         )}
+                        <Badge color="blue" style={{ fontWeight: 500 }}>
+                          현재
+                          {getDivisionTeamCount(application.tournamentId, application.division)}팀
+                          신청
+                        </Badge>
                       </div>
-                      <Text size="2" color="gray">
-                        {formatDate(application.createdAt)}
-                      </Text>
+                      <Text color="gray">{formatDate(application.createdAt)}</Text>
                     </div>
 
                     {/* 참가자 정보 */}
@@ -170,7 +184,7 @@ export default function TournamentApplicationsPage() {
                         <div className="space-y-3">
                           {/* 단체전 클럽 정보 */}
                           <div className="p-3 bg-blue-50 rounded border-l-4 border-blue-500">
-                            <Text size="2" weight="bold" color="gray">
+                            <Text weight="bold" color="gray">
                               참가 클럽
                             </Text>
                             <Text size="3" weight="bold" color="blue">
@@ -190,15 +204,15 @@ export default function TournamentApplicationsPage() {
                                   className="p-3 bg-gray-50 rounded flex items-center justify-between"
                                 >
                                   <div className="flex items-center gap-3">
-                                    <Text size="2" weight="bold" color="gray">
+                                    <Text weight="bold" color="gray">
                                       {index + 1}번
                                     </Text>
                                     <Text size="3" weight="bold">
                                       {member.name}
                                     </Text>
                                   </div>
-                                  <div>
-                                    <Text size="2" weight="bold" color="gray">
+                                  <div className="flex items-center gap-3">
+                                    <Text weight="bold" color="gray">
                                       점수
                                     </Text>
                                     <Text size="3">{member.score || '-'}</Text>
@@ -225,7 +239,7 @@ export default function TournamentApplicationsPage() {
 
                                   <Separator orientation="vertical" />
 
-                                  <Text size="2" weight="bold" color="gray">
+                                  <Text weight="bold" color="gray">
                                     점수
                                   </Text>
                                   <Text size="3">{member.score || '-'}</Text>
@@ -246,14 +260,14 @@ export default function TournamentApplicationsPage() {
                         </Text>
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <Text size="2" weight="bold" color="gray">
+                            <Text weight="bold" color="gray">
                               연락처
                             </Text>
                             <Text size="3">{application.contact}</Text>
                           </div>
                           {application.email && (
                             <div>
-                              <Text size="2" weight="bold" color="gray">
+                              <Text weight="bold" color="gray">
                                 이메일
                               </Text>
                               <Text size="3">{application.email}</Text>
@@ -301,7 +315,6 @@ export default function TournamentApplicationsPage() {
                           <Button
                             variant="soft"
                             color="green"
-                            size="2"
                             onClick={() => openStatusDialog(application, 'approved')}
                             disabled={isMutating}
                           >
@@ -310,7 +323,6 @@ export default function TournamentApplicationsPage() {
                           <Button
                             variant="soft"
                             color="red"
-                            size="2"
                             onClick={() => openStatusDialog(application, 'rejected')}
                             disabled={isMutating}
                           >
@@ -320,7 +332,6 @@ export default function TournamentApplicationsPage() {
                       )}
                       <Button
                         variant="soft"
-                        size="2"
                         onClick={() => {
                           const tournamentId = application.tournamentId;
                           if (tournamentId && tournamentId.trim() !== '') {
@@ -333,7 +344,6 @@ export default function TournamentApplicationsPage() {
                       {(application.status === 'pending' || application.status === 'rejected') && (
                         <Button
                           variant="soft"
-                          size="2"
                           onClick={() =>
                             router.push(`/tournament-applications/${application._id}/edit`)
                           }

@@ -17,6 +17,7 @@ import { TeamParticipantForm } from '@/components/tournament/TeamParticipantForm
 import { TournamentParticipationForm } from '@/components/tournament/TournamentParticipationForm';
 import type { ClubMember } from '@/types/tournament';
 import { isModerator } from '@/lib/authUtils';
+import { useTournamentApplications } from '@/hooks/useTournamentApplications';
 
 // 상수 정의
 const INDIVIDUAL_PARTICIPANTS = 2;
@@ -41,6 +42,10 @@ export default function TournamentApplicationForm({
   const { data: session } = useSession();
   const { user } = useUser(session?.user?.email);
   const { clubs, isLoading: clubsLoading } = useClubs();
+
+  useEffect(() => {
+    console.log(clubs);
+  }, [clubs]);
 
   // 전체 클럽 회원 데이터 상태
   const [allClubMembers, setAllClubMembers] = useState<ClubMember[]>([]);
@@ -237,6 +242,23 @@ export default function TournamentApplicationForm({
     [activeParticipants, isIndividual, division, contact],
   );
 
+  // 대회ID+부서별 전체 신청 목록
+  const { applications: divisionApplications } = useTournamentApplications(
+    tournament._id && division ? `${tournament._id}&division=${division}` : undefined,
+  );
+
+  // 중복 체크: 동일 대회/부서에 동일 이름+클럽으로 이미 신청된 경우
+  const isDuplicate = useMemo(() => {
+    if (!divisionApplications || divisionApplications.length === 0) return false;
+    return activeParticipants.some((participant) =>
+      divisionApplications.some((app) =>
+        app.teamMembers.some(
+          (member) => member.name === participant.name && member.clubId === participant.clubId,
+        ),
+      ),
+    );
+  }, [divisionApplications, activeParticipants]);
+
   // 폼 제출
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -289,6 +311,11 @@ export default function TournamentApplicationForm({
           }
         }, 100);
 
+        return;
+      }
+      if (isDuplicate) {
+        setAlertMessage('이미 동일 대회/부서에 동일 이름과 클럽으로 참가신청이 존재합니다.');
+        setShowAlert(true);
         return;
       }
 
@@ -377,6 +404,7 @@ export default function TournamentApplicationForm({
       isEdit,
       applicationId,
       withLoading,
+      isDuplicate,
     ],
   );
 

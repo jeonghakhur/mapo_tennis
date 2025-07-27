@@ -58,6 +58,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   { path: '/admin/users', label: '회원관리', icon: UserCog, adminOnly: true },
   { path: '/admin/questions', label: '1:1 문의(전체)', icon: FileText, adminOnly: true },
+  { path: '/admin/dashboard', label: '대시보드', icon: UserCog, adminOnly: true },
 ];
 
 // 페이지 제목 매핑

@@ -1,6 +1,6 @@
 'use client';
 import { useState, useCallback, useMemo } from 'react';
-import { Box, Text, Button, TextField, Select, Flex, Heading } from '@radix-ui/themes';
+import { Box, Text, Button, TextField, Select, Flex } from '@radix-ui/themes';
 import { useDropzone } from 'react-dropzone';
 import Image from 'next/image';
 import { Save } from 'lucide-react';
@@ -28,8 +28,6 @@ interface ExpenseFormProps {
 }
 
 export default function ExpenseForm({
-  title = '지출내역 등록',
-  subtitle = '지출 정보를 입력해주세요.',
   submitButtonText = '저장',
   initialData = {},
   onSubmit,
@@ -229,18 +227,11 @@ export default function ExpenseForm({
 
   return (
     <Box>
-      <Heading as="h2" size="4" mb="3">
-        {title}
-        <Text size="2" ml="1" color="gray">
-          {subtitle}
-        </Text>
-      </Heading>
-
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         {/* 영수증 이미지 업로드 섹션 */}
         {showImageUpload && (
           <div>
-            <Text weight="bold" size="3" mb="4">
+            <Text weight="bold" size="3" mb="2" as="div">
               영수증 사진
             </Text>
             {preview ? (
@@ -276,102 +267,104 @@ export default function ExpenseForm({
         )}
 
         {/* 기본 정보 테이블 */}
-        <table className="table-form">
-          <tbody>
-            <tr>
-              <th style={{ width: '100px' }}>제목 *</th>
-              <td>
-                <TextField.Root
-                  size="3"
-                  name="title"
-                  value={form.title}
-                  onChange={handleChange}
-                  placeholder="지출 제목을 입력하세요"
-                  required
-                />
-              </td>
-            </tr>
-            <tr>
-              <th>금액 *</th>
-              <td>
-                <TextField.Root
-                  size="3"
-                  name="amount"
-                  value={form.amount}
-                  onChange={handleChange}
-                  placeholder="예: 15,000원, 15000, $15, $15.50"
-                  min="0"
-                  required
-                />
-              </td>
-            </tr>
-            <tr>
-              <th>카테고리 *</th>
-              <td>
-                <Select.Root size="3" value={form.category} onValueChange={handleCategoryChange}>
-                  <Select.Trigger placeholder="카테고리 선택" />
-                  <Select.Content>
-                    {categoryOptions.map((opt) => (
-                      <Select.Item key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </Select.Item>
-                    ))}
-                  </Select.Content>
-                </Select.Root>
-              </td>
-            </tr>
-            <tr>
-              <th>지출일 *</th>
-              <td>
-                <TextField.Root
-                  size="3"
-                  name="date"
-                  value={form.date}
-                  onChange={handleChange}
-                  type="date"
-                  required
-                />
-              </td>
-            </tr>
-            <tr>
-              <th>매장명</th>
-              <td>
-                <TextField.Root
-                  size="3"
-                  name="storeName"
-                  value={form.storeName}
-                  onChange={handleChange}
-                  placeholder="매장명을 입력하세요"
-                />
-              </td>
-            </tr>
-            <tr>
-              <th>주소</th>
-              <td>
-                <TextField.Root
-                  size="3"
-                  name="address"
-                  value={form.address}
-                  onChange={handleChange}
-                  placeholder="주소를 입력하세요"
-                />
-              </td>
-            </tr>
-            <tr>
-              <th>설명</th>
-              <td>
-                <textarea
-                  name="description"
-                  value={form.description}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full border rounded p-2"
-                  placeholder="지출에 대한 추가 설명을 입력하세요"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="table-form">
+          <table>
+            <tbody>
+              <tr>
+                <th style={{ width: '100px' }}>제목 *</th>
+                <td>
+                  <TextField.Root
+                    size="3"
+                    name="title"
+                    value={form.title}
+                    onChange={handleChange}
+                    placeholder="지출 제목을 입력하세요"
+                    required
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th>금액 *</th>
+                <td>
+                  <TextField.Root
+                    size="3"
+                    name="amount"
+                    value={form.amount}
+                    onChange={handleChange}
+                    placeholder="예: 15,000원, 15000, $15, $15.50"
+                    min="0"
+                    required
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th>카테고리 *</th>
+                <td>
+                  <Select.Root size="3" value={form.category} onValueChange={handleCategoryChange}>
+                    <Select.Trigger placeholder="카테고리 선택" />
+                    <Select.Content>
+                      {categoryOptions.map((opt) => (
+                        <Select.Item key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </Select.Item>
+                      ))}
+                    </Select.Content>
+                  </Select.Root>
+                </td>
+              </tr>
+              <tr>
+                <th>지출일 *</th>
+                <td>
+                  <TextField.Root
+                    size="3"
+                    name="date"
+                    value={form.date}
+                    onChange={handleChange}
+                    type="date"
+                    required
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th>매장명</th>
+                <td>
+                  <TextField.Root
+                    size="3"
+                    name="storeName"
+                    value={form.storeName}
+                    onChange={handleChange}
+                    placeholder="매장명을 입력하세요"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th>주소</th>
+                <td>
+                  <TextField.Root
+                    size="3"
+                    name="address"
+                    value={form.address}
+                    onChange={handleChange}
+                    placeholder="주소를 입력하세요"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th>설명</th>
+                <td>
+                  <textarea
+                    name="description"
+                    value={form.description}
+                    onChange={handleChange}
+                    rows={3}
+                    className="w-full border rounded p-2"
+                    placeholder="지출에 대한 추가 설명을 입력하세요"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         {/* 에러 메시지 */}
         {error && (

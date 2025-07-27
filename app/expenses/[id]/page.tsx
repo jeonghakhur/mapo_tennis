@@ -2,15 +2,25 @@
 import { Box, Text, Button, Flex, Badge } from '@radix-ui/themes';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import React from 'react';
+import React, { useState } from 'react';
 import Container from '@/components/Container';
 import { categoryLabels, categoryColors, formatAmount, formatDate } from '@/lib/expenseUtils';
-import { useExpense } from '@/hooks/useExpenses';
+import { useExpense, useExpenses } from '@/hooks/useExpenses';
 import { urlFor } from '@/sanity/lib/image';
 import type { Expense } from '@/model/expense';
 
 // 헤더 컴포넌트
-function ExpenseHeader({ onEdit, onBack }: { onEdit: () => void; onBack: () => void }) {
+function ExpenseHeader({
+  onEdit,
+  onBack,
+  onDelete,
+  deleting,
+}: {
+  onEdit: () => void;
+  onBack: () => void;
+  onDelete?: () => void;
+  deleting?: boolean;
+}) {
   return (
     <Flex justify="between" align="center" mb="6">
       <Text size="6" weight="bold">
@@ -20,6 +30,11 @@ function ExpenseHeader({ onEdit, onBack }: { onEdit: () => void; onBack: () => v
         <Button variant="soft" onClick={onEdit}>
           수정
         </Button>
+        {onDelete && (
+          <Button variant="soft" color="red" onClick={onDelete} disabled={deleting}>
+            {deleting ? '삭제 중...' : '삭제'}
+          </Button>
+        )}
         <Button variant="soft" onClick={onBack}>
           목록으로
         </Button>
@@ -144,6 +159,8 @@ export default function ExpenseDetailPage({ params }: { params: Promise<{ id: st
   const { id } = React.use(params);
   const router = useRouter();
   const { expense, loading, error } = useExpense(id);
+  const { deleteExpense } = useExpenses({ autoFetch: false });
+  const [deleting, setDeleting] = useState(false);
 
   if (loading) {
     return (
@@ -171,9 +188,32 @@ export default function ExpenseDetailPage({ params }: { params: Promise<{ id: st
   const handleEdit = () => router.push(`/expenses/${id}/edit`);
   const handleBack = () => router.push('/expenses');
 
+  const handleDelete = async () => {
+    if (!confirm('정말로 이 지출내역을 삭제하시겠습니까?')) {
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      await deleteExpense(id);
+      alert('지출내역이 삭제되었습니다.');
+      router.push('/expenses');
+    } catch (error) {
+      console.error('지출내역 삭제 실패:', error);
+      alert('삭제에 실패했습니다.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <Container>
-      <ExpenseHeader onEdit={handleEdit} onBack={handleBack} />
+      <ExpenseHeader
+        onEdit={handleEdit}
+        onBack={handleBack}
+        onDelete={handleDelete}
+        deleting={deleting}
+      />
 
       <div className="space-y-6">
         {/* 기본 정보 */}

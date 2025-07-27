@@ -365,6 +365,7 @@ function getPageTitle(pathname: string): string {
     '/posts': '포스트',
     '/posts/create': '포스트작성',
     '/expenses': '지출내역',
+    '/expenses/create': '지출내역등록',
     '/tournaments': '대회일정',
     '/notifications': '알림',
     '/profile': '프로필',
@@ -387,6 +388,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/posts/')) return '포스트상세';
   if (pathname.startsWith('/club/')) return '클럽상세';
   if (pathname.startsWith('/club-member/')) return '클럽멤버상세';
+  if (pathname.startsWith('/expenses/') && pathname.includes('/edit')) return '지출내역수정';
   if (pathname.startsWith('/expenses/')) return '지출내역상세';
   if (pathname.startsWith('/tournaments/') && pathname.includes('/apply')) return '참가신청';
   if (pathname.startsWith('/tournaments/') && pathname.includes('/edit')) return '대회수정';

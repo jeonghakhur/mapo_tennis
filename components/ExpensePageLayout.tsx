@@ -1,5 +1,5 @@
 'use client';
-import { Box, Text, Button, Flex } from '@radix-ui/themes';
+import { Box, Text, Button } from '@radix-ui/themes';
 import { useRouter } from 'next/navigation';
 import React from 'react';
 import Container from '@/components/Container';
@@ -41,8 +41,6 @@ interface ExpensePageLayoutProps {
 }
 
 export default function ExpensePageLayout({
-  title,
-  subtitle,
   submitButtonText,
   initialData,
   onSubmit,
@@ -51,8 +49,6 @@ export default function ExpensePageLayout({
   showImageUpload = true,
   isEditMode = false,
   expense,
-  onDelete,
-  deleting = false,
   isLoading = false,
   error,
 }: ExpensePageLayoutProps) {
@@ -85,24 +81,8 @@ export default function ExpensePageLayout({
 
   return (
     <Container>
-      {/* 헤더 */}
-      <Flex justify="between" align="center" mb="6">
-        <Text size="6" weight="bold">
-          {title}
-        </Text>
-        {isEditMode && onDelete && (
-          <Button variant="soft" color="red" onClick={onDelete} disabled={deleting}>
-            {deleting ? '삭제 중...' : '삭제'}
-          </Button>
-        )}
-      </Flex>
-
       {/* 폼 */}
       <ExpenseForm
-        title={isEditMode ? '지출내역 수정' : '지출내역 등록'}
-        subtitle={
-          subtitle || (isEditMode ? '지출 정보를 수정해주세요.' : '지출 정보를 입력해주세요.')
-        }
         submitButtonText={submitButtonText}
         initialData={initialData}
         onSubmit={onSubmit}

@@ -8,11 +8,11 @@ import { categoryLabels, categoryColors, formatAmount, formatDate } from '@/lib/
 import { useExpense, useExpenses } from '@/hooks/useExpenses';
 import { urlFor } from '@/sanity/lib/image';
 import type { Expense } from '@/model/expense';
+import SkeletonCard from '@/components/SkeletonCard';
 
 // 헤더 컴포넌트
 function ExpenseHeader({
   onEdit,
-  onBack,
   onDelete,
   deleting,
 }: {
@@ -22,10 +22,7 @@ function ExpenseHeader({
   deleting?: boolean;
 }) {
   return (
-    <Flex justify="between" align="center" mb="6">
-      <Text size="6" weight="bold">
-        지출내역 상세
-      </Text>
+    <Flex justify="end" align="center" mb="4">
       <Flex gap="2">
         <Button variant="soft" onClick={onEdit}>
           수정
@@ -35,9 +32,6 @@ function ExpenseHeader({
             {deleting ? '삭제 중...' : '삭제'}
           </Button>
         )}
-        <Button variant="soft" onClick={onBack}>
-          목록으로
-        </Button>
       </Flex>
     </Flex>
   );
@@ -46,84 +40,86 @@ function ExpenseHeader({
 // 기본 정보 테이블 컴포넌트
 function ExpenseInfoTable({ expense }: { expense: Expense }) {
   return (
-    <table className="table-form">
-      <tbody>
-        <tr>
-          <th style={{ width: '100px' }}>제목</th>
-          <td>
-            <Text size="4" weight="medium">
-              {expense.title}
-            </Text>
-          </td>
-        </tr>
-        <tr>
-          <th>금액</th>
-          <td>
-            <Text size="4" weight="bold" color="red">
-              {formatAmount(expense.amount)}원
-            </Text>
-          </td>
-        </tr>
-        <tr>
-          <th>카테고리</th>
-          <td>
-            <Badge color={categoryColors[expense.category]} size="2">
-              {categoryLabels[expense.category]}
-            </Badge>
-          </td>
-        </tr>
-        <tr>
-          <th>지출일</th>
-          <td>
-            <Text size="4">{formatDate(expense.date)}</Text>
-          </td>
-        </tr>
-        {expense.storeName && (
+    <div className="table-view">
+      <table>
+        <tbody>
           <tr>
-            <th>매장명</th>
+            <th style={{ width: '100px' }}>제목</th>
             <td>
-              <Text size="4">{expense.storeName}</Text>
+              <Text size="4" weight="medium">
+                {expense.title}
+              </Text>
             </td>
           </tr>
-        )}
-        {expense.address && (
           <tr>
-            <th>주소</th>
+            <th>금액</th>
             <td>
-              <Text size="4">{expense.address}</Text>
+              <Text size="4" weight="bold" color="red">
+                {formatAmount(expense.amount)}원
+              </Text>
             </td>
           </tr>
-        )}
-        {expense.description && (
           <tr>
-            <th>설명</th>
+            <th>카테고리</th>
             <td>
-              <Text size="4">{expense.description}</Text>
+              <Badge color={categoryColors[expense.category]} size="2">
+                {categoryLabels[expense.category]}
+              </Badge>
             </td>
           </tr>
-        )}
-        <tr>
-          <th>작성자</th>
-          <td>
-            <Text size="4">{expense.author}</Text>
-          </td>
-        </tr>
-        <tr>
-          <th>등록일</th>
-          <td>
-            <Text size="4">{formatDate(expense.createdAt)}</Text>
-          </td>
-        </tr>
-        {expense.updatedAt && (
           <tr>
-            <th>수정일</th>
+            <th>지출일</th>
             <td>
-              <Text size="4">{formatDate(expense.updatedAt)}</Text>
+              <Text size="4">{formatDate(expense.date)}</Text>
             </td>
           </tr>
-        )}
-      </tbody>
-    </table>
+          {expense.storeName && (
+            <tr>
+              <th>매장명</th>
+              <td>
+                <Text size="4">{expense.storeName}</Text>
+              </td>
+            </tr>
+          )}
+          {expense.address && (
+            <tr>
+              <th>주소</th>
+              <td>
+                <Text size="4">{expense.address}</Text>
+              </td>
+            </tr>
+          )}
+          {expense.description && (
+            <tr>
+              <th>설명</th>
+              <td>
+                <Text size="4">{expense.description}</Text>
+              </td>
+            </tr>
+          )}
+          <tr>
+            <th>작성자</th>
+            <td>
+              <Text size="4">{expense.author}</Text>
+            </td>
+          </tr>
+          <tr>
+            <th>등록일</th>
+            <td>
+              <Text size="4">{formatDate(expense.createdAt)}</Text>
+            </td>
+          </tr>
+          {expense.updatedAt && (
+            <tr>
+              <th>수정일</th>
+              <td>
+                <Text size="4">{formatDate(expense.updatedAt)}</Text>
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -135,7 +131,7 @@ function ReceiptImage({ expense }: { expense: Expense }) {
 
   return (
     <div className="mt-6">
-      <Text weight="bold" size="3" mb="4">
+      <Text weight="bold" size="3" mb="2" as="div">
         영수증 이미지
       </Text>
       <div className="relative">
@@ -165,9 +161,7 @@ export default function ExpenseDetailPage({ params }: { params: Promise<{ id: st
   if (loading) {
     return (
       <Container>
-        <Box>
-          <Text>로딩 중...</Text>
-        </Box>
+        <SkeletonCard />
       </Container>
     );
   }

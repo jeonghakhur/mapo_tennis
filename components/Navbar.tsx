@@ -26,14 +26,237 @@ import {
 } from 'lucide-react';
 import { isAdmin, hasPermissionLevel } from '@/lib/authUtils';
 import { useState, useEffect } from 'react';
+import { Session } from 'next-auth';
+import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
+import type { User as UserType } from '@/model/user';
 
+// 네비게이션 아이템 타입 정의
+interface NavItem {
+  path: string;
+  label: string;
+  icon: React.ComponentType<{ size: number }>;
+  requiredLevel?: number;
+  adminOnly?: boolean;
+  authRequired?: boolean;
+}
+
+// 네비게이션 아이템 설정
+const NAV_ITEMS: NavItem[] = [
+  { path: '/club', label: '클럽', icon: Users, requiredLevel: 4 },
+  { path: '/club-member', label: '클럽멤버', icon: UserCheck, requiredLevel: 4 },
+  { path: '/posts', label: '포스트', icon: FileText },
+  { path: '/expenses', label: '지출내역', icon: Receipt, requiredLevel: 4 },
+  { path: '/tournaments', label: '대회일정', icon: Calendar },
+  { path: '/awards', label: '대회결과', icon: Trophy },
+  { path: '/questions', label: '1:1 문의', icon: FileText, authRequired: true },
+  { path: '/tournament-applications', label: '내참가신청', icon: ClipboardList, adminOnly: false },
+  {
+    path: '/tournament-applications/admin',
+    label: '전체참가신청목록',
+    icon: ClipboardList,
+    adminOnly: true,
+  },
+  { path: '/admin/users', label: '회원관리', icon: UserCog, adminOnly: true },
+  { path: '/admin/questions', label: '1:1 문의(전체)', icon: FileText, adminOnly: true },
+];
+
+// 페이지 제목 매핑
+const PAGE_TITLES: Record<string, string> = {
+  '/club': '클럽',
+  '/club-member': '클럽멤버',
+  '/posts': '포스트',
+  '/posts/create': '포스트작성',
+  '/expenses': '지출내역',
+  '/expenses/create': '지출내역등록',
+  '/tournaments': '대회일정',
+  '/notifications': '알림',
+  '/profile': '프로필',
+  '/tournament-applications': '참가신청목록',
+  '/tournament-applications/admin': '전체참가신청목록',
+  '/admin/users': '회원관리',
+  '/welcome': '회원가입',
+  '/awards': '대회결과',
+  '/awards/create': '대회결과등록',
+  '/questions': '문의내역',
+  '/questions/create': '문의작성',
+};
+
+// 동적 라우트 제목 매핑
+const DYNAMIC_ROUTE_TITLES = [
+  { pattern: /^\/posts\/.*\/edit$/, title: '포스트수정' },
+  { pattern: /^\/posts\/.*$/, title: '포스트상세' },
+  { pattern: /^\/club\/.*$/, title: '클럽상세' },
+  { pattern: /^\/club-member\/.*$/, title: '클럽멤버상세' },
+  { pattern: /^\/expenses\/.*\/edit$/, title: '지출내역수정' },
+  { pattern: /^\/expenses\/.*$/, title: '지출내역상세' },
+  { pattern: /^\/tournaments\/.*\/apply$/, title: '참가신청' },
+  { pattern: /^\/tournaments\/.*\/edit$/, title: '대회수정' },
+  { pattern: /^\/tournaments\/.*$/, title: '대회상세' },
+  { pattern: /^\/admin\/users\/.*$/, title: '회원정보수정' },
+  { pattern: /^\/questions\/.*$/, title: '1:1 문의상세' },
+  { pattern: /^\/tournament-applications\/.*\/edit$/, title: '참가신청수정' },
+];
+
+// 페이지 제목 가져오기
+function getPageTitle(pathname: string): string {
+  // 정확히 일치하는 경로 확인
+  if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname];
+
+  // 동적 라우트 확인
+  for (const route of DYNAMIC_ROUTE_TITLES) {
+    if (route.pattern.test(pathname)) {
+      return route.title;
+    }
+  }
+
+  return '페이지';
+}
+
+// 큰글씨 모드 훅
+function useBigFontMode() {
+  const [bigFont, setBigFont] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  const toggleBigFont = () => {
+    const newBigFont = !bigFont;
+    setBigFont(newBigFont);
+
+    const themeElement = document.querySelector('.radix-themes');
+    if (themeElement) {
+      themeElement.setAttribute('data-scaling', newBigFont ? '110%' : '100%');
+    }
+
+    localStorage.setItem('bigFontMode', newBigFont ? 'true' : 'false');
+  };
+
+  useEffect(() => {
+    const saved = localStorage.getItem('bigFontMode');
+    if (saved === 'true') {
+      setBigFont(true);
+      const themeElement = document.querySelector('.radix-themes');
+      if (themeElement) {
+        themeElement.setAttribute('data-scaling', '110%');
+      }
+    }
+    setIsInitialized(true);
+  }, []);
+
+  return { bigFont, toggleBigFont, isInitialized };
+}
+
+// 네비게이션 아이템 렌더링
+function NavigationItems({
+  user,
+  admin,
+  session,
+  router,
+}: {
+  user: UserType | null | undefined;
+  admin: boolean;
+  session: Session | null;
+  router: AppRouterInstance;
+}) {
+  return (
+    <>
+      {NAV_ITEMS.map((item) => {
+        // 권한 체크
+        if (item.requiredLevel && !hasPermissionLevel(user, item.requiredLevel)) return null;
+        if (item.adminOnly && !admin) return null;
+        if (item.authRequired && !session) return null;
+        if (item.adminOnly === false && admin) return null;
+
+        const Icon = item.icon;
+        return (
+          <DropdownMenu.Item
+            key={item.path}
+            onClick={() => router.push(item.path)}
+            style={{ fontSize: '18px', fontWeight: 'bold' }}
+          >
+            <Icon size={14} />
+            {item.label}
+          </DropdownMenu.Item>
+        );
+      })}
+    </>
+  );
+}
+
+// 인증 관련 메뉴 아이템
+function AuthMenuItems({
+  session,
+  status,
+  router,
+}: {
+  session: Session | null;
+  status: string;
+  router: AppRouterInstance;
+}) {
+  const handleLogout = async () => {
+    try {
+      if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const registration of registrations) {
+          await registration.unregister();
+        }
+      }
+
+      await signOut({
+        callbackUrl: '/',
+        redirect: true,
+      });
+    } catch (error) {
+      console.error('로그아웃 실패:', error);
+      try {
+        window.location.href = '/';
+      } catch (fallbackError) {
+        console.error('홈페이지 이동 실패:', fallbackError);
+        window.location.reload();
+      }
+    }
+  };
+
+  if (status === 'loading') return null;
+
+  if (!session) {
+    return (
+      <>
+        <DropdownMenu.Item
+          onClick={() => router.push('/auth/signin')}
+          style={{ fontSize: '18px', fontWeight: 'bold' }}
+        >
+          <LogIn size={14} />
+          로그인
+        </DropdownMenu.Item>
+        <DropdownMenu.Item
+          onClick={() => router.push('/auth/signup')}
+          style={{ fontSize: '18px', fontWeight: 'bold' }}
+        >
+          <UserPlus size={14} />
+          회원가입
+        </DropdownMenu.Item>
+      </>
+    );
+  }
+
+  return (
+    <DropdownMenu.Item
+      color="red"
+      onClick={handleLogout}
+      style={{ fontSize: '18px', fontWeight: 'bold' }}
+    >
+      <LogOut size={14} />
+      로그아웃
+    </DropdownMenu.Item>
+  );
+}
+
+// 메인 Navbar 컴포넌트
 export default function Navbar() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useUser(session?.user?.email);
-  const [bigFont, setBigFont] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const { bigFont, toggleBigFont, isInitialized } = useBigFontMode();
 
   // 알림이 필요 없는 페이지 목록
   const notificationExcludedPaths = ['/simple', '/studio', '/tiptap'];
@@ -54,48 +277,10 @@ export default function Navbar() {
     }
   };
 
-  // 큰글씨 모드 토글 함수
-  const toggleBigFont = () => {
-    const newBigFont = !bigFont;
-    setBigFont(newBigFont);
-
-    // Theme의 scaling 변경 - radix-themes 클래스명 사용
-    const themeElement = document.querySelector('.radix-themes');
-    if (themeElement) {
-      themeElement.setAttribute('data-scaling', newBigFont ? '110%' : '100%');
-    }
-
-    // localStorage에 저장
-    localStorage.setItem('bigFontMode', newBigFont ? 'true' : 'false');
-  };
-
-  // 컴포넌트 마운트 시 localStorage에서 값 복원
-  useEffect(() => {
-    const saved = localStorage.getItem('bigFontMode');
-    if (saved === 'true') {
-      setBigFont(true);
-      // 초기 렌더링 시 scaling 설정
-      const themeElement = document.querySelector('.radix-themes');
-      if (themeElement) {
-        themeElement.setAttribute('data-scaling', '110%');
-      }
-    }
-    setIsInitialized(true);
-  }, []);
-
   // 초기화가 완료되지 않았으면 로딩 상태 표시
   if (!isInitialized) {
     return (
-      <nav
-        style={{
-          borderBottom: '1px solid #eee',
-          background: '#fff',
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-          height: '56px',
-        }}
-      >
+      <nav className="navbar-loading">
         <Flex align="center" px="4" py="3" justify="center">
           <div>Loading...</div>
         </Flex>
@@ -104,16 +289,7 @@ export default function Navbar() {
   }
 
   return (
-    <nav
-      style={{
-        borderBottom: '1px solid #eee',
-        background: '#fff',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-        height: '56px',
-      }}
-    >
+    <nav className="navbar">
       <Flex align="center" px="4" py="3" justify="between">
         {/* 좌측: 뒤로가기 버튼 또는 홈 링크 */}
         <Flex align="center" gap="3">
@@ -122,33 +298,27 @@ export default function Navbar() {
               <ArrowLeft size={24} className="text-gray-800" />
             </Button>
           ) : (
-            <Link
-              href="/"
-              style={{ textDecoration: 'none' }}
-              className="absolute left-1/2 -translate-x-1/2 text-center block flex-1 font-bold text-xl"
-            >
+            <Link href="/" className="text-xl font-bold">
               마포구 테니스 협회
             </Link>
           )}
         </Flex>
 
-        {/* 중앙: 페이지 제목 (뒤로가기 가능한 페이지에서만 표시) */}
+        {/* 중앙: 페이지 제목 */}
         {canGoBack && (
-          <Flex
-            align="center"
-            className="absolute left-1/2 -translate-x-1/2 text-center block flex-1 font-bold text-xl"
-          >
+          <Flex align="center" className="text-xl font-bold">
             {getPageTitle(pathname)}
           </Flex>
         )}
 
         {/* 우측: 알림 및 햄버거 메뉴 */}
         <Flex align="center" gap="2">
-          <Link href="/" style={{ textDecoration: 'none' }}>
+          <Link href="/" className="navbar-icon">
             <House size={24} className="text-gray-800" />
           </Link>
+
           {/* 알림 버튼 */}
-          <Link href="/notifications" style={{ textDecoration: 'none', position: 'relative' }}>
+          <Link href="/notifications" className="relative">
             <BellRing size={24} className="text-gray-800" />
             {session && user?._id && unreadCount > 0 && pathname !== '/welcome' && (
               <Badge
@@ -156,17 +326,7 @@ export default function Navbar() {
                 variant="solid"
                 size="1"
                 radius="full"
-                style={{
-                  position: 'absolute',
-                  top: '-8px',
-                  right: '-6px',
-                  width: '20px',
-                  height: '20px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 'bold',
-                }}
+                className="absolute -top-2 -right-2"
               >
                 {unreadCount}
               </Badge>
@@ -190,103 +350,8 @@ export default function Navbar() {
                   프로필
                 </DropdownMenu.Item>
               )}
-              {hasPermissionLevel(user, 4) && (
-                <DropdownMenu.Item
-                  onClick={() => router.push('/club')}
-                  style={{ fontSize: '18px', fontWeight: 'bold' }}
-                >
-                  <Users size={14} />
-                  클럽
-                </DropdownMenu.Item>
-              )}
-              {hasPermissionLevel(user, 4) && (
-                <DropdownMenu.Item
-                  onClick={() => router.push('/club-member')}
-                  style={{ fontSize: '18px', fontWeight: 'bold' }}
-                >
-                  <UserCheck size={14} />
-                  클럽멤버
-                </DropdownMenu.Item>
-              )}
-              {hasPermissionLevel(user, 4) && (
-                <DropdownMenu.Item
-                  onClick={() => router.push('/posts')}
-                  style={{ fontSize: '18px', fontWeight: 'bold' }}
-                >
-                  <FileText size={14} />
-                  포스트
-                </DropdownMenu.Item>
-              )}
-              {hasPermissionLevel(user, 4) && (
-                <DropdownMenu.Item
-                  onClick={() => router.push('/expenses')}
-                  style={{ fontSize: '18px', fontWeight: 'bold' }}
-                >
-                  <Receipt size="14" />
-                  지출내역
-                </DropdownMenu.Item>
-              )}
-              <DropdownMenu.Item
-                onClick={() => router.push('/tournaments')}
-                style={{ fontSize: '18px', fontWeight: 'bold' }}
-              >
-                <Calendar size={14} />
-                대회일정
-              </DropdownMenu.Item>
 
-              <DropdownMenu.Item
-                onClick={() => router.push('/awards')}
-                style={{ fontSize: '18px', fontWeight: 'bold' }}
-              >
-                <Trophy size={14} />
-                대회결과
-              </DropdownMenu.Item>
-
-              {status === 'authenticated' && session && (
-                <DropdownMenu.Item
-                  onClick={() => router.push('/questions')}
-                  style={{ fontSize: '18px', fontWeight: 'bold' }}
-                >
-                  <FileText size={14} />
-                  1:1 문의
-                </DropdownMenu.Item>
-              )}
-              {!admin && (
-                <DropdownMenu.Item
-                  onClick={() => router.push('/tournament-applications')}
-                  style={{ fontSize: '18px', fontWeight: 'bold' }}
-                >
-                  <ClipboardList size={14} />
-                  내참가신청
-                </DropdownMenu.Item>
-              )}
-              {admin && (
-                <DropdownMenu.Item
-                  onClick={() => router.push('/tournament-applications/admin')}
-                  style={{ fontSize: '18px', fontWeight: 'bold' }}
-                >
-                  <ClipboardList size={14} />
-                  전체참가신청목록
-                </DropdownMenu.Item>
-              )}
-              {admin && (
-                <DropdownMenu.Item
-                  onClick={() => router.push('/admin/users')}
-                  style={{ fontSize: '18px', fontWeight: 'bold' }}
-                >
-                  <UserCog size={14} />
-                  회원관리
-                </DropdownMenu.Item>
-              )}
-              {admin && (
-                <DropdownMenu.Item
-                  onClick={() => router.push('/admin/questions')}
-                  style={{ fontSize: '18px', fontWeight: 'bold' }}
-                >
-                  <FileText size={14} />
-                  1:1 문의(전체)
-                </DropdownMenu.Item>
-              )}
+              <NavigationItems user={user} admin={admin} session={session} router={router} />
 
               <DropdownMenu.CheckboxItem
                 checked={bigFont}
@@ -296,107 +361,14 @@ export default function Navbar() {
                 <ZoomIn size={14} />
                 큰글씨모드
               </DropdownMenu.CheckboxItem>
-              <DropdownMenu.Separator />
-              {status === 'loading' ? null : !session ? (
-                <>
-                  <DropdownMenu.Item
-                    onClick={() => router.push('/auth/signin')}
-                    style={{ fontSize: '18px', fontWeight: 'bold' }}
-                  >
-                    <LogIn size={14} />
-                    로그인
-                  </DropdownMenu.Item>
-                  <DropdownMenu.Item
-                    onClick={() => router.push('/auth/signup')}
-                    style={{ fontSize: '18px', fontWeight: 'bold' }}
-                  >
-                    <UserPlus size={14} />
-                    회원가입
-                  </DropdownMenu.Item>
-                </>
-              ) : (
-                <DropdownMenu.Item
-                  color="red"
-                  onClick={async () => {
-                    try {
-                      // PWA 관련 문제 방지를 위한 추가 처리
-                      if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-                        // 서비스 워커가 있다면 정리
-                        const registrations = await navigator.serviceWorker.getRegistrations();
-                        for (const registration of registrations) {
-                          await registration.unregister();
-                        }
-                      }
 
-                      await signOut({
-                        callbackUrl: '/',
-                        redirect: true,
-                      });
-                    } catch (error) {
-                      console.error('로그아웃 실패:', error);
-                      // 강제로 홈페이지로 이동
-                      try {
-                        window.location.href = '/';
-                      } catch (fallbackError) {
-                        console.error('홈페이지 이동 실패:', fallbackError);
-                        // 최후의 수단으로 페이지 새로고침
-                        window.location.reload();
-                      }
-                    }
-                  }}
-                  style={{ fontSize: '18px', fontWeight: 'bold' }}
-                >
-                  <LogOut size={14} />
-                  로그아웃
-                </DropdownMenu.Item>
-              )}
+              <DropdownMenu.Separator />
+
+              <AuthMenuItems session={session} status={status} router={router} />
             </DropdownMenu.Content>
           </DropdownMenu.Root>
         </Flex>
       </Flex>
     </nav>
   );
-}
-
-function getPageTitle(pathname: string): string {
-  const titleMap: Record<string, string> = {
-    '/club': '클럽',
-    '/club-member': '클럽멤버',
-    '/posts': '포스트',
-    '/posts/create': '포스트작성',
-    '/expenses': '지출내역',
-    '/expenses/create': '지출내역등록',
-    '/tournaments': '대회일정',
-    '/notifications': '알림',
-    '/profile': '프로필',
-    '/tournament-applications': '참가신청목록',
-    '/tournament-applications/admin': '전체참가신청목록',
-    '/admin/users': '회원관리',
-    '/welcome': '회원가입',
-    '/awards': '대회결과',
-    '/awards/create': '대회결과등록',
-    '/questions': '문의내역',
-    '/questions/create': '문의작성',
-    // '/admin/questions': '1:1 문의(전체)',
-  };
-
-  // 1. 정확히 일치하는 경로 우선
-  if (titleMap[pathname]) return titleMap[pathname];
-
-  // 2. 동적 라우트 처리
-  if (pathname.startsWith('/posts/') && pathname.includes('/edit')) return '포스트수정';
-  if (pathname.startsWith('/posts/')) return '포스트상세';
-  if (pathname.startsWith('/club/')) return '클럽상세';
-  if (pathname.startsWith('/club-member/')) return '클럽멤버상세';
-  if (pathname.startsWith('/expenses/') && pathname.includes('/edit')) return '지출내역수정';
-  if (pathname.startsWith('/expenses/')) return '지출내역상세';
-  if (pathname.startsWith('/tournaments/') && pathname.includes('/apply')) return '참가신청';
-  if (pathname.startsWith('/tournaments/') && pathname.includes('/edit')) return '대회수정';
-  if (pathname.startsWith('/tournaments/')) return '대회상세';
-  if (pathname.startsWith('/admin/users/')) return '회원정보수정';
-  if (pathname.startsWith('/questions/')) return '1:1 문의상세';
-  if (pathname.startsWith('/tournament-applications/') && pathname.includes('/edit'))
-    return '참가신청수정';
-
-  return '페이지';
 }

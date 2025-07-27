@@ -1,6 +1,6 @@
 'use client';
 import { Box, Text, Button, Flex, Badge, Card, Select, TextField } from '@radix-ui/themes';
-import { Search, Calendar, MapPin, User, Filter, X, NotebookPen } from 'lucide-react';
+import { Search, Calendar, Filter, X, NotebookPen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import Container from '@/components/Container';
@@ -242,54 +242,27 @@ function ExpenseFilters({
 function ExpenseCard({ expense, onClick }: { expense: Expense; onClick: () => void }) {
   return (
     <Card className="p-6 cursor-pointer hover:bg-gray-50 transition-colors" onClick={onClick}>
-      <div className="space-y-4">
-        {/* 제목과 카테고리 */}
-        <div className="flex items-center gap-3">
-          <Badge color={categoryColors[expense.category as keyof typeof categoryColors]}>
-            {categoryLabels[expense.category as keyof typeof categoryLabels]}
-          </Badge>
-          <Text size="5" weight="bold" className="block mb-2">
-            {expense.title}
+      {/* 제목과 카테고리 */}
+      <div className="flex items-center gap-3">
+        <Text size="5" weight="bold" className="block mb-2">
+          {expense.title}
+        </Text>
+        <Badge color={categoryColors[expense.category as keyof typeof categoryColors]}>
+          {categoryLabels[expense.category as keyof typeof categoryLabels]}
+        </Badge>
+      </div>
+
+      {/* 정보 */}
+      <div className="flex items-center gap-2 justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-red-500 font-bold">₩</span>
+          <Text size="3" weight="bold" color="red">
+            {formatAmount(expense.amount)}원
           </Text>
         </div>
-
-        {/* 정보 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-red-500 font-bold">₩</span>
-              <Text size="3" weight="bold" color="red">
-                {formatAmount(expense.amount)}원
-              </Text>
-            </div>
-            <div className="flex items-center gap-2">
-              <Calendar size={16} />
-              <Text>{formatDate(expense.date)}</Text>
-            </div>
-            {expense.storeName && (
-              <div className="flex items-center gap-2">
-                <MapPin size={16} />
-                <Text>{expense.storeName}</Text>
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              <User size={16} />
-              <Text color="gray">{expense.author}</Text>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            {expense.description && (
-              <Text color="gray" className="line-clamp-2">
-                {expense.description}
-              </Text>
-            )}
-            {expense.receiptImage && (
-              <Badge color="green" size="1">
-                📷 영수증
-              </Badge>
-            )}
-          </div>
+        <div className="flex items-center gap-2">
+          <Calendar size={16} />
+          <Text>{formatDate(expense.date)}</Text>
         </div>
       </div>
     </Card>

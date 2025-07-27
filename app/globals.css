@@ -204,7 +204,6 @@
       border-bottom: 1px solid #e0e0e0;
       border-left: 1px solid #e0e0e0;
       white-space: nowrap;
-      text-align: center;
 
       &:first-child {
         border-left: none;

@@ -1,7 +1,7 @@
 import useSWR from 'swr';
 import type { Post, PostInput } from '@/model/post';
 
-export function usePosts(showAll = false) {
+export function usePosts(showAll = true) {
   const { data, error, isLoading, mutate } = useSWR(`/api/posts?all=${showAll}`, null);
 
   // 생성

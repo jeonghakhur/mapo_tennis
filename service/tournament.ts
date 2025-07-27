@@ -118,3 +118,36 @@ export async function updateTournamentStatus(
 
   return result as unknown as Tournament;
 }
+
+// 예정된 대회만 조회
+export async function getUpcomingTournaments(): Promise<Tournament[]> {
+  const query = `*[_type == "tournament" && status == "upcoming"] | order(startDate asc) {
+    _id,
+    _type,
+    title,
+    startDate,
+    endDate,
+    location,
+    tournamentType,
+    registrationStartDate,
+    registrationDeadline,
+    descriptionPostId,
+    rulesPostId,
+    host,
+    organizer,
+    participants,
+    registrationMethod,
+    drawMethod,
+    equipment,
+    memo,
+    entryFee,
+    bankAccount,
+    accountHolder,
+    divisions,
+    status,
+    createdAt,
+    updatedAt,
+    createdBy
+  }`;
+  return client.fetch(query);
+}

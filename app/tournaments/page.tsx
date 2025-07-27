@@ -1,14 +1,12 @@
 'use client';
-import { Box, Text, Button, Flex, Badge, Card, Select } from '@radix-ui/themes';
+import { Box, Text, Button, Badge, Card } from '@radix-ui/themes';
 import Container from '@/components/Container';
 import { Calendar, MapPin, NotebookPen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 import { useTournaments } from '@/hooks/useTournaments';
 import SkeletonCard from '@/components/SkeletonCard';
 
 export default function TournamentsPage() {
-  const [filterStatus, setFilterStatus] = useState<string>('all');
   const router = useRouter();
   const { tournaments, isLoading, error } = useTournaments();
 
@@ -50,34 +48,13 @@ export default function TournamentsPage() {
     });
   };
 
-  const filteredTournaments = tournaments.filter((tournament) => {
-    if (filterStatus === 'all') return true;
-    return tournament.status === filterStatus;
-  });
-
   return (
     <Container>
       {isLoading ? (
         <SkeletonCard />
       ) : (
         <Box>
-          <Flex gap="3" mb="4" align="center">
-            <Text size="2" weight="bold">
-              상태 필터:
-            </Text>
-            <Select.Root value={filterStatus} onValueChange={setFilterStatus}>
-              <Select.Trigger placeholder="전체" />
-              <Select.Content>
-                <Select.Item value="all">전체</Select.Item>
-                <Select.Item value="upcoming">예정</Select.Item>
-                <Select.Item value="ongoing">진행중</Select.Item>
-                <Select.Item value="completed">완료</Select.Item>
-                <Select.Item value="cancelled">취소</Select.Item>
-              </Select.Content>
-            </Select.Root>
-          </Flex>
-
-          {filteredTournaments.length === 0 ? (
+          {tournaments.length === 0 ? (
             <Card className="p-6 text-center">
               <Text size="3" color="gray">
                 등록된 대회가 없습니다.
@@ -85,12 +62,12 @@ export default function TournamentsPage() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {filteredTournaments.map((tournament) => (
+              {tournaments.map((tournament) => (
                 <Card key={tournament._id} className="p-6 hover:bg-gray-50 transition-colors">
                   <div className="space-y-4">
                     {/* 제목과 상태 */}
                     <div className="flex items-center gap-3">
-                      <Badge color={getStatusColor(tournament.status)} size="2">
+                      <Badge color={getStatusColor(tournament.status)}>
                         {getStatusLabel(tournament.status)}
                       </Badge>
                       <Text size="5" weight="bold" className="block mb-2">
@@ -103,35 +80,35 @@ export default function TournamentsPage() {
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <Calendar size={16} />
-                          <Text size="2">
+                          <Text>
                             {formatDate(tournament.startDate)} ~ {formatDate(tournament.endDate)}
                           </Text>
                         </div>
                         <div className="space-y-2">
                           {tournament.registrationStartDate && (
-                            <Text size="2" color="gray">
+                            <Text color="gray">
                               등록시작: {formatDate(tournament.registrationStartDate)}
                             </Text>
                           )}
                           {tournament.registrationDeadline && (
-                            <Text size="2" color="gray">
+                            <Text color="gray">
                               등록마감: {formatDate(tournament.registrationDeadline)}
                             </Text>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
                           <MapPin size={16} />
-                          <Text size="2">{tournament.location}</Text>
+                          <Text>{tournament.location}</Text>
                         </div>
                       </div>
 
                       {/* 액션 버튼 */}
-                      <div className="flex flex-col gap-2 justify-end">
+                      <div className="btn-wrap">
                         {tournament.status === 'upcoming' && (
                           <Button
                             variant="solid"
                             color="blue"
-                            size="2"
+                            size="3"
                             onClick={(e) => {
                               e.stopPropagation();
                               router.push(`/tournaments/${tournament._id}/apply`);
@@ -142,7 +119,7 @@ export default function TournamentsPage() {
                         )}
                         <Button
                           variant="soft"
-                          size="2"
+                          size="3"
                           onClick={(e) => {
                             e.stopPropagation();
                             router.push(`/tournaments/${tournament._id}`);

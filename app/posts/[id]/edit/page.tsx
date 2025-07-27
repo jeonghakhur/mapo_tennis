@@ -1,7 +1,7 @@
 'use client';
 import { Box, Text, Button, Flex, TextField, Select } from '@radix-ui/themes';
 import Container from '@/components/Container';
-import { Save, Eye } from 'lucide-react';
+import { Save } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
@@ -53,14 +53,19 @@ export default function EditPostPage({ params }: EditPostPageProps) {
       setFormData({
         title: post.title,
         content: post.content,
-        author: { _ref: post.author_id },
+        author:
+          typeof post.author === 'object' && post.author._id
+            ? { _ref: post.author._id }
+            : typeof post.author === 'string'
+              ? { _ref: post.author }
+              : { _ref: session?.user?.id || '' },
         category: post.category,
         isPublished: post.isPublished,
         attachments: post.attachments || [],
+        mainPriority: post.mainPriority, // 추가!
       });
     }
-    console.log(post);
-  }, [post]);
+  }, [post, session]);
 
   const validateForm = () => {
     const newErrors: { title?: string; author?: string } = {};
@@ -78,11 +83,22 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     setActionLoading(true);
     setIsSaving(true);
     try {
-      // author가 string이면 {_ref: author}로 변환
       const authorObj =
-        typeof formData.author === 'string' ? { _ref: formData.author } : formData.author;
-      await updatePost(id, { ...formData, author: authorObj, isPublished: publish });
-      alert(publish ? '포스트가 발행되었습니다.' : '포스트가 저장되었습니다.');
+        typeof formData.author === 'string'
+          ? { _ref: formData.author }
+          : formData.author && formData.author._ref
+            ? formData.author
+            : { _ref: session?.user?.id || '' };
+      // 1. 일반 필드 저장
+      await updatePost(id, { ...formData, author: authorObj });
+      // 2. 발행/임시저장 처리
+      if (publish) {
+        await fetch(`/api/posts?id=${id}&action=publish`, { method: 'PATCH' });
+        alert('포스트가 발행되었습니다.');
+      } else {
+        await fetch(`/api/posts?id=${id}&action=unpublish`, { method: 'PATCH' });
+        alert('포스트가 임시저장되었습니다.');
+      }
       router.push('/posts');
     } catch {
       alert('저장 실패');
@@ -157,7 +173,11 @@ export default function EditPostPage({ params }: EditPostPageProps) {
             <Select.Root
               size="3"
               value={formData.mainPriority !== undefined ? String(formData.mainPriority) : '0'}
-              onValueChange={(value) => setFormData({ ...formData, mainPriority: Number(value) })}
+              onValueChange={(value) => {
+                console.log(value);
+                if (!value) return;
+                setFormData({ ...formData, mainPriority: Number(value) });
+              }}
             >
               <Select.Trigger placeholder="메인 노출 안함" />
               <Select.Content>
@@ -216,10 +236,6 @@ export default function EditPostPage({ params }: EditPostPageProps) {
             >
               <Save size={16} />
               저장
-            </Button>
-            <Button type="button" onClick={() => handleSave(true)} disabled={isSaving} size="3">
-              <Eye size={16} />
-              발행
             </Button>
           </Flex>
         </form>

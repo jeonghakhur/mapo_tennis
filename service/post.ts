@@ -212,3 +212,17 @@ export async function unpublishPost(id: string): Promise<Post> {
 
   return (await getPost(id)) as Post;
 }
+
+// 메인에 노출할 포스트 조회 (mainPriority가 1 이상인 것만, 오름차순)
+export async function getMainPosts(): Promise<Post[]> {
+  return await client.fetch(`
+    *[_type == "post" && isPublished == true && defined(mainPriority) && mainPriority >= 1]
+    | order(mainPriority asc, publishedAt desc){
+      ...,
+      author->{
+        _id,
+        name
+      }
+    }
+  `);
+}

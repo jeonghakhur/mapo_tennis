@@ -9,7 +9,7 @@ import {
   useUserTournamentApplications,
   useUpdateApplicationStatus,
 } from '@/hooks/useTournamentApplications';
-import { isModerator } from '@/lib/authUtils';
+import { hasPermissionLevel, isModerator } from '@/lib/authUtils';
 import { getAllTournamentApplications } from '@/service/tournamentApplication';
 import { useEffect } from 'react';
 
@@ -39,6 +39,16 @@ export default function TournamentApplicationsPage() {
       setAllApplications(all);
     })();
   }, []);
+
+  if (!hasPermissionLevel(user, 1)) {
+    return (
+      <Container>
+        <Box>
+          <Text color="red">권한이 없습니다.</Text>
+        </Box>
+      </Container>
+    );
+  }
 
   // 대회ID+부서별 전체 참가팀 수 계산
   const getDivisionTeamCount = (tournamentId: string, division: string) =>
@@ -111,7 +121,6 @@ export default function TournamentApplicationsPage() {
     setShowConfirmDialog(true);
   };
 
-  console.log(applications);
   return (
     <Container>
       {isLoading ? (

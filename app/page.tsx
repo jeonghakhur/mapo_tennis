@@ -11,6 +11,8 @@ import dynamic from 'next/dynamic';
 import { Calendar, MapPin } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import SkeletonCard from '@/components/SkeletonCard';
+import { hasPermissionLevel } from '@/lib/authUtils';
+import { useSession } from 'next-auth/react';
 
 const MarkdownRenderer = dynamic(() => import('@/components/MarkdownRenderer'), { ssr: false });
 
@@ -19,6 +21,8 @@ export default function Page() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { data: session } = useSession();
+  const user = session?.user;
 
   useEffect(() => {
     (async () => {
@@ -104,17 +108,19 @@ export default function Page() {
                   </div>
                 </div>
                 <div className="btn-wrap">
-                  <Button
-                    variant="solid"
-                    color="blue"
-                    size="3"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      router.push(`/tournaments/${tournament._id}/apply`);
-                    }}
-                  >
-                    참가 신청
-                  </Button>
+                  {hasPermissionLevel(user, 1) && (
+                    <Button
+                      variant="solid"
+                      color="blue"
+                      size="3"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/tournaments/${tournament._id}/apply`);
+                      }}
+                    >
+                      참가 신청
+                    </Button>
+                  )}
                   <Button
                     variant="soft"
                     size="3"

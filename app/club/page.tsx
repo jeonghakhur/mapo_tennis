@@ -9,10 +9,6 @@ import imageUrlBuilder from '@sanity/image-url';
 import { client } from '@/sanity/lib/client'; // sanity client
 import type { SanityImageSource } from '@sanity/image-url/lib/types/types';
 import SkeletonCard from '@/components/SkeletonCard';
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useUser } from '@/hooks/useUser';
-import { hasPermissionLevel } from '@/lib/authUtils';
 import { NotebookPen } from 'lucide-react';
 
 const builder = imageUrlBuilder(client);
@@ -23,49 +19,7 @@ function urlFor(source: SanityImageSource) {
 
 export default function ClubPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
-  const { user } = useUser(session?.user?.email);
   const { clubs, isLoading, error } = useClubs();
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    if (user) {
-      setHasPermission(hasPermissionLevel(user, 4));
-    } else {
-      setHasPermission(null);
-    }
-  }, [user]);
-
-  // handleImageLoad, loadedImages, allImagesLoaded 등 이미지 로딩 관련 코드 삭제
-
-  // 세션 로딩 중에는 아무것도 렌더링하지 않음
-  if (status === 'loading') {
-    return null; // 또는 <SkeletonCard />
-  }
-
-  if (status === 'unauthenticated') {
-    return (
-      <Container>
-        <Box>
-          <Text color="red" size="4" weight="bold">
-            로그인이 필요합니다.
-          </Text>
-        </Box>
-      </Container>
-    );
-  }
-
-  if (hasPermission === false) {
-    return (
-      <Container>
-        <Box>
-          <Text color="red" size="4" weight="bold">
-            접근 권한이 없습니다.
-          </Text>
-        </Box>
-      </Container>
-    );
-  }
 
   if (error) {
     return (

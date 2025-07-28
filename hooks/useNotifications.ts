@@ -1,4 +1,5 @@
 import useSWR, { mutate } from 'swr';
+import { useSession } from 'next-auth/react';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -8,12 +9,15 @@ const DEFAULT_REFRESH_INTERVAL =
     : 10000;
 
 export function useNotifications(userId?: string, options?: { pause?: boolean }) {
+  const { status } = useSession();
   const { pause } = options || {};
+  const shouldFetch = status === 'authenticated' && !pause;
+
   const { data, error, isLoading } = useSWR(
-    `/api/notifications${userId ? `?userId=${userId}` : ''}`,
+    shouldFetch ? `/api/notifications${userId ? `?userId=${userId}` : ''}` : null,
     fetcher,
     {
-      refreshInterval: pause ? 0 : DEFAULT_REFRESH_INTERVAL,
+      refreshInterval: shouldFetch ? DEFAULT_REFRESH_INTERVAL : 0,
       revalidateOnFocus: true,
     },
   );

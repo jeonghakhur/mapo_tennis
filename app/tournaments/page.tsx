@@ -5,10 +5,14 @@ import { Calendar, MapPin, NotebookPen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTournaments } from '@/hooks/useTournaments';
 import SkeletonCard from '@/components/SkeletonCard';
+import { hasPermissionLevel } from '@/lib/authUtils';
+import { useSession } from 'next-auth/react';
 
 export default function TournamentsPage() {
   const router = useRouter();
   const { tournaments, isLoading, error } = useTournaments();
+  const { data: session } = useSession();
+  const user = session?.user;
 
   if (error) {
     return (
@@ -104,7 +108,7 @@ export default function TournamentsPage() {
 
                       {/* 액션 버튼 */}
                       <div className="btn-wrap">
-                        {tournament.status === 'upcoming' && (
+                        {tournament.status === 'upcoming' && hasPermissionLevel(user, 1) && (
                           <Button
                             variant="solid"
                             color="blue"

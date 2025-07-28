@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { CheckIcon, ChevronsUpDownIcon } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@radix-ui/themes';
 import {
   Command,
   CommandEmpty,
@@ -54,7 +54,8 @@ export function Combobox({
           aria-expanded={open}
           className={cn('w-full justify-between text-lg', className)}
           disabled={disabled}
-          size="lg"
+          size="3"
+          color="gray"
         >
           {selectedOption ? selectedOption.label : placeholder}
           <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />

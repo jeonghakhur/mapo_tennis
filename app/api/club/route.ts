@@ -11,6 +11,7 @@ import type { Club } from '@/model/club';
 import { getUserByEmail } from '@/service/user';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
+import { getClubMembers } from '@/service/clubMember';
 
 export async function GET(req: Request) {
   try {
@@ -97,10 +98,51 @@ export async function DELETE(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: '로그인 필요' }, { status: 401 });
+    }
+    const user = await getUserByEmail(session.user.email);
+    if (!user) {
+      return NextResponse.json({ error: '유저 정보 없음' }, { status: 400 });
+    }
+    const userLevel = user.level ?? 0;
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
     if (!id) {
       return NextResponse.json({ error: 'id 파라미터가 필요합니다.' }, { status: 400 });
+    }
+    // 권한 체크: 4레벨 이상은 무조건 허용, 그 외에는 클럽 멤버(이름 일치) + 회장/총무만 허용
+    if (userLevel < 4) {
+      const club = await getClub(id);
+      if (!club) {
+        return NextResponse.json({ error: '클럽을 찾을 수 없습니다.' }, { status: 404 });
+      }
+      // 1. 내가 가입한 클럽인지(user.clubs에 club._id가 있는지)
+      function isClubRefArray(arr: unknown): arr is { _ref: string }[] {
+        return Array.isArray(arr) && arr.every((c) => c && typeof c._ref === 'string');
+      }
+      type ClubRef = { _ref: string };
+      const clubsArr: ClubRef[] = isClubRefArray(user.clubs) ? (user.clubs as ClubRef[]) : [];
+      const isMyClub = clubsArr.some((c) => c && c._ref === id);
+      if (!isMyClub) {
+        return NextResponse.json(
+          { error: '본인 소속 클럽만 수정할 수 있습니다.' },
+          { status: 403 },
+        );
+      }
+      // 2. 클럽멤버에서 내 역할이 회장/총무인지
+      const allMembers = await getClubMembers();
+      const clubMembers = allMembers.filter((m) => m.club && m.club._id === id);
+      const myMember = clubMembers.find(
+        (m) => m.user === user.name && (m.role === '회장' || m.role === '총무'),
+      );
+      if (!myMember) {
+        return NextResponse.json(
+          { error: '수정 권한이 없습니다. (회장/총무만 가능)' },
+          { status: 403 },
+        );
+      }
     }
     const formData = await req.formData();
     const updateFields: Record<string, unknown> = {};

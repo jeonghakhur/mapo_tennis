@@ -10,7 +10,6 @@ import {
   IconButton,
   Checkbox,
 } from '@radix-ui/themes';
-import Link from 'next/link';
 // import { useClubMembers, deleteAllClubMembersRequest } from '@/hooks/useClubMembers';
 import { useClubMembers } from '@/hooks/useClubMembers';
 import type { ClubMember, ClubMemberInput } from '@/model/clubMember';
@@ -20,10 +19,11 @@ import LoadingOverlay from '@/components/LoadingOverlay';
 import SkeletonCard from '@/components/SkeletonCard';
 import Container from '@/components/Container';
 import { useRouter } from 'next/navigation';
-import { SlidersHorizontal } from 'lucide-react';
+import { NotebookPen, SlidersHorizontal } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useUser } from '@/hooks/useUser';
 import { hasPermissionLevel } from '@/lib/authUtils';
+import { Combobox } from '@/components/ui/combobox';
 
 export default function ClubMemberListPage() {
   const { data: session } = useSession();
@@ -166,17 +166,16 @@ export default function ClubMemberListPage() {
               style={{ width: 200 }}
             />
 
-            <Select.Root value={selectedClub} onValueChange={setSelectedClub} size="3">
-              <Select.Trigger placeholder="클럽명으로 필터링" />
-              <Select.Content>
-                <Select.Item value="ALL">전체</Select.Item>
-                {clubOptions.map((name) => (
-                  <Select.Item key={name} value={name}>
-                    {name}
-                  </Select.Item>
-                ))}
-              </Select.Content>
-            </Select.Root>
+            <Combobox
+              options={[
+                { value: 'ALL', label: '전체' },
+                ...clubOptions.map((name) => ({ value: name, label: name })),
+              ]}
+              value={selectedClub}
+              onValueChange={setSelectedClub}
+              placeholder="클럽명으로 필터링"
+              className="flex-1"
+            />
             <IconButton
               onClick={() => setFilterOpen(true)}
               variant="soft"
@@ -185,10 +184,30 @@ export default function ClubMemberListPage() {
             >
               <SlidersHorizontal />
             </IconButton>
-            <Button asChild ml="auto" size="3">
-              <Link href="/club-member/create">회원 등록</Link>
-            </Button>
           </Flex>
+          <div
+            style={{
+              position: 'fixed',
+              bottom: '20px',
+              right: '20px',
+              zIndex: 1000,
+            }}
+          >
+            <Button
+              style={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              onClick={() => router.push(`/club-member/create`)}
+            >
+              <NotebookPen size={24} />
+            </Button>
+          </div>
           <Dialog.Root open={filterOpen} onOpenChange={setFilterOpen}>
             <Dialog.Content style={{ maxWidth: 400 }}>
               <Dialog.Title>고급 필터</Dialog.Title>

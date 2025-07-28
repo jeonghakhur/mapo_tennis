@@ -76,6 +76,7 @@ export const authOptions = {
       if (user && user.email) {
         // DB에서 level 조회
         const dbUser = await getUserByEmail(user.email);
+        token.name = dbUser?.name;
         token.level = dbUser?.level ?? 0;
         token.id = dbUser?._id as string;
       }
@@ -84,6 +85,7 @@ export const authOptions = {
     async session({ session, token }: { session: SessionWithLevel; token: JWTWithLevel }) {
       // 세션에 level 추가
       if (session.user) {
+        session.user.name = token.name;
         session.user.level = token.level ?? 0;
         session.user.id = token.id as string;
       }

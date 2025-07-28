@@ -1,5 +1,5 @@
 'use client';
-import { Text, Button, Flex, Table } from '@radix-ui/themes';
+import { Text, Button, Flex } from '@radix-ui/themes';
 import { useLoading } from '@/hooks/useLoading';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import Link from 'next/link';
@@ -22,69 +22,67 @@ export default function ClubMemberDetailPage({ params }: { params: Promise<{ id:
       ) : !member ? (
         <Text color="gray">회원 정보를 찾을 수 없습니다.</Text>
       ) : (
-        <div>
+        <div className="table-view">
           {loading && <LoadingOverlay size="3" />}
-          <Text size="6" weight="bold" mb="4" as="div">
-            클럽회원 상세
-          </Text>
-          <Table.Root size="3" className="text-lg" mb="5">
-            <Table.Body>
-              <Table.Row>
-                <Table.RowHeaderCell width="100px">이름</Table.RowHeaderCell>
-                <Table.Cell>{member.user || '-'}</Table.Cell>
-              </Table.Row>
-              <Table.Row>
-                <Table.RowHeaderCell>클럽</Table.RowHeaderCell>
-                <Table.Cell>{member.club?.name || '-'}</Table.Cell>
-              </Table.Row>
-              <Table.Row>
-                <Table.RowHeaderCell>직위</Table.RowHeaderCell>
-                <Table.Cell>{member.role || '-'}</Table.Cell>
-              </Table.Row>
-              <Table.Row>
-                <Table.RowHeaderCell>성별</Table.RowHeaderCell>
-                <Table.Cell>{member.gender || '-'}</Table.Cell>
-              </Table.Row>
-              <Table.Row>
-                <Table.RowHeaderCell>연락처</Table.RowHeaderCell>
-                <Table.Cell>{member.contact || '-'}</Table.Cell>
-              </Table.Row>
-              <Table.Row>
-                <Table.RowHeaderCell>출생년도</Table.RowHeaderCell>
-                <Table.Cell>{member.birth || '-'}</Table.Cell>
-              </Table.Row>
-              <Table.Row>
-                <Table.RowHeaderCell>입문년도</Table.RowHeaderCell>
-                <Table.Cell>{member.tennisStartYear || '-'}</Table.Cell>
-              </Table.Row>
-              <Table.Row>
-                <Table.RowHeaderCell>이메일</Table.RowHeaderCell>
-                <Table.Cell>{member.email || '-'}</Table.Cell>
-              </Table.Row>
-              <Table.Row>
-                <Table.RowHeaderCell>점수</Table.RowHeaderCell>
-                <Table.Cell>{member.score ?? '-'}</Table.Cell>
-              </Table.Row>
-              <Table.Row>
-                <Table.RowHeaderCell>회원상태</Table.RowHeaderCell>
-                <Table.Cell>{member.status || '-'}</Table.Cell>
-              </Table.Row>
-              <Table.Row>
-                <Table.RowHeaderCell>가입일</Table.RowHeaderCell>
-                <Table.Cell>{member.joinedAt || '-'}</Table.Cell>
-              </Table.Row>
+
+          <table>
+            <tbody>
+              <tr>
+                <th style={{ width: '100px' }}>이름</th>
+                <td>{member.user || '-'}</td>
+              </tr>
+              <tr>
+                <th>클럽</th>
+                <td>{member.club?.name || '-'}</td>
+              </tr>
+              <tr>
+                <th>직위</th>
+                <td>{member.role || '-'}</td>
+              </tr>
+              <tr>
+                <th>성별</th>
+                <td>{member.gender || '-'}</td>
+              </tr>
+              <tr>
+                <th>연락처</th>
+                <td>{member.contact || '-'}</td>
+              </tr>
+              <tr>
+                <th>출생년도</th>
+                <td>{member.birth || '-'}</td>
+              </tr>
+              <tr>
+                <th>입문년도</th>
+                <td>{member.tennisStartYear || '-'}</td>
+              </tr>
+              <tr>
+                <th>이메일</th>
+                <td>{member.email || '-'}</td>
+              </tr>
+              <tr>
+                <th>점수</th>
+                <td>{member.score ?? '-'}</td>
+              </tr>
+              <tr>
+                <th>회원상태</th>
+                <td>{member.status || '-'}</td>
+              </tr>
+              <tr>
+                <th>가입일</th>
+                <td>{member.joinedAt || '-'}</td>
+              </tr>
               {member.status === '탈퇴회원' && (
-                <Table.Row>
-                  <Table.RowHeaderCell>탈퇴일</Table.RowHeaderCell>
-                  <Table.Cell>{member.leftAt || '-'}</Table.Cell>
-                </Table.Row>
+                <tr>
+                  <th>탈퇴일</th>
+                  <td>{member.leftAt || '-'}</td>
+                </tr>
               )}
-              <Table.Row>
-                <Table.RowHeaderCell>메모</Table.RowHeaderCell>
-                <Table.Cell>{member.memo || '-'}</Table.Cell>
-              </Table.Row>
-            </Table.Body>
-          </Table.Root>
+              <tr>
+                <th>메모</th>
+                <td>{member.memo || '-'}</td>
+              </tr>
+            </tbody>
+          </table>
 
           <Flex gap="2">
             <Button asChild size="3" className="!flex-1">

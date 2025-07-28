@@ -7,12 +7,13 @@ import LoadingOverlay from '@/components/LoadingOverlay';
 import { useClubs } from '@/hooks/useClubs';
 import { createClubMemberRequest } from '@/hooks/useClubMembers';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import Container from '@/components/Container';
 import SkeletonCard from '@/components/SkeletonCard';
 import { Combobox } from '@/components/ui/combobox';
 import { wrapTextWithSpans } from '@/lib/utils';
 
-export default function ClubMemberCreatePage() {
+function ClubMemberCreateInner() {
   const { clubs, isLoading: clubsLoading } = useClubs();
   const [form, setForm] = useState({
     user: '',
@@ -31,7 +32,7 @@ export default function ClubMemberCreatePage() {
   const [error, setError] = useState('');
   const router = useRouter();
   const searchParams = useSearchParams();
-  const clubIdFromQuery = searchParams?.get('id') || '';
+  const clubIdFromQuery = searchParams.get('id') || '';
 
   const handleChange = (field: string, value: string) => {
     // 클럽 상세에서 진입한 경우 club 필드는 변경 불가
@@ -308,5 +309,13 @@ export default function ClubMemberCreatePage() {
         </>
       )}
     </Container>
+  );
+}
+
+export default function ClubMemberCreatePage() {
+  return (
+    <Suspense>
+      <ClubMemberCreateInner />
+    </Suspense>
   );
 }

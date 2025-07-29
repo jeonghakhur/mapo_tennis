@@ -28,6 +28,8 @@ export interface Post {
   // 좋아요 관련 필드 추가
   likeCount?: number;
   likedBy?: string[]; // 좋아요를 누른 사용자 ID 배열
+  // 코멘트 관련 필드 추가
+  commentCount?: number;
 }
 
 export interface PostInput {

@@ -14,7 +14,8 @@ export async function getPublishedPosts(): Promise<Post[]> {
           name
         },
       "likeCount": coalesce(likeCount, 0),
-      "likedBy": coalesce(likedBy, [])
+      "likedBy": coalesce(likedBy, []),
+      "commentCount": coalesce(commentCount, 0)
       }
   `);
 }
@@ -30,7 +31,8 @@ export async function getAllPosts(): Promise<Post[]> {
           name
         },
       "likeCount": coalesce(likeCount, 0),
-      "likedBy": coalesce(likedBy, [])
+      "likedBy": coalesce(likedBy, []),
+      "commentCount": coalesce(commentCount, 0)
       }
   `);
 }
@@ -46,7 +48,8 @@ export async function getPost(id: string): Promise<Post | null> {
           name
         },
       "likeCount": coalesce(likeCount, 0),
-      "likedBy": coalesce(likedBy, [])
+      "likedBy": coalesce(likedBy, []),
+      "commentCount": coalesce(commentCount, 0)
       }`,
     { id },
   );
@@ -62,7 +65,8 @@ export async function getPostsByCategory(category: string): Promise<Post[]> {
           name
         },
       "likeCount": coalesce(likeCount, 0),
-      "likedBy": coalesce(likedBy, [])
+      "likedBy": coalesce(likedBy, []),
+      "commentCount": coalesce(commentCount, 0)
       }`,
     {
       category,
@@ -77,6 +81,7 @@ export async function createPost(data: PostInput): Promise<Post> {
     ...data,
     likeCount: 0,
     likedBy: [],
+    commentCount: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   });
@@ -235,7 +240,8 @@ export async function getMainPosts(): Promise<Post[]> {
         name
       },
       "likeCount": coalesce(likeCount, 0),
-      "likedBy": coalesce(likedBy, [])
+      "likedBy": coalesce(likedBy, []),
+      "commentCount": coalesce(commentCount, 0)
     }
   `);
 }

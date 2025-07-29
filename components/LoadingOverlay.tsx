@@ -11,7 +11,7 @@ export default function LoadingOverlay({ size = '3' }: { size?: '1' | '2' | '3' 
         width: '100vw',
         height: '100vh',
         background: 'rgba(0,0,0,0.25)',
-        zIndex: 9999,
+        zIndex: 11000,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

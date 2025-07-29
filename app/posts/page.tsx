@@ -13,6 +13,8 @@ import MarkdownRenderer from '@/components/MarkdownRenderer';
 import Lightbox from 'yet-another-react-lightbox';
 import Zoom from 'yet-another-react-lightbox/plugins/zoom';
 import PostLikeButton from '@/components/PostLikeButton';
+import CommentButton from '@/components/CommentButton';
+import CommentDialog from '@/components/CommentDialog';
 // import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import 'yet-another-react-lightbox/styles.css';
 
@@ -21,6 +23,10 @@ export default function PostsPage() {
   const [searchKeyword, setSearchKeyword] = useState('');
   const { posts, isLoading } = usePosts();
   const router = useRouter();
+  const [commentDialogOpen, setCommentDialogOpen] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState<string>('');
+  const [selectedPostTitle, setSelectedPostTitle] = useState<string>('');
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
   // useScrollRestoration('posts');
 
   // 회원 레벨 4 이상인지 확인
@@ -71,6 +77,28 @@ export default function PostsPage() {
     if (diff < 2419200) return `${Math.floor(diff / 604800)}주 전`;
     return date.toLocaleDateString('ko-KR');
   }
+
+  // 코멘트 다이얼로그 열기
+  const handleCommentClick = async (postId: string, postTitle: string) => {
+    setSelectedPostId(postId);
+    setSelectedPostTitle(postTitle);
+    setIsLoadingComments(true);
+
+    // 코멘트를 먼저 가져온 후 다이얼로그 열기
+    try {
+      const response = await fetch(`/api/comments?postId=${postId}`);
+      if (response.ok) {
+        setCommentDialogOpen(true);
+      } else {
+        alert('코멘트를 불러오는 중 오류가 발생했습니다.');
+      }
+    } catch (error) {
+      console.error('코멘트 조회 오류:', error);
+      alert('코멘트를 불러오는 중 오류가 발생했습니다.');
+    } finally {
+      setIsLoadingComments(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -164,13 +192,20 @@ export default function PostsPage() {
                         </Flex>
                       </Box>
                     )}
-                    {/* 좋아요 버튼과 관리자 수정 버튼 */}
+                    {/* 좋아요, 코멘트 버튼과 관리자 수정 버튼 */}
                     <Flex justify="between" align="center" mt="4">
-                      <PostLikeButton
-                        postId={post._id}
-                        initialLikeCount={post.likeCount || 0}
-                        initialIsLiked={post.likedBy?.includes(session?.user?.id || '') || false}
-                      />
+                      <Flex gap="3">
+                        <PostLikeButton
+                          postId={post._id}
+                          initialLikeCount={post.likeCount || 0}
+                          initialIsLiked={post.likedBy?.includes(session?.user?.id || '') || false}
+                        />
+                        <CommentButton
+                          commentCount={post.commentCount || 0}
+                          onClick={() => handleCommentClick(post._id, post.title)}
+                          isLoading={isLoadingComments && selectedPostId === post._id}
+                        />
+                      </Flex>
                       {hasPermissionLevel(session?.user, 4) && (
                         <Button
                           size="3"
@@ -195,6 +230,16 @@ export default function PostsPage() {
               slides={lightboxImages.map((url) => ({ src: url }))}
               index={lightboxIndex}
               plugins={[Zoom]}
+            />
+          )}
+
+          {/* 코멘트 다이얼로그 */}
+          {commentDialogOpen && (
+            <CommentDialog
+              postId={selectedPostId}
+              postTitle={selectedPostTitle}
+              open={commentDialogOpen}
+              onOpenChange={setCommentDialogOpen}
             />
           )}
           {/* 플로팅 새 포스트 작성 버튼 */}

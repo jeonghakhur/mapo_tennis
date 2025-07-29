@@ -124,6 +124,14 @@ export default defineType({
       readOnly: true,
       description: '좋아요를 누른 사용자 ID 목록',
     }),
+    defineField({
+      name: 'commentCount',
+      title: '코멘트 수',
+      type: 'number',
+      initialValue: 0,
+      readOnly: true,
+      description: '코멘트 개수',
+    }),
   ],
   preview: {
     select: {

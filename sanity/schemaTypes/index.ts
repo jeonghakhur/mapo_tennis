@@ -1,5 +1,6 @@
 import club from './club';
 import clubMember from './clubMember';
+import comment from './comment';
 import expense from './expense';
 import notification from './notification';
 import post from './post';
@@ -12,6 +13,7 @@ import question from './question';
 export const schemaTypes = [
   club,
   clubMember,
+  comment,
   expense,
   notification,
   post,

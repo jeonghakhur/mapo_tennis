@@ -13,6 +13,7 @@ interface CommentDialogProps {
   postTitle: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialComments?: Comment[]; // 초기 코멘트 데이터
 }
 
 export default function CommentDialog({
@@ -20,22 +21,24 @@ export default function CommentDialog({
   postTitle,
   open,
   onOpenChange,
+  initialComments = [],
 }: CommentDialogProps) {
   const { data: session } = useSession();
   const { comments, isCreating, fetchComments, createComment, deleteComment } = useComments({
     postId,
+    initialComments,
   });
   const { loading, withLoading } = useLoading();
   const [newComment, setNewComment] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState<string>('');
 
-  // 다이얼로그가 열릴 때 코멘트 목록 조회
+  // 다이얼로그가 열릴 때 코멘트 목록 조회 (초기 데이터가 없을 때만)
   useEffect(() => {
-    if (open) {
+    if (open && initialComments.length === 0) {
       fetchComments();
     }
-  }, [open, fetchComments]);
+  }, [open, fetchComments, initialComments.length]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

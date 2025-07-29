@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { usePosts } from '@/hooks/usePosts';
 import type { Post } from '@/model/post';
+import type { Comment } from '@/model/comment';
 import SkeletonCard from '@/components/SkeletonCard';
 import { hasPermissionLevel } from '@/lib/authUtils';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
@@ -27,6 +28,7 @@ export default function PostsPage() {
   const [selectedPostId, setSelectedPostId] = useState<string>('');
   const [selectedPostTitle, setSelectedPostTitle] = useState<string>('');
   const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [initialComments, setInitialComments] = useState<Comment[]>([]);
   // useScrollRestoration('posts');
 
   // 회원 레벨 4 이상인지 확인
@@ -88,6 +90,8 @@ export default function PostsPage() {
     try {
       const response = await fetch(`/api/comments?postId=${postId}`);
       if (response.ok) {
+        const data = await response.json();
+        setInitialComments(data.comments || []);
         setCommentDialogOpen(true);
       } else {
         alert('코멘트를 불러오는 중 오류가 발생했습니다.');
@@ -245,6 +249,7 @@ export default function PostsPage() {
               postTitle={selectedPostTitle}
               open={commentDialogOpen}
               onOpenChange={setCommentDialogOpen}
+              initialComments={initialComments}
             />
           )}
           {/* 플로팅 새 포스트 작성 버튼 */}

@@ -5,11 +5,12 @@ import type { Comment } from '@/model/comment';
 
 interface UseCommentsProps {
   postId: string;
+  initialComments?: Comment[];
 }
 
-export function useComments({ postId }: UseCommentsProps) {
+export function useComments({ postId, initialComments = [] }: UseCommentsProps) {
   const { data: session } = useSession();
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [comments, setComments] = useState<Comment[]>(initialComments);
   const [isCreating, setIsCreating] = useState(false);
 
   // 코멘트 목록 조회 (useCallback으로 메모이제이션)

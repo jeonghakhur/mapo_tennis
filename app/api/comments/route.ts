@@ -3,9 +3,8 @@ import { withPermission, UserWithLevel } from '@/lib/apiUtils';
 import { getCommentsByPost, createComment } from '@/service/comment';
 import type { CommentInput } from '@/model/comment';
 
-// 코멘트 목록 조회 핸들러
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function getCommentsHandler(req: NextRequest, _user: UserWithLevel) {
+// 코멘트 목록 조회 핸들러 (로그인 없이 접근 가능)
+async function getCommentsHandler(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const postId = searchParams.get('postId');
@@ -47,10 +46,9 @@ async function createCommentHandler(req: NextRequest, user: UserWithLevel) {
   }
 }
 
-// 코멘트 목록 조회 API (GET)
+// 코멘트 목록 조회 API (GET) - 로그인 없이 접근 가능
 export async function GET(req: NextRequest) {
-  // 기본 사용자 권한 확인 (level 1 이상)
-  return withPermission(req, 1, getCommentsHandler);
+  return getCommentsHandler(req);
 }
 
 // 코멘트 생성 API (POST)

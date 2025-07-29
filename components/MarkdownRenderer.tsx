@@ -67,12 +67,14 @@ export default function MarkdownRenderer({ content, onImageClick }: MarkdownRend
     };
   }, []);
 
-  // content가 변경될 때 Viewer 업데이트
+  // content가 변경될 때 Viewer 업데이트 (이미지 제거된 내용만)
   useEffect(() => {
     if (isClient && viewerRef.current && content) {
       const viewer = viewerRef.current.getInstance();
       if (viewer) {
-        viewer.setMarkdown(content);
+        // 이미지 마크다운을 제거한 텍스트만 설정
+        const textContent = removeImageMarkdowns(content);
+        viewer.setMarkdown(textContent);
       }
     }
   }, [content, isClient]);

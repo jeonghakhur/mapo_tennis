@@ -12,6 +12,7 @@ import type { PostInput } from '@/model/post';
 import { use } from 'react';
 import SkeletonCard from '@/components/SkeletonCard';
 import LoadingOverlay from '@/components/LoadingOverlay';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 interface EditPostPageProps {
   params: Promise<{
@@ -40,6 +41,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<{ title?: string; author?: string }>({});
   const [actionLoading, setActionLoading] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
   // 권한이 없는 경우 포스트 목록으로 리다이렉트
   useEffect(() => {
@@ -78,7 +80,8 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = async (publish: boolean) => {
+  // handleSave에서 publish 인자 제거
+  const handleSave = async () => {
     if (!validateForm()) return;
     setActionLoading(true);
     setIsSaving(true);
@@ -89,17 +92,8 @@ export default function EditPostPage({ params }: EditPostPageProps) {
           : formData.author && formData.author._ref
             ? formData.author
             : { _ref: session?.user?.id || '' };
-      // 1. 일반 필드 저장
       await updatePost(id, { ...formData, author: authorObj });
-      // 2. 발행/임시저장 처리
-      if (publish) {
-        await fetch(`/api/posts?id=${id}&action=publish`, { method: 'PATCH' });
-        alert('포스트가 발행되었습니다.');
-      } else {
-        await fetch(`/api/posts?id=${id}&action=unpublish`, { method: 'PATCH' });
-        alert('포스트가 임시저장되었습니다.');
-      }
-      router.push('/posts');
+      setShowSuccessDialog(true);
     } catch {
       alert('저장 실패');
     } finally {
@@ -143,6 +137,15 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     <Container>
       <Box>
         {actionLoading && <LoadingOverlay />}
+        <ConfirmDialog
+          title="수정 완료"
+          description="포스트가 수정되었습니다."
+          confirmText="확인"
+          confirmColor="green"
+          open={showSuccessDialog}
+          onOpenChange={setShowSuccessDialog}
+          onConfirm={() => router.push(`/posts/${id}`)}
+        />
         <form className="space-y-4">
           <Flex align="center" gap="3">
             <Select.Root
@@ -227,13 +230,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
           />
 
           <Flex gap="3" justify="end" pt="4">
-            <Button
-              type="button"
-              variant="soft"
-              onClick={() => handleSave(false)}
-              disabled={isSaving}
-              size="3"
-            >
+            <Button type="button" variant="soft" onClick={handleSave} disabled={isSaving} size="3">
               <Save size={16} />
               저장
             </Button>

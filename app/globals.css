@@ -81,6 +81,8 @@
   --tt-color-highlight-purple: #f3e8ff;
   --tt-color-highlight-yellow: #fef9c3;
   --default-font-size: 20px !important;
+  --swiper-navigation-color: white;
+  --swiper-pagination-color: white;
 }
 
 .radix-themes {
@@ -275,4 +277,16 @@ main .toastui-editor-contents {
     max-width: 300px;
     margin: 0 !important;
   }
+}
+
+/* swiper */
+
+.swiper-pagination-bullet {
+  border: 2px solid gray !important;
+  width: 14px !important;
+  height: 14px !important;
+  opacity: 0.5 !important;
+}
+.swiper-pagination-bullet-active {
+  opacity: 1 !important;
 }

@@ -115,118 +115,116 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
 
   return (
     <Container>
-      <Box>
-        {loading && <LoadingOverlay />}
-        <div>
-          {/* 헤더 */}
-          {canManagePosts && (
-            <div className="flex items-center gap-2 mb-4">
-              <Badge color={getCategoryColor(post.category)} size="2">
-                {getCategoryLabel(post.category)}
+      {loading && <LoadingOverlay />}
+      <div>
+        {/* 헤더 */}
+        {canManagePosts && (
+          <div className="flex items-center gap-2 mb-4">
+            <Badge color={getCategoryColor(post.category)} size="2">
+              {getCategoryLabel(post.category)}
+            </Badge>
+            {post.isPublished ? (
+              <Badge color="green" size="2">
+                발행됨
               </Badge>
-              {post.isPublished ? (
-                <Badge color="green" size="2">
-                  발행됨
-                </Badge>
-              ) : (
-                <Badge color="gray" size="2">
-                  임시저장
-                </Badge>
-              )}
-            </div>
-          )}
-
-          {/* 제목 */}
-          <Box pb="1" className="border-b" style={{ borderBottomWidth: '2px' }}>
-            <Text weight="bold" className="block mb-2 text-2xl">
-              {post.title}
-            </Text>
-          </Box>
-
-          {/* 메타 정보 */}
-
-          <div className="flex flex-wrap gap-4 text-sm text-gray-600 border-b py-3">
-            <span>작성자: {typeof post.author === 'string' ? post.author : post.author?.name}</span>
-            <span>생성일: {formatDate(post.createdAt)}</span>
-            {canManagePosts && (
-              <>
-                {post.updatedAt && <span>수정일: {formatDate(post.updatedAt)}</span>}
-                {post.publishedAt && <span>발행일: {formatDate(post.publishedAt)}</span>}
-              </>
+            ) : (
+              <Badge color="gray" size="2">
+                임시저장
+              </Badge>
             )}
           </div>
+        )}
 
-          {/* 내용 */}
-          <div className="pt-4">
-            <MarkdownRenderer content={post.content} />
-          </div>
+        {/* 제목 */}
+        <Box pb="1" className="border-b" style={{ borderBottomWidth: '2px' }}>
+          <Text weight="bold" className="block mb-2 text-2xl">
+            {post.title}
+          </Text>
+        </Box>
 
-          {/* 첨부파일 */}
-          {post.attachments && post.attachments.length > 0 && (
-            <div className="pt-4 border-t">
-              <Text size="3" weight="bold" className="block mb-3">
-                첨부파일
-              </Text>
-              <div className="space-y-2">
-                {post.attachments.map((attachment: Attachment, index: number) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 border rounded-lg bg-gray-50"
-                  >
-                    <div className="flex items-center gap-2">
-                      {attachment.type.startsWith('image/') ? (
-                        // eslint-disable-next-line jsx-a11y/alt-text
-                        <Image size={16} />
-                      ) : attachment.type === 'application/pdf' ? (
-                        <FileText size={16} />
-                      ) : (
-                        <File size={16} />
-                      )}
-                      <div>
-                        <Text size="2" weight="bold">
-                          {attachment.filename}
-                        </Text>
-                        <Text size="1" color="gray">
-                          {formatFileSize(attachment.size)}
-                        </Text>
-                      </div>
-                    </div>
+        {/* 메타 정보 */}
 
-                    <Button
-                      size="2"
-                      variant="soft"
-                      onClick={() => window.open(attachment.url, '_blank')}
-                    >
-                      다운로드
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
+        <div className="flex flex-wrap gap-4 text-sm text-gray-600 border-b py-3">
+          <span>작성자: {typeof post.author === 'string' ? post.author : post.author?.name}</span>
+          <span>생성일: {formatDate(post.createdAt)}</span>
           {canManagePosts && (
-            <Flex gap="3" justify="end" pt="4" className="border-t">
-              <Button
-                size="3"
-                variant="soft"
-                color={post.isPublished ? 'orange' : 'green'}
-                onClick={() => handlePublish(post._id, post.isPublished)}
-              >
-                {post.isPublished ? '임시저장' : '발행'}
-              </Button>
-              <Button variant="soft" onClick={() => router.push(`/posts/${id}/edit`)} size="3">
-                <Edit size={16} />
-                수정
-              </Button>
-              <Button variant="soft" color="red" onClick={handleDelete} size="3">
-                <Trash2 size={16} />
-                삭제
-              </Button>
-            </Flex>
+            <>
+              {post.updatedAt && <span>수정일: {formatDate(post.updatedAt)}</span>}
+              {post.publishedAt && <span>발행일: {formatDate(post.publishedAt)}</span>}
+            </>
           )}
         </div>
-      </Box>
+
+        {/* 내용 */}
+        <div className="pt-4">
+          <MarkdownRenderer content={post.content} />
+        </div>
+
+        {/* 첨부파일 */}
+        {post.attachments && post.attachments.length > 0 && (
+          <div className="pt-4 border-t">
+            <Text weight="bold" mb="2" as="div">
+              첨부파일
+            </Text>
+            <div className="space-y-2">
+              {post.attachments.map((attachment: Attachment, index: number) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 border rounded-lg bg-gray-50"
+                >
+                  <div className="flex items-center gap-2">
+                    {attachment.type.startsWith('image/') ? (
+                      // eslint-disable-next-line jsx-a11y/alt-text
+                      <Image size={16} />
+                    ) : attachment.type === 'application/pdf' ? (
+                      <FileText size={16} />
+                    ) : (
+                      <File size={16} />
+                    )}
+                    <div>
+                      <Text size="2" weight="bold" mr="2">
+                        {attachment.filename}
+                      </Text>
+                      <Text size="1" color="gray">
+                        {formatFileSize(attachment.size)}
+                      </Text>
+                    </div>
+                  </div>
+
+                  <Button
+                    size="2"
+                    variant="soft"
+                    onClick={() => window.open(attachment.url, '_blank')}
+                  >
+                    다운로드
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {canManagePosts && (
+          <Flex gap="3" justify="end" pt="4" className="border-t mt-4">
+            <Button
+              size="3"
+              variant="soft"
+              color={post.isPublished ? 'orange' : 'green'}
+              onClick={() => handlePublish(post._id, post.isPublished)}
+            >
+              {post.isPublished ? '임시저장' : '발행'}
+            </Button>
+            <Button variant="soft" onClick={() => router.push(`/posts/${id}/edit`)} size="3">
+              <Edit size={16} />
+              수정
+            </Button>
+            <Button variant="soft" color="red" onClick={handleDelete} size="3">
+              <Trash2 size={16} />
+              삭제
+            </Button>
+          </Flex>
+        )}
+      </div>
     </Container>
   );
 }

@@ -83,6 +83,7 @@
   --default-font-size: 20px !important;
   --swiper-navigation-color: white;
   --swiper-pagination-color: white;
+  --swiper-navigation-size: 22px !important;
 }
 
 .radix-themes {
@@ -280,13 +281,12 @@ main .toastui-editor-contents {
 }
 
 /* swiper */
-
 .swiper-pagination-bullet {
-  border: 2px solid gray !important;
-  width: 14px !important;
-  height: 14px !important;
-  opacity: 0.5 !important;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
 }
-.swiper-pagination-bullet-active {
-  opacity: 1 !important;
+.swiper-button-prev:after,
+.swiper-button-next:after {
+  /* text-shadow: #000; */
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
 }

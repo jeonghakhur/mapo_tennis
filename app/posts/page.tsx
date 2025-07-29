@@ -103,7 +103,7 @@ export default function PostsPage() {
             </div>
           </div>
 
-          <div className="space-y-8">
+          <Flex direction="column" gap="4">
             {filteredPosts.length === 0 ? (
               <Box className="text-center py-8">
                 <Text size="4" color="gray">
@@ -120,7 +120,7 @@ export default function PostsPage() {
                   setLightboxOpen(true);
                 };
                 return (
-                  <Box key={post._id} className="p-6 border rounded-lg bg-white shadow-sm mb-4">
+                  <Box key={post._id} className="border-b pb-4">
                     <Flex align="center" gap="2" mb="1">
                       <Text weight="bold" size="4">
                         {post.title}
@@ -179,7 +179,7 @@ export default function PostsPage() {
                 );
               })
             )}
-          </div>
+          </Flex>
 
           {/* Lightbox */}
           {lightboxOpen && (

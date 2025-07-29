@@ -23,6 +23,20 @@ interface MarkdownRendererProps {
   onImageClick?: (idx: number) => void;
 }
 
+// Sanity 이미지 URL인지 확인
+function isSanityImageUrl(url: string): boolean {
+  return url.includes('cdn.sanity.io') && url.includes('/assets/');
+}
+
+// Sanity 이미지 URL을 최적화된 URL로 변환
+function optimizeSanityImageUrl(url: string): string {
+  if (isSanityImageUrl(url)) {
+    // Sanity 이미지 최적화 옵션 적용
+    return url + '?w=1000&h=400&fit=crop&auto=format';
+  }
+  return url;
+}
+
 // 이미지 마크다운 추출
 function extractImageMarkdowns(markdown: string): string[] {
   const regex = /!\[.*?\]\(.*?\)/g;
@@ -73,9 +87,10 @@ export default function MarkdownRenderer({ content, onImageClick }: MarkdownRend
   // 디버깅을 위한 콘솔 로그
 
   return (
-    <Box className="markdown-content" style={{ fontSize: '2rem' }}>
-      {imageUrls.length > 1 && (
+    <Box className="markdown-content -mx-5">
+      {imageUrls.length >= 1 && (
         <Swiper
+          autoHeight={true}
           spaceBetween={10}
           slidesPerView={1}
           style={{ maxWidth: 600 }}
@@ -86,13 +101,13 @@ export default function MarkdownRenderer({ content, onImageClick }: MarkdownRend
           {imageUrls.map((url, idx) => (
             <SwiperSlide key={idx}>
               <Image
-                src={url}
+                src={optimizeSanityImageUrl(url)}
                 alt={`image-${idx}`}
                 width={1000}
-                height={1000}
+                height={400}
                 style={{
                   width: '100%',
-                  maxHeight: 400,
+                  // maxHeight: 400,
                   objectFit: 'contain',
                   cursor: onImageClick ? 'pointer' : undefined,
                 }}
@@ -102,22 +117,11 @@ export default function MarkdownRenderer({ content, onImageClick }: MarkdownRend
           ))}
         </Swiper>
       )}
-      {imageUrls.length === 1 && (
-        <Image
-          src={imageUrls[0]}
-          alt="image-0"
-          width={1000}
-          height={1000}
-          style={{
-            width: '100%',
-            maxHeight: 400,
-            objectFit: 'contain',
-            cursor: onImageClick ? 'pointer' : undefined,
-          }}
-          onClick={onImageClick ? () => onImageClick(0) : undefined}
-        />
+      {isClient && (
+        <Box px="5">
+          <Viewer ref={viewerRef} initialValue={textContent || ''} />
+        </Box>
       )}
-      {isClient && <Viewer ref={viewerRef} initialValue={textContent || ''} />}
     </Box>
   );
 }

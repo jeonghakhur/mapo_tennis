@@ -141,13 +141,10 @@ export default function Page() {
       <Flex direction="column" gap="4" mb="8">
         {posts.map((post) => (
           <Box key={post._id} p="4" style={{ border: '1px solid #eee', borderRadius: 8 }}>
-            <Text size="4" weight="bold">
+            <Text size="4" weight="bold" as="div" mb="2">
               {post.title}
             </Text>
-            <Text color="gray" mb="2">
-              {typeof post.author === 'object' ? post.author.name : ''} •{' '}
-              {new Date(post.publishedAt || post.createdAt).toLocaleDateString()}
-            </Text>
+
             <MarkdownRenderer content={post.content} />
           </Box>
         ))}

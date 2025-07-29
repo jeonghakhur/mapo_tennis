@@ -20,6 +20,7 @@ const Viewer = dynamic(
 
 interface MarkdownRendererProps {
   content: string;
+  onImageClick?: (idx: number) => void;
 }
 
 // 이미지 마크다운 추출
@@ -32,7 +33,7 @@ function removeImageMarkdowns(markdown: string): string {
   return markdown.replace(/!\[.*?\]\(.*?\)/g, '');
 }
 
-export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
+export default function MarkdownRenderer({ content, onImageClick }: MarkdownRendererProps) {
   const [isClient, setIsClient] = useState(false);
   const viewerRef = useRef<{ getInstance: () => { setMarkdown: (content: string) => void } }>(null);
 
@@ -89,11 +90,32 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
                 alt={`image-${idx}`}
                 width={1000}
                 height={1000}
-                style={{ width: '100%', maxHeight: 400, objectFit: 'contain' }}
+                style={{
+                  width: '100%',
+                  maxHeight: 400,
+                  objectFit: 'contain',
+                  cursor: onImageClick ? 'pointer' : undefined,
+                }}
+                onClick={onImageClick ? () => onImageClick(idx) : undefined}
               />
             </SwiperSlide>
           ))}
         </Swiper>
+      )}
+      {imageUrls.length === 1 && (
+        <Image
+          src={imageUrls[0]}
+          alt="image-0"
+          width={1000}
+          height={1000}
+          style={{
+            width: '100%',
+            maxHeight: 400,
+            objectFit: 'contain',
+            cursor: onImageClick ? 'pointer' : undefined,
+          }}
+          onClick={onImageClick ? () => onImageClick(0) : undefined}
+        />
       )}
       {isClient && <Viewer ref={viewerRef} initialValue={textContent || ''} />}
     </Box>

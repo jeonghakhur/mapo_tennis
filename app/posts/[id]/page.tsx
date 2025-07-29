@@ -11,6 +11,10 @@ import SkeletonCard from '@/components/SkeletonCard';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import { useSession } from 'next-auth/react';
 import { useLoading } from '@/hooks/useLoading';
+import Lightbox from 'yet-another-react-lightbox';
+import Zoom from 'yet-another-react-lightbox/plugins/zoom';
+import 'yet-another-react-lightbox/styles.css';
+import { useState } from 'react';
 
 interface PostDetailPageProps {
   params: Promise<{
@@ -25,6 +29,8 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
   const { data: session } = useSession();
   const canManagePosts = session?.user?.level >= 4;
   const { loading, withLoading } = useLoading();
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   const handleDelete = async () => {
     if (!post || !confirm(`"${post.title}" 포스트를 삭제하시겠습니까?`)) return;
@@ -87,6 +93,25 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  // 마크다운에서 이미지 url 추출 함수
+  function extractImageUrls(markdown: string): string[] {
+    const regex = /!\[.*?\]\((.*?)\)/g;
+    const urls: string[] = [];
+    let match;
+    while ((match = regex.exec(markdown)) !== null) {
+      urls.push(match[1]);
+    }
+    return urls;
+  }
+
+  const imageUrls = post ? extractImageUrls(post.content) : [];
+
+  // 이미지 클릭 핸들러 (MarkdownRenderer에 prop으로 전달)
+  const handleImageClick = (idx: number) => {
+    setLightboxIndex(idx);
+    setLightboxOpen(true);
   };
 
   useEffect(() => {
@@ -157,8 +182,18 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
 
         {/* 내용 */}
         <div className="pt-4">
-          <MarkdownRenderer content={post.content} />
+          <MarkdownRenderer content={post.content} onImageClick={handleImageClick} />
         </div>
+        {/* Lightbox */}
+        {lightboxOpen && (
+          <Lightbox
+            open={lightboxOpen}
+            close={() => setLightboxOpen(false)}
+            slides={imageUrls.map((url) => ({ src: url }))}
+            index={lightboxIndex}
+            plugins={[Zoom]}
+          />
+        )}
 
         {/* 첨부파일 */}
         {post.attachments && post.attachments.length > 0 && (

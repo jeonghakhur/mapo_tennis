@@ -12,6 +12,7 @@ import { hasPermissionLevel } from '@/lib/authUtils';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import Lightbox from 'yet-another-react-lightbox';
 import Zoom from 'yet-another-react-lightbox/plugins/zoom';
+import PostLikeButton from '@/components/PostLikeButton';
 // import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import 'yet-another-react-lightbox/styles.css';
 
@@ -163,9 +164,14 @@ export default function PostsPage() {
                         </Flex>
                       </Box>
                     )}
-                    {/* 관리자만 수정 버튼 노출 */}
-                    {hasPermissionLevel(session?.user, 4) && (
-                      <Flex justify="end" mt="4">
+                    {/* 좋아요 버튼과 관리자 수정 버튼 */}
+                    <Flex justify="between" align="center" mt="4">
+                      <PostLikeButton
+                        postId={post._id}
+                        initialLikeCount={post.likeCount || 0}
+                        initialIsLiked={post.likedBy?.includes(session?.user?.id || '') || false}
+                      />
+                      {hasPermissionLevel(session?.user, 4) && (
                         <Button
                           size="3"
                           variant="soft"
@@ -173,8 +179,8 @@ export default function PostsPage() {
                         >
                           수정
                         </Button>
-                      </Flex>
-                    )}
+                      )}
+                    </Flex>
                   </Box>
                 );
               })

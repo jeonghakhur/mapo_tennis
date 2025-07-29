@@ -108,6 +108,22 @@ export default defineType({
       initialValue: 0,
       description: '메인 노출 시 우선순위(낮을수록 먼저)',
     }),
+    defineField({
+      name: 'likeCount',
+      title: '좋아요 수',
+      type: 'number',
+      initialValue: 0,
+      readOnly: true,
+      description: '좋아요를 누른 사용자 수',
+    }),
+    defineField({
+      name: 'likedBy',
+      title: '좋아요를 누른 사용자들',
+      type: 'array',
+      of: [{ type: 'string' }],
+      readOnly: true,
+      description: '좋아요를 누른 사용자 ID 목록',
+    }),
   ],
   preview: {
     select: {

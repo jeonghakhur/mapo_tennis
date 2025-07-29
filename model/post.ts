@@ -25,6 +25,9 @@ export interface Post {
   createdAt: string;
   updatedAt?: string;
   attachments?: Attachment[];
+  // 좋아요 관련 필드 추가
+  likeCount?: number;
+  likedBy?: string[]; // 좋아요를 누른 사용자 ID 배열
 }
 
 export interface PostInput {
@@ -36,4 +39,11 @@ export interface PostInput {
   attachments?: Attachment[];
   showOnMain?: boolean;
   mainPriority?: number;
+}
+
+// 좋아요 토글 응답 타입
+export interface LikeToggleResponse {
+  success: boolean;
+  isLiked: boolean;
+  likeCount: number;
 }

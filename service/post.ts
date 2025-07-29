@@ -12,7 +12,9 @@ export async function getPublishedPosts(): Promise<Post[]> {
       author->{
           _id,
           name
-        }
+        },
+      "likeCount": coalesce(likeCount, 0),
+      "likedBy": coalesce(likedBy, [])
       }
   `);
 }
@@ -26,7 +28,9 @@ export async function getAllPosts(): Promise<Post[]> {
       author->{
           _id,
           name
-        }
+        },
+      "likeCount": coalesce(likeCount, 0),
+      "likedBy": coalesce(likedBy, [])
       }
   `);
 }
@@ -40,7 +44,9 @@ export async function getPost(id: string): Promise<Post | null> {
       author->{
           _id,
           name
-        }
+        },
+      "likeCount": coalesce(likeCount, 0),
+      "likedBy": coalesce(likedBy, [])
       }`,
     { id },
   );
@@ -54,7 +60,9 @@ export async function getPostsByCategory(category: string): Promise<Post[]> {
       author->{
           _id,
           name
-        }
+        },
+      "likeCount": coalesce(likeCount, 0),
+      "likedBy": coalesce(likedBy, [])
       }`,
     {
       category,
@@ -67,6 +75,8 @@ export async function createPost(data: PostInput): Promise<Post> {
   const post = await client.create({
     _type: 'post',
     ...data,
+    likeCount: 0,
+    likedBy: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   });
@@ -223,7 +233,9 @@ export async function getMainPosts(): Promise<Post[]> {
       author->{
         _id,
         name
-      }
+      },
+      "likeCount": coalesce(likeCount, 0),
+      "likedBy": coalesce(likedBy, [])
     }
   `);
 }

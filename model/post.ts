@@ -27,7 +27,7 @@ export interface Post {
   attachments?: Attachment[];
   // 좋아요 관련 필드 추가
   likeCount?: number;
-  likedBy?: string[]; // 좋아요를 누른 사용자 ID 배열
+  likedBy?: { _key: string; _ref: string }[]; // 좋아요를 누른 사용자 reference 배열
   // 코멘트 관련 필드 추가
   commentCount?: number;
 }

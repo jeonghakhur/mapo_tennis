@@ -113,23 +113,22 @@ export default defineType({
       title: '좋아요 수',
       type: 'number',
       initialValue: 0,
-      readOnly: true,
+
       description: '좋아요를 누른 사용자 수',
     }),
     defineField({
       name: 'likedBy',
       title: '좋아요를 누른 사용자들',
       type: 'array',
-      of: [{ type: 'string' }],
-      readOnly: true,
-      description: '좋아요를 누른 사용자 ID 목록',
+      of: [{ type: 'reference', to: [{ type: 'user' }] }],
+
+      description: '좋아요를 누른 사용자 목록',
     }),
     defineField({
       name: 'commentCount',
       title: '코멘트 수',
       type: 'number',
-      initialValue: 0,
-      readOnly: true,
+
       description: '코멘트 개수',
     }),
   ],

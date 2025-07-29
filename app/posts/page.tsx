@@ -198,7 +198,12 @@ export default function PostsPage() {
                         <PostLikeButton
                           postId={post._id}
                           initialLikeCount={post.likeCount || 0}
-                          initialIsLiked={post.likedBy?.includes(session?.user?.id || '') || false}
+                          initialIsLiked={
+                            post.likedBy?.some(
+                              (ref: { _key: string; _ref: string }) =>
+                                ref._ref === session?.user?.id,
+                            ) || false
+                          }
                         />
                         <CommentButton
                           commentCount={post.commentCount || 0}

@@ -27,18 +27,26 @@ async function likeToggleHandler(req: NextRequest, user: UserWithLevel) {
 
     const currentLikedBy = post.likedBy || [];
     const userId = user.id as string;
-    const isCurrentlyLiked = currentLikedBy.includes(userId);
+    const isCurrentlyLiked = currentLikedBy.some(
+      (ref: { _key: string; _ref: string }) => ref._ref === userId,
+    );
 
-    let newLikedBy: string[];
+    let newLikedBy: { _key: string; _ref: string }[];
     let newLikeCount: number;
 
     if (isCurrentlyLiked) {
       // 좋아요 취소
-      newLikedBy = currentLikedBy.filter((id: string) => id !== userId);
+      newLikedBy = currentLikedBy.filter(
+        (ref: { _key: string; _ref: string }) => ref._ref !== userId,
+      );
       newLikeCount = Math.max(0, (post.likeCount || 0) - 1);
     } else {
       // 좋아요 추가
-      newLikedBy = [...currentLikedBy, userId];
+      const newLikeRef = {
+        _key: `likedBy_${userId}_${Date.now()}`,
+        _ref: userId,
+      };
+      newLikedBy = [...currentLikedBy, newLikeRef];
       newLikeCount = (post.likeCount || 0) + 1;
     }
 

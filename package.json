@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "prepare": "husky install",
-    "update-comment-count": "node scripts/update-posts-commentCount.js"
+    "update-comment-count": "node scripts/update-posts-commentCount.js",
+    "migrate-likedby": "node scripts/migrate-likedBy-to-reference.js"
   },
   "engines": {
     "node": "22.x"

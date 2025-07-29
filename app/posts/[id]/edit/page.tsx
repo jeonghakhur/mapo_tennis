@@ -1,11 +1,10 @@
 'use client';
 import { Box, Text, Button, Flex, TextField, Select } from '@radix-ui/themes';
 import Container from '@/components/Container';
-import { Save } from 'lucide-react';
+import { Save, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { usePost, usePosts } from '@/hooks/usePosts';
 import MarkdownEditor from '@/components/MarkdownEditor';
 import FileUpload from '@/components/FileUpload';
 import type { PostInput } from '@/model/post';
@@ -13,6 +12,9 @@ import { use } from 'react';
 import SkeletonCard from '@/components/SkeletonCard';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { useLoading } from '@/hooks/useLoading';
+import { usePost } from '@/hooks/usePosts';
+import { usePosts } from '@/hooks/usePosts';
 
 interface EditPostPageProps {
   params: Promise<{
@@ -28,8 +30,8 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   // 회원 레벨 4 이상인지 확인
   const canManagePosts = session?.user?.level >= 4;
 
+  const { updatePost, deletePost } = usePosts();
   const { post, isLoading } = usePost(id);
-  const { updatePost } = usePosts();
   const [formData, setFormData] = useState<PostInput>({
     title: '',
     content: '',
@@ -38,10 +40,9 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     isPublished: false,
     attachments: [],
   });
-  const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<{ title?: string; author?: string }>({});
-  const [actionLoading, setActionLoading] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const { loading, withLoading } = useLoading();
 
   // 권한이 없는 경우 포스트 목록으로 리다이렉트
   useEffect(() => {
@@ -55,12 +56,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
       setFormData({
         title: post.title,
         content: post.content,
-        author:
-          typeof post.author === 'object' && post.author._id
-            ? { _ref: post.author._id }
-            : typeof post.author === 'string'
-              ? { _ref: post.author }
-              : { _ref: session?.user?.id || '' },
+        author: post.author,
         category: post.category,
         isPublished: post.isPublished,
         attachments: post.attachments || [],
@@ -83,22 +79,38 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   // handleSave에서 publish 인자 제거
   const handleSave = async () => {
     if (!validateForm()) return;
-    setActionLoading(true);
-    setIsSaving(true);
     try {
-      const authorObj =
-        typeof formData.author === 'string'
-          ? { _ref: formData.author }
-          : formData.author && formData.author._ref
-            ? formData.author
-            : { _ref: session?.user?.id || '' };
-      await updatePost(id, { ...formData, author: authorObj });
-      setShowSuccessDialog(true);
-    } catch {
-      alert('저장 실패');
+      await withLoading(async () => await updatePost(id, { ...formData }));
+      // console.log('handleSave result', result);
+      // setShowSuccessDialog(true);
+    } catch (error) {
+      alert('저장 실패: ' + error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!post || !confirm(`"${post.title}" 포스트를 삭제하시겠습니까?`)) return;
+    try {
+      await withLoading(async () => await deletePost(id));
+      alert('포스트가 삭제되었습니다.');
+      router.push('/posts');
+    } catch (error) {
+      console.error('포스트 삭제 실패:', error);
+      alert('포스트 삭제 중 오류가 발생했습니다.');
     } finally {
-      setIsSaving(false);
-      setActionLoading(false);
+    }
+  };
+
+  const handlePublish = async (id: string, isPublished: boolean) => {
+    if (!canManagePosts || !post) return;
+    try {
+      await withLoading(
+        async () => await updatePost(id, { ...formData, isPublished: !isPublished }),
+      );
+    } catch (error: unknown) {
+      let msg = '';
+      if (error instanceof Error) msg = error.message;
+      alert('포스트 상태 변경에 실패했습니다: ' + msg);
     }
   };
 
@@ -136,7 +148,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   return (
     <Container>
       <Box>
-        {actionLoading && <LoadingOverlay />}
+        {loading && <LoadingOverlay />}
         <ConfirmDialog
           title="수정 완료"
           description="포스트가 수정되었습니다."
@@ -144,7 +156,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
           confirmColor="green"
           open={showSuccessDialog}
           onOpenChange={setShowSuccessDialog}
-          onConfirm={() => router.push(`/posts/${id}`)}
+          onConfirm={() => router.push(`/posts/`)}
         />
         <form className="space-y-4">
           <Flex align="center" gap="3">
@@ -230,7 +242,20 @@ export default function EditPostPage({ params }: EditPostPageProps) {
           />
 
           <Flex gap="3" justify="end" pt="4">
-            <Button type="button" variant="soft" onClick={handleSave} disabled={isSaving} size="3">
+            <Button type="button" variant="soft" color="red" onClick={handleDelete} size="3">
+              <Trash2 size={16} />
+              삭제
+            </Button>
+            <Button
+              size="3"
+              variant="soft"
+              type="button"
+              color={post.isPublished ? 'orange' : 'green'}
+              onClick={() => handlePublish(post._id, post.isPublished)}
+            >
+              {post.isPublished ? '임시저장' : '발행'}
+            </Button>
+            <Button type="button" variant="soft" onClick={handleSave} size="3">
               <Save size={16} />
               저장
             </Button>

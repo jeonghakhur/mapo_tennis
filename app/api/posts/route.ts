@@ -6,8 +6,6 @@ import {
   createPost,
   updatePost,
   deletePost,
-  publishPost,
-  unpublishPost,
   getPostsByCategory,
 } from '@/service/post';
 import type { PostInput } from '@/model/post';
@@ -81,44 +79,27 @@ export async function PATCH(req: NextRequest) {
   return withPermission(req, PERMISSION_LEVELS.POST_MANAGER, async (req) => {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
-    const action = searchParams.get('action');
-
+    // action 파라미터 제거
     if (!id) {
       return NextResponse.json({ error: 'id가 필요합니다.' }, { status: 400 });
     }
 
     try {
-      if (action === 'publish') {
-        const result = await publishPost(id);
-        return NextResponse.json({ ok: true, post: result });
-      } else if (action === 'unpublish') {
-        const result = await unpublishPost(id);
-        return NextResponse.json({ ok: true, post: result });
-      } else {
-        const updateFields: Partial<PostInput> = await req.json();
-        // author가 string이면 {_ref: author}로 변환
-        if (updateFields.author && typeof updateFields.author === 'string') {
-          updateFields.author = { _ref: updateFields.author };
-        }
-        // author._ref가 없으면 에러 반환
-        if (updateFields.author && !updateFields.author._ref) {
-          return NextResponse.json({ error: '작성자 정보가 올바르지 않습니다.' }, { status: 400 });
-        }
-        const result = await updatePost(id, updateFields);
+      const updateFields: Partial<PostInput> = await req.json();
+      const result = await updatePost(id, updateFields);
 
-        // 알림 생성
-        const { title, message } = createNotificationMessage('UPDATE', 'POST', result.title);
+      // 알림 생성
+      const { title, message } = createNotificationMessage('UPDATE', 'POST', result.title);
 
-        await createNotification({
-          type: 'UPDATE',
-          entityType: 'POST',
-          entityId: id,
-          title,
-          message,
-        });
+      await createNotification({
+        type: 'UPDATE',
+        entityType: 'POST',
+        entityId: id,
+        title,
+        message,
+      });
 
-        return NextResponse.json({ ok: true, post: result });
-      }
+      return NextResponse.json({ ok: true, post: result });
     } catch (e) {
       return NextResponse.json({ error: '수정 실패', detail: String(e) }, { status: 500 });
     }

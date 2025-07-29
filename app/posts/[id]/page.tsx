@@ -3,7 +3,7 @@ import { Box, Text, Button, Flex, Badge } from '@radix-ui/themes';
 import Container from '@/components/Container';
 import { Edit, Trash2, Image, FileText, File } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { usePostWithStatus } from '@/hooks/usePosts';
+
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import type { Attachment } from '@/model/post';
 import { use, useEffect } from 'react';
@@ -15,6 +15,7 @@ import Lightbox from 'yet-another-react-lightbox';
 import Zoom from 'yet-another-react-lightbox/plugins/zoom';
 import 'yet-another-react-lightbox/styles.css';
 import { useState } from 'react';
+import { usePost, usePosts } from '@/hooks/usePosts';
 
 interface PostDetailPageProps {
   params: Promise<{
@@ -24,7 +25,8 @@ interface PostDetailPageProps {
 
 export default function PostDetailPage({ params }: PostDetailPageProps) {
   const { id } = use(params);
-  const { post, isLoading, updatePostStatus, deletePost } = usePostWithStatus(id);
+  const { post, isLoading } = usePost(id);
+  const { updatePost, deletePost } = usePosts();
   const router = useRouter();
   const { data: session } = useSession();
   const canManagePosts = session?.user?.level >= 4;
@@ -35,7 +37,7 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
   const handleDelete = async () => {
     if (!post || !confirm(`"${post.title}" 포스트를 삭제하시겠습니까?`)) return;
     try {
-      withLoading(async () => await deletePost());
+      withLoading(async () => await deletePost(id));
       alert('포스트가 삭제되었습니다.');
       router.push('/posts');
     } catch (error) {
@@ -49,7 +51,7 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
     if (!canManagePosts || !post) return;
 
     try {
-      withLoading(async () => await updatePostStatus(!isPublished));
+      withLoading(async () => await updatePost(id, { ...post, isPublished: !isPublished }));
     } catch (error: unknown) {
       let msg = '';
       if (error instanceof Error) msg = error.message;

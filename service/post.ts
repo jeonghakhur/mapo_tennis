@@ -78,6 +78,7 @@ export async function createPost(data: PostInput): Promise<Post> {
 export async function updatePost(id: string, updateFields: Partial<PostInput>): Promise<Post> {
   // 기존 포스트 정보 조회
   const existingPost = await getPost(id);
+  console.log('existingPost', existingPost);
 
   if (existingPost) {
     // 첨부파일이 제거된 경우 파일 삭제

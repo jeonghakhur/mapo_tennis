@@ -1,5 +1,5 @@
 'use client';
-import { Box, Text, Button, Badge, Card, TextField, Select, Flex } from '@radix-ui/themes';
+import { Box, Text, Button, Badge, TextField, Flex } from '@radix-ui/themes';
 import Container from '@/components/Container';
 import { Search, NotebookPen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -9,10 +9,13 @@ import { usePosts } from '@/hooks/usePosts';
 import type { Post } from '@/model/post';
 import SkeletonCard from '@/components/SkeletonCard';
 import { hasPermissionLevel } from '@/lib/authUtils';
+import MarkdownRenderer from '@/components/MarkdownRenderer';
+import Lightbox from 'yet-another-react-lightbox';
+import Zoom from 'yet-another-react-lightbox/plugins/zoom';
+import 'yet-another-react-lightbox/styles.css';
 
 export default function PostsPage() {
   const { data: session } = useSession();
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchKeyword, setSearchKeyword] = useState('');
   const { posts, isLoading } = usePosts();
   const router = useRouter();
@@ -20,25 +23,11 @@ export default function PostsPage() {
   // 회원 레벨 4 이상인지 확인
   const canManagePosts = session?.user?.level >= 4;
 
-  // 카테고리 옵션
-  const categoryOptions = [
-    { value: 'all', label: '전체' },
-    { value: 'notice', label: '공지사항' },
-    { value: 'event', label: '이벤트' },
-    { value: 'general', label: '일반' },
-    { value: 'tournament_rules', label: '대회규칙' },
-    { value: 'tournament_info', label: '대회요강' },
-  ];
-
   // 필터링된 포스트
   const filteredPosts =
     posts?.filter((post: Post) => {
       // 회원 레벨 4 미만은 발행된 포스트만 볼 수 있음
       if (!hasPermissionLevel(session?.user, 4) && !post.isPublished) {
-        return false;
-      }
-      // 카테고리 필터
-      if (selectedCategory !== 'all' && post.category !== selectedCategory) {
         return false;
       }
       // 검색 필터
@@ -51,30 +40,34 @@ export default function PostsPage() {
       return true;
     }) || [];
 
-  const getCategoryColor = (category: string) => {
-    const colors: Record<string, 'blue' | 'green' | 'orange' | 'red' | 'purple'> = {
-      notice: 'red',
-      event: 'orange',
-      general: 'blue',
-      tournament_rules: 'green',
-      tournament_info: 'purple',
-    };
-    return colors[category] || 'blue';
-  };
+  // 목록 전체에서 Lightbox 상태 관리
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
 
-  const getCategoryLabel = (category: string) => {
-    const labels: Record<string, string> = {
-      notice: '공지사항',
-      event: '이벤트',
-      general: '일반',
-      tournament_rules: '대회규칙',
-    };
-    return labels[category] || '일반';
-  };
+  // 마크다운에서 이미지 url 추출 함수
+  function extractImageUrls(markdown: string): string[] {
+    const regex = /!\[.*?\]\((.*?)\)/g;
+    const urls: string[] = [];
+    let match;
+    while ((match = regex.exec(markdown)) !== null) {
+      urls.push(match[1]);
+    }
+    return urls;
+  }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ko-KR');
-  };
+  // 상대적 시간 포맷 함수
+  function formatRelativeTime(dateString: string) {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diff = (now.getTime() - date.getTime()) / 1000; // 초 단위
+    if (diff < 60) return '방금 전';
+    if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)}일 전`;
+    if (diff < 2419200) return `${Math.floor(diff / 604800)}주 전`;
+    return date.toLocaleDateString('ko-KR');
+  }
 
   if (isLoading) {
     return (
@@ -93,18 +86,6 @@ export default function PostsPage() {
       ) : (
         <Box>
           <div className="flex items-center gap-4 mb-6">
-            {/* 카테고리 필터 */}
-            <Select.Root size="3" value={selectedCategory} onValueChange={setSelectedCategory}>
-              <Select.Trigger />
-              <Select.Content>
-                {categoryOptions.map((option) => (
-                  <Select.Item key={option.value} value={option.value}>
-                    {option.label}
-                  </Select.Item>
-                ))}
-              </Select.Content>
-            </Select.Root>
-
             {/* 검색 */}
             <div className="relative flex-1">
               <TextField.Root
@@ -120,16 +101,7 @@ export default function PostsPage() {
             </div>
           </div>
 
-          {/* 결과 개수 표시 */}
-          <div className="mb-4">
-            <Text size="2" color="gray">
-              총 {filteredPosts.length}개의 포스트
-              {selectedCategory !== 'all' && ` (${getCategoryLabel(selectedCategory)} 카테고리)`}
-              {searchKeyword && ` (검색어: "${searchKeyword}")`}
-            </Text>
-          </div>
-
-          <div className="space-y-4">
+          <div className="space-y-8">
             {filteredPosts.length === 0 ? (
               <Box className="text-center py-8">
                 <Text size="4" color="gray">
@@ -138,43 +110,85 @@ export default function PostsPage() {
               </Box>
             ) : (
               filteredPosts.map((post: Post) => {
+                const imageUrls = extractImageUrls(post.content);
+                // 이미지 클릭 핸들러
+                const handleImageClick = (idx: number) => {
+                  setLightboxImages(imageUrls);
+                  setLightboxIndex(idx);
+                  setLightboxOpen(true);
+                };
                 return (
-                  <Card
-                    key={post._id}
-                    className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                    onClick={() => router.push(`/posts/${post._id}`)}
-                  >
-                    {' '}
-                    <Flex mb="2" gap="2" justify="between">
-                      <Flex gap="2">
-                        {hasPermissionLevel(session?.user, 4) &&
-                          (post.isPublished ? (
-                            <Badge color="green" size="2">
-                              발행됨
-                            </Badge>
-                          ) : (
-                            <Badge color="gray" size="2">
-                              임시저장
-                            </Badge>
-                          ))}
-
-                        <Badge color={getCategoryColor(post.category)} size="2">
-                          {getCategoryLabel(post.category)}
-                        </Badge>
-                      </Flex>
-                      <Box>{formatDate(post.publishedAt || formatDate(post.createdAt))}</Box>
-                    </Flex>
-                    <Box>
-                      <Text weight="bold" size="4" className="block mb-1">
+                  <Box key={post._id} className="p-6 border rounded-lg bg-white shadow-sm mb-4">
+                    <Flex align="center" gap="2" mb="1">
+                      <Text weight="bold" size="4">
                         {post.title}
                       </Text>
+                      <Text size="2" color="gray">
+                        {formatRelativeTime(post.createdAt)}
+                      </Text>
+                      {hasPermissionLevel(session?.user, 4) &&
+                        (post.isPublished ? (
+                          <Badge color="green" size="2">
+                            발행됨
+                          </Badge>
+                        ) : (
+                          <Badge color="gray" size="2">
+                            임시저장
+                          </Badge>
+                        ))}
+                    </Flex>
+                    {/* 본문 전체 */}
+                    <Box mt="4">
+                      <MarkdownRenderer content={post.content} onImageClick={handleImageClick} />
                     </Box>
-                  </Card>
+                    {/* 첨부파일(있다면) */}
+                    {post.attachments && post.attachments.length > 0 && (
+                      <Box mt="4">
+                        <Text weight="bold" mb="2" as="div">
+                          첨부파일
+                        </Text>
+                        <Flex gap="2" wrap="wrap">
+                          {post.attachments.map((attachment, idx) => (
+                            <Button
+                              key={idx}
+                              size="2"
+                              variant="soft"
+                              onClick={() => window.open(attachment.url, '_blank')}
+                            >
+                              {attachment.filename}
+                            </Button>
+                          ))}
+                        </Flex>
+                      </Box>
+                    )}
+                    {/* 관리자만 수정 버튼 노출 */}
+                    {hasPermissionLevel(session?.user, 4) && (
+                      <Flex justify="end" mt="4">
+                        <Button
+                          size="3"
+                          variant="soft"
+                          onClick={() => router.push(`/posts/${post._id}/edit`)}
+                        >
+                          수정
+                        </Button>
+                      </Flex>
+                    )}
+                  </Box>
                 );
               })
             )}
           </div>
 
+          {/* Lightbox */}
+          {lightboxOpen && (
+            <Lightbox
+              open={lightboxOpen}
+              close={() => setLightboxOpen(false)}
+              slides={lightboxImages.map((url) => ({ src: url }))}
+              index={lightboxIndex}
+              plugins={[Zoom]}
+            />
+          )}
           {/* 플로팅 새 포스트 작성 버튼 */}
           {canManagePosts && (
             <div

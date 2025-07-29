@@ -90,6 +90,59 @@ export function usePost(id: string) {
   };
 }
 
+// 게시글 상태 변경(발행/임시저장) - 상세 단일 post용
+export function usePostWithStatus(id: string) {
+  const { data, error, isLoading, mutate } = useSWR(id ? `/api/posts?id=${id}` : null, null);
+
+  // 게시글 상태 변경 (발행/임시저장)
+  const updatePostStatus = async (isPublished: boolean) => {
+    if (!data?.post) return;
+    await mutate(
+      async () => {
+        const action = isPublished ? 'publish' : 'unpublish';
+        const response = await fetch(`/api/posts?id=${id}&action=${action}`, {
+          method: 'PATCH',
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || '상태 변경 실패');
+        }
+        return { post: { ...data.post, isPublished } };
+      },
+      {
+        optimisticData: { post: { ...data.post, isPublished } },
+        rollbackOnError: true,
+        revalidate: true,
+      },
+    );
+  };
+
+  // 삭제
+  const deletePost = async () => {
+    if (!data?.post) return;
+    await mutate(
+      async () => {
+        await fetch(`/api/posts?id=${id}`, { method: 'DELETE' });
+        return { post: null };
+      },
+      {
+        optimisticData: { post: null },
+        rollbackOnError: true,
+        revalidate: true,
+      },
+    );
+  };
+
+  return {
+    post: data?.post || null,
+    isLoading,
+    error,
+    mutate,
+    updatePostStatus,
+    deletePost,
+  };
+}
+
 export function usePostsByCategory(category: string) {
   const { data, error, isLoading, mutate } = useSWR(
     category ? `/api/posts?category=${category}` : null,

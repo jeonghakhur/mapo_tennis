@@ -19,8 +19,11 @@ interface MarkdownEditorProps {
 }
 
 export default function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
-  const editorRef = useRef<{ getInstance: () => { getMarkdown: () => string } }>(null);
+  const editorRef = useRef<{
+    getInstance: () => { getMarkdown: () => string; setMarkdown: (markdown: string) => void };
+  }>(null);
   const [isClient, setIsClient] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -65,23 +68,34 @@ export default function MarkdownEditor({ value, onChange }: MarkdownEditorProps)
             ref={editorRef}
             initialValue={value || ' '} // 여기서 value를 사용
             onChange={handleChange}
-            height="400px"
-            initialEditType="wysiwyg"
+            height="500px"
+            initialEditType="markdown"
+            previewStyle="vertical"
             useCommandShortcut={true}
             placeholder="포스트 내용을 작성하세요..."
             hooks={{
               addImageBlobHook: async (blob: File, callback: (url: string) => void) => {
+                setIsUploading(true);
                 try {
-                  const url = await handleImageUpload(blob);
-                  if (url) {
-                    callback(url);
+                  const uploadedUrl = await handleImageUpload(blob);
+                  if (uploadedUrl) {
+                    callback(uploadedUrl);
                   }
-                } catch (error) {
+                } catch (error: unknown) {
                   console.error('이미지 업로드 실패:', error);
+                  alert('이미지 업로드 중 오류가 발생했습니다.');
+                } finally {
+                  setIsUploading(false);
                 }
               },
             }}
           />
+          {isUploading && (
+            <div className="markdown-editor-upload-overlay">
+              <div className="spinner" />
+              <div style={{ marginTop: 8 }}>이미지 업로드 중...</div>
+            </div>
+          )}
           <style jsx>{`
             .markdown-editor-container {
               font-size: 16px; /* 모바일에서 자동 확대 방지 */
@@ -94,6 +108,35 @@ export default function MarkdownEditor({ value, onChange }: MarkdownEditorProps)
             }
             .markdown-editor-container :global(.toastui-editor-contents) {
               font-size: 16px;
+            }
+            .markdown-editor-upload-overlay {
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              background: rgba(255, 255, 255, 0.7);
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              z-index: 10;
+            }
+            .spinner {
+              width: 40px;
+              height: 40px;
+              border: 4px solid #ccc;
+              border-top: 4px solid #333;
+              border-radius: 50%;
+              animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+              0% {
+                transform: rotate(0deg);
+              }
+              100% {
+                transform: rotate(360deg);
+              }
             }
           `}</style>
         </div>

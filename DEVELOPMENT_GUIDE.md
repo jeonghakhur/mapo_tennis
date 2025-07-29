@@ -606,6 +606,12 @@ export default function UserEditPage() {
 - 사용자 액션에 즉시 UI 반영 후 서버 동기화
 - 에러 발생 시 이전 상태로 롤백
 
+## 회원 권한 체크 가이드
+
+- 회원 권한(레벨) 체크 및 접근 제어 로직 작성 시 반드시 `lib/authUtils.ts`의 유틸리티 함수를 참고하세요.
+- 예시: 게시글/페이지 접근 권한, 관리자/운영자 기능 분기 등은 `hasPermissionLevel`, `isAdmin`, `isModerator` 등 함수 사용 권장
+- 레벨별 정책(예: 게시글 노출, 작성/수정/삭제 권한 등)은 `lib/authUtils.ts`의 PERMISSION_LEVELS 상수와 함수 시그니처를 참고하여 일관성 있게 구현하세요.
+
 ## 파일 구조 규칙
 
 ### 컴포넌트

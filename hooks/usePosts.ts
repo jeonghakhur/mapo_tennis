@@ -28,7 +28,6 @@ export function usePosts(showAll = true) {
 
   // 수정
   const updatePost = async (id: string, updatedFields: Partial<PostInput>) => {
-    console.log('updatePost', id, updatedFields);
     const previous: Post[] = data?.posts || [];
     await mutate(
       async () => {

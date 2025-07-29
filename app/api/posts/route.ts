@@ -50,8 +50,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: '작성자 정보가 올바르지 않습니다.' }, { status: 400 });
       }
 
-      console.log(data);
-
       const result = await createPost({
         ...data,
         author: { _ref: typeof data.author === 'string' ? data.author : data.author._ref },

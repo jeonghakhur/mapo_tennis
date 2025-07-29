@@ -82,7 +82,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     try {
       await withLoading(async () => await updatePost(id, { ...formData }));
       // console.log('handleSave result', result);
-      // setShowSuccessDialog(true);
+      setShowSuccessDialog(true);
     } catch (error) {
       alert('저장 실패: ' + error);
     }
@@ -156,7 +156,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
           confirmColor="green"
           open={showSuccessDialog}
           onOpenChange={setShowSuccessDialog}
-          onConfirm={() => router.push(`/posts/`)}
+          onConfirm={() => router.back()}
         />
         <form className="space-y-4">
           <Flex align="center" gap="3">

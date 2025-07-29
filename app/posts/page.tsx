@@ -12,6 +12,7 @@ import { hasPermissionLevel } from '@/lib/authUtils';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import Lightbox from 'yet-another-react-lightbox';
 import Zoom from 'yet-another-react-lightbox/plugins/zoom';
+// import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import 'yet-another-react-lightbox/styles.css';
 
 export default function PostsPage() {
@@ -19,6 +20,7 @@ export default function PostsPage() {
   const [searchKeyword, setSearchKeyword] = useState('');
   const { posts, isLoading } = usePosts();
   const router = useRouter();
+  // useScrollRestoration('posts');
 
   // 회원 레벨 4 이상인지 확인
   const canManagePosts = session?.user?.level >= 4;

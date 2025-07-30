@@ -2,7 +2,7 @@
 import Container from '@/components/Container';
 import '@radix-ui/themes/styles.css';
 import { getUpcomingTournaments } from '@/service/tournament';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { Box, Text, Flex, Badge, Button } from '@radix-ui/themes';
 import type { Post } from '@/model/post';
 import type { Tournament } from '@/model/tournament';
@@ -21,7 +21,7 @@ import CommentButton from '@/components/CommentButton';
 import CommentDialog from '@/components/CommentDialog';
 import 'yet-another-react-lightbox/styles.css';
 
-export default function Page() {
+function HomePageContent() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -385,5 +385,13 @@ export default function Page() {
         </>
       )}
     </Container>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<SkeletonCard />}>
+      <HomePageContent />
+    </Suspense>
   );
 }

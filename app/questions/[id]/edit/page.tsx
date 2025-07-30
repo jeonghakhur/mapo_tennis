@@ -97,11 +97,11 @@ export default function QuestionEditPage() {
         open={dialog.open}
         onOpenChange={(open) => {
           setDialog((d) => ({ ...d, open }));
-          if (!open && dialog.color === 'green') router.push(`/questions/${question._id}`);
+          if (!open && dialog.color === 'green') router.push(`/questions/`);
         }}
         onConfirm={() => {
           setDialog((d) => ({ ...d, open: false }));
-          if (dialog.color === 'green') router.push(`/questions/${question._id}`);
+          if (dialog.color === 'green') router.push(`/questions/`);
         }}
       />
       <ConfirmDialog
@@ -113,7 +113,7 @@ export default function QuestionEditPage() {
         onOpenChange={setForbiddenDialog}
         onConfirm={() => {
           setForbiddenDialog(false);
-          router.replace(`/questions/${question._id}`);
+          router.replace(`/questions/`);
         }}
       />
     </Container>

@@ -25,6 +25,7 @@ export async function notifyAdminsOnQuestionCreate(question: Question) {
     const admins = await getUsersLevel4AndAbove();
     const { title, message } = createNotificationMessage('CREATE', 'QUESTION', question.title);
     const link = createNotificationLink('QUESTION', question._id, { admin: true });
+
     await Promise.all(
       admins.map((admin) =>
         createNotification({

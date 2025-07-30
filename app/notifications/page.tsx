@@ -18,7 +18,7 @@ export default function NotificationsPage() {
   const [isDeletingAll, setIsDeletingAll] = useState(false);
 
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } =
-    useNotifications(admin ? undefined : user?._id);
+    useNotifications(user?._id);
 
   // 모든 알림 삭제 함수
   const deleteAllNotifications = async () => {

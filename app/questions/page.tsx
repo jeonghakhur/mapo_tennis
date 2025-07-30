@@ -4,15 +4,19 @@ import { useSession } from 'next-auth/react';
 import { Button, Flex, Separator, Text, Badge } from '@radix-ui/themes';
 import Link from 'next/link';
 import Container from '@/components/Container';
-import { useQuestionsList } from '@/hooks/useQuestions';
+import { useQuestionsList, useDeleteQuestion } from '@/hooks/useQuestions';
 import SkeletonCard from '@/components/SkeletonCard';
 import { useState, useEffect } from 'react';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 export default function QuestionListPage() {
   const router = useRouter();
   const { status } = useSession();
   const { questions, isLoading, isError } = useQuestionsList();
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
+  const { remove: deleteQuestion } = useDeleteQuestion();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [questionToDelete, setQuestionToDelete] = useState<string>('');
 
   // 첫 번째 문의가 있으면 기본적으로 확장
   useEffect(() => {
@@ -44,10 +48,22 @@ export default function QuestionListPage() {
     });
   };
 
-  // 삭제 핸들러 예시 (상세에서만 사용 가능, 목록에서는 필요시 구현)
-  // const handleDelete = async (id: string) => {
-  //   await deleteQuestion(id, '/api/questions');
-  // };
+  // 삭제 핸들러
+  const handleDeleteClick = (questionId: string) => {
+    setQuestionToDelete(questionId);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await deleteQuestion(questionToDelete, '/api/questions');
+      setShowDeleteDialog(false);
+      setQuestionToDelete('');
+    } catch (error) {
+      console.error('문의 삭제 실패:', error);
+      alert('문의 삭제 중 오류가 발생했습니다.');
+    }
+  };
 
   return (
     <Container>
@@ -133,16 +149,26 @@ export default function QuestionListPage() {
                         </div>
                       )}
 
-                      {/* 수정 버튼 */}
-                      <Flex justify="end" mt="3">
+                      {/* 수정/삭제 버튼 */}
+                      <Flex justify="end" mt="3" gap="2">
                         {!q.answer && (
-                          <Button
-                            size="2"
-                            variant="soft"
-                            onClick={() => router.push(`/questions/${q._id}/edit`)}
-                          >
-                            수정
-                          </Button>
+                          <>
+                            <Button
+                              size="2"
+                              variant="soft"
+                              onClick={() => router.push(`/questions/${q._id}/edit`)}
+                            >
+                              수정
+                            </Button>
+                            <Button
+                              size="2"
+                              variant="soft"
+                              color="red"
+                              onClick={() => handleDeleteClick(q._id)}
+                            >
+                              삭제
+                            </Button>
+                          </>
                         )}
                       </Flex>
                     </>
@@ -153,6 +179,18 @@ export default function QuestionListPage() {
           })}
         </ul>
       )}
+
+      {/* 삭제 확인 다이얼로그 */}
+      <ConfirmDialog
+        title="문의 삭제 확인"
+        description="정말로 이 문의를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        confirmText="삭제"
+        cancelText="취소"
+        confirmColor="red"
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleDeleteConfirm}
+      />
     </Container>
   );
 }

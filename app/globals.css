@@ -287,6 +287,11 @@ main .toastui-editor-contents {
   }
 }
 
+.simple-editor-content .tiptap.ProseMirror.simple-editor {
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+}
+
 /* swiper */
 .swiper-pagination-bullet {
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);

@@ -26,7 +26,7 @@ export function usePosts(showAll = true) {
     );
   };
 
-  // 수정
+  // 수정 - 캐시 무효화 최적화
   const updatePost = async (id: string, updatedFields: Partial<PostInput>) => {
     const previous: Post[] = data?.posts || [];
     await mutate(
@@ -47,11 +47,20 @@ export function usePosts(showAll = true) {
         populateCache: true,
       },
     );
-    // 상세 페이지 캐시도 갱신
-    await globalMutate(`/api/posts?id=${id}`);
-    // 목록 캐시도 갱신 (all=true, all=false 모두 사용될 수 있음)
-    await globalMutate(`/api/posts?all=true`);
-    await globalMutate(`/api/posts?all=false`);
+
+    // 필요한 캐시만 선택적으로 무효화
+    const promises = [];
+    promises.push(globalMutate(`/api/posts?id=${id}`));
+
+    // 현재 페이지가 all=true인 경우에만 해당 캐시 무효화
+    if (showAll) {
+      promises.push(globalMutate(`/api/posts?all=true`));
+    } else {
+      promises.push(globalMutate(`/api/posts?all=false`));
+    }
+
+    // 병렬로 캐시 무효화 실행
+    await Promise.all(promises);
   };
 
   // 삭제

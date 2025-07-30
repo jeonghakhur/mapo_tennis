@@ -13,7 +13,10 @@ async function getCommentsHandler(req: NextRequest) {
       return NextResponse.json({ error: '포스트 ID가 필요합니다.' }, { status: 400 });
     }
 
+    console.log('코멘트 조회 요청 - postId:', postId);
     const comments = await getCommentsByPost(postId);
+    console.log('코멘트 조회 결과:', comments);
+
     return NextResponse.json({ comments });
   } catch (error) {
     console.error('코멘트 조회 오류:', error);
@@ -30,7 +33,7 @@ async function createCommentHandler(req: NextRequest, user: UserWithLevel) {
       return NextResponse.json({ error: '코멘트 내용을 입력해주세요.' }, { status: 400 });
     }
 
-    if (!data.post) {
+    if (!data.post || !data.post._ref) {
       return NextResponse.json({ error: '포스트 ID가 필요합니다.' }, { status: 400 });
     }
 

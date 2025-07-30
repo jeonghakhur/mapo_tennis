@@ -5,7 +5,7 @@ import type { Comment, CommentInput } from '@/model/comment';
 export async function getCommentsByPost(postId: string): Promise<Comment[]> {
   return await client.fetch(
     `
-    *[_type == "comment" && post == $postId]
+    *[_type == "comment" && post._ref == $postId]
     | order(createdAt desc){
       ...,
       author->{
@@ -28,9 +28,27 @@ export async function createComment(data: CommentInput): Promise<Comment> {
   });
 
   // 포스트의 코멘트 수 증가 (기존 필드가 없을 경우 0으로 초기화)
-  await client.patch(data.post).setIfMissing({ commentCount: 0 }).inc({ commentCount: 1 }).commit();
+  await client
+    .patch(data.post._ref)
+    .setIfMissing({ commentCount: 0 })
+    .inc({ commentCount: 1 })
+    .commit();
 
-  return comment as unknown as Comment;
+  // 생성된 코멘트의 확장된 정보 조회
+  const createdComment = await client.fetch(
+    `
+    *[_type == "comment" && _id == $id][0]{
+      ...,
+      author->{
+        _id,
+        name
+      }
+    }
+  `,
+    { id: comment._id },
+  );
+
+  return createdComment as Comment;
 }
 
 // 코멘트 수정
@@ -73,10 +91,10 @@ export async function deleteComment(id: string): Promise<void> {
     { id },
   );
 
-  if (comment) {
+  if (comment && comment.post) {
     // 포스트의 코멘트 수 감소 (기존 필드가 없을 경우 0으로 초기화)
     await client
-      .patch(comment.post)
+      .patch(comment.post._ref || comment.post)
       .setIfMissing({ commentCount: 0 })
       .dec({ commentCount: 1 })
       .commit();
@@ -90,7 +108,7 @@ export async function deleteComment(id: string): Promise<void> {
 export async function getCommentCount(postId: string): Promise<number> {
   const count = await client.fetch(
     `
-    count(*[_type == "comment" && post == $postId])
+    count(*[_type == "comment" && post._ref == $postId])
   `,
     { postId },
   );

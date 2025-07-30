@@ -8,8 +8,8 @@ export interface Comment {
   _id: string;
   _type: 'comment';
   content: string;
-  author: CommentAuthor | string;
-  post: string; // 포스트 ID
+  author: CommentAuthor; // 확장된 author 정보
+  post: { _ref: string }; // 참조 타입으로 통일
   createdAt: string;
   updatedAt?: string;
 }
@@ -17,7 +17,7 @@ export interface Comment {
 export interface CommentInput {
   content: string;
   author: { _ref: string }; // user._id
-  post: string; // 포스트 ID
+  post: { _ref: string }; // post._id (참조 타입)
 }
 
 // 코멘트 생성/수정/삭제 응답 타입

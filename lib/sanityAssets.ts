@@ -44,9 +44,15 @@ export async function uploadImageToSanityAssets(file: File): Promise<SanityAsset
 export async function deleteFromSanityAssets(assetId: string): Promise<void> {
   try {
     // Sanity Assets 삭제는 API를 통해 처리
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10초 타임아웃
+
     const response = await fetch(`/api/sanity-assets/delete?id=${assetId}`, {
       method: 'DELETE',
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error('파일 삭제에 실패했습니다.');
@@ -55,7 +61,12 @@ export async function deleteFromSanityAssets(assetId: string): Promise<void> {
     console.log(`Sanity Assets 파일 삭제 완료: ${assetId}`);
   } catch (error) {
     console.error('Sanity Assets 파일 삭제 실패:', error);
-    throw new Error('파일 삭제에 실패했습니다.');
+    // 타임아웃이나 네트워크 오류는 무시하고 계속 진행
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.warn(`파일 삭제 타임아웃: ${assetId}`);
+    } else {
+      throw new Error('파일 삭제에 실패했습니다.');
+    }
   }
 }
 

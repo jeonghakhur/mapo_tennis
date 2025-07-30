@@ -35,7 +35,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   const [formData, setFormData] = useState<PostInput>({
     title: '',
     content: '',
-    author: session?.user?.id || '',
+    author: { _ref: session?.user?.id || '' },
     category: 'general',
     isPublished: false,
     attachments: [],
@@ -56,7 +56,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
       setFormData({
         title: post.title,
         content: post.content,
-        author: { _ref: post.author._id },
+        author: { _ref: post.author?._id || session?.user?.id },
         category: post.category,
         isPublished: post.isPublished,
         attachments: post.attachments || [],
@@ -78,7 +78,6 @@ export default function EditPostPage({ params }: EditPostPageProps) {
 
   // handleSave에서 publish 인자 제거
   const handleSave = async () => {
-    console.log('handleSave', formData);
     if (!validateForm()) return;
     try {
       await withLoading(async () => await updatePost(id, { ...formData }));

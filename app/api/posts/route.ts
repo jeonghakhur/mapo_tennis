@@ -55,16 +55,18 @@ export async function POST(req: NextRequest) {
         author: { _ref: typeof data.author === 'string' ? data.author : data.author._ref },
       });
 
-      // 알림 생성
-      const { title, message } = createNotificationMessage('CREATE', 'POST', data.title);
+      // 발행된 포스트에만 알림 생성 (성능 최적화)
+      if (data.isPublished) {
+        const { title, message } = createNotificationMessage('CREATE', 'POST', data.title);
 
-      await createNotification({
-        type: 'CREATE',
-        entityType: 'POST',
-        entityId: result._id,
-        title,
-        message,
-      });
+        await createNotification({
+          type: 'CREATE',
+          entityType: 'POST',
+          entityId: result._id,
+          title,
+          message,
+        });
+      }
 
       return NextResponse.json({ ok: true, id: result._id });
     } catch (e) {
@@ -86,16 +88,23 @@ export async function PATCH(req: NextRequest) {
       const updateFields: Partial<PostInput> = await req.json();
       const result = await updatePost(id, updateFields);
 
-      // 알림 생성
-      const { title, message } = createNotificationMessage('UPDATE', 'POST', result.title);
+      // 발행 상태 변경이나 중요한 수정에만 알림 생성
+      const shouldNotify =
+        updateFields.isPublished !== undefined ||
+        updateFields.mainPriority !== undefined ||
+        updateFields.category !== undefined;
 
-      await createNotification({
-        type: 'UPDATE',
-        entityType: 'POST',
-        entityId: id,
-        title,
-        message,
-      });
+      if (shouldNotify) {
+        const { title, message } = createNotificationMessage('UPDATE', 'POST', result.title);
+
+        await createNotification({
+          type: 'UPDATE',
+          entityType: 'POST',
+          entityId: id,
+          title,
+          message,
+        });
+      }
 
       return NextResponse.json({ ok: true, post: result });
     } catch (e) {
@@ -122,16 +131,18 @@ export async function DELETE(req: NextRequest) {
 
       await deletePost(id);
 
-      // 삭제 알림 생성
-      const { title, message } = createNotificationMessage('DELETE', 'POST', existingPost.title);
+      // 발행된 포스트 삭제에만 알림 생성
+      if (existingPost.isPublished) {
+        const { title, message } = createNotificationMessage('DELETE', 'POST', existingPost.title);
 
-      await createNotification({
-        type: 'DELETE',
-        entityType: 'POST',
-        entityId: id,
-        title,
-        message,
-      });
+        await createNotification({
+          type: 'DELETE',
+          entityType: 'POST',
+          entityId: id,
+          title,
+          message,
+        });
+      }
 
       return NextResponse.json({ ok: true });
     } catch (e) {

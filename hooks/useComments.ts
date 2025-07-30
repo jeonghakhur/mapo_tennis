@@ -19,12 +19,14 @@ export function useComments({ postId, initialComments = [] }: UseCommentsProps) 
       const response = await fetch(`/api/comments?postId=${postId}`);
       if (response.ok) {
         const data = await response.json();
+        console.log('코멘트 조회 성공:', data);
         setComments(data.comments || []);
       } else {
-        console.error('코멘트 조회 실패');
+        const errorData = await response.json();
+        console.error('코멘트 조회 실패:', errorData);
       }
     } catch (error) {
-      console.error('코멘트 조회 오류:', error);
+      console.error('코멘트 조회 네트워크 오류:', error);
     }
   }, [postId]);
 
@@ -49,13 +51,13 @@ export function useComments({ postId, initialComments = [] }: UseCommentsProps) 
         },
         body: JSON.stringify({
           content: content.trim(),
-          post: postId,
+          post: { _ref: postId }, // 참조 타입으로 전송
         }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
+      const data = await response.json();
 
+      if (response.ok) {
         // 서버에서 최신 코멘트 목록을 다시 조회하여 정확한 데이터로 업데이트
         await fetchComments();
 
@@ -65,11 +67,11 @@ export function useComments({ postId, initialComments = [] }: UseCommentsProps) 
 
         return data.comment;
       } else {
-        const errorData = await response.json();
-        alert(errorData.error || '코멘트 생성 중 오류가 발생했습니다.');
+        console.error('코멘트 생성 응답 오류:', data);
+        alert(data.error || '코멘트 생성 중 오류가 발생했습니다.');
       }
     } catch (error) {
-      console.error('코멘트 생성 오류:', error);
+      console.error('코멘트 생성 네트워크 오류:', error);
       alert('코멘트 생성 중 오류가 발생했습니다.');
     } finally {
       setIsCreating(false);

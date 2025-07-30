@@ -93,25 +93,27 @@ export async function createPost(data: PostInput): Promise<Post> {
 export async function updatePost(id: string, updateFields: Partial<PostInput>): Promise<Post> {
   // 기존 포스트 정보 조회
   const existingPost = await getPost(id);
-  console.log('existingPost', existingPost);
 
   if (existingPost) {
+    const deletePromises: Promise<void>[] = [];
+
     // 첨부파일이 제거된 경우 파일 삭제
     if (existingPost.attachments && updateFields.attachments) {
       const removedAttachments = existingPost.attachments.filter(
         (existing) => !updateFields.attachments!.some((updated) => updated.url === existing.url),
       );
 
+      // 병렬로 파일 삭제 처리
       for (const attachment of removedAttachments) {
-        try {
-          if (isSanityAssetUrl(attachment.url)) {
-            const assetId = extractAssetIdFromUrl(attachment.url);
-            if (assetId) {
-              await deleteFromSanityAssets(assetId);
-            }
+        if (isSanityAssetUrl(attachment.url)) {
+          const assetId = extractAssetIdFromUrl(attachment.url);
+          if (assetId) {
+            deletePromises.push(
+              deleteFromSanityAssets(assetId).catch((error) => {
+                console.error(`첨부파일 삭제 중 오류: ${attachment.filename}`, error);
+              }),
+            );
           }
-        } catch (error) {
-          console.error(`첨부파일 삭제 중 오류: ${attachment.filename}`, error);
         }
       }
     }
@@ -130,18 +132,24 @@ export async function updatePost(id: string, updateFields: Partial<PostInput>): 
       // 제거된 이미지 찾기
       const removedImages = oldImageUrls.filter((url) => !newImageUrls.includes(url));
 
+      // 병렬로 이미지 삭제 처리
       for (const imageUrl of removedImages) {
-        try {
-          if (isSanityAssetUrl(imageUrl)) {
-            const assetId = extractAssetIdFromUrl(imageUrl);
-            if (assetId) {
-              await deleteFromSanityAssets(assetId);
-            }
+        if (isSanityAssetUrl(imageUrl)) {
+          const assetId = extractAssetIdFromUrl(imageUrl);
+          if (assetId) {
+            deletePromises.push(
+              deleteFromSanityAssets(assetId).catch((error) => {
+                console.error(`마크다운 이미지 삭제 중 오류: ${imageUrl}`, error);
+              }),
+            );
           }
-        } catch (error) {
-          console.error(`마크다운 이미지 삭제 중 오류: ${imageUrl}`, error);
         }
       }
+    }
+
+    // 파일 삭제를 병렬로 실행
+    if (deletePromises.length > 0) {
+      await Promise.all(deletePromises);
     }
   }
 
@@ -153,8 +161,14 @@ export async function updatePost(id: string, updateFields: Partial<PostInput>): 
     })
     .commit();
 
-  // 업데이트 후 확장된 정보로 다시 조회
-  return (await getPost(id)) as Post;
+  // 업데이트된 포스트 정보를 직접 구성하여 추가 조회 방지
+  const updatedPost = {
+    ...existingPost,
+    ...updateFields,
+    updatedAt: new Date().toISOString(),
+  };
+
+  return updatedPost as Post;
 }
 
 // 포스트 삭제
@@ -163,18 +177,20 @@ export async function deletePost(id: string): Promise<void> {
   const post = await getPost(id);
 
   if (post) {
+    const deletePromises: Promise<void>[] = [];
+
     // 첨부파일 삭제
     if (post.attachments && post.attachments.length > 0) {
       for (const attachment of post.attachments) {
-        try {
-          if (isSanityAssetUrl(attachment.url)) {
-            const assetId = extractAssetIdFromUrl(attachment.url);
-            if (assetId) {
-              await deleteFromSanityAssets(assetId);
-            }
+        if (isSanityAssetUrl(attachment.url)) {
+          const assetId = extractAssetIdFromUrl(attachment.url);
+          if (assetId) {
+            deletePromises.push(
+              deleteFromSanityAssets(assetId).catch((error) => {
+                console.error(`첨부파일 삭제 중 오류: ${attachment.filename}`, error);
+              }),
+            );
           }
-        } catch (error) {
-          console.error(`첨부파일 삭제 중 오류: ${attachment.filename}`, error);
         }
       }
     }
@@ -183,17 +199,22 @@ export async function deletePost(id: string): Promise<void> {
     if (post.content) {
       const imageUrls = extractImageUrls(post.content);
       for (const imageUrl of imageUrls) {
-        try {
-          if (isSanityAssetUrl(imageUrl)) {
-            const assetId = extractAssetIdFromUrl(imageUrl);
-            if (assetId) {
-              await deleteFromSanityAssets(assetId);
-            }
+        if (isSanityAssetUrl(imageUrl)) {
+          const assetId = extractAssetIdFromUrl(imageUrl);
+          if (assetId) {
+            deletePromises.push(
+              deleteFromSanityAssets(assetId).catch((error) => {
+                console.error(`마크다운 이미지 삭제 중 오류: ${imageUrl}`, error);
+              }),
+            );
           }
-        } catch (error) {
-          console.error(`마크다운 이미지 삭제 중 오류: ${imageUrl}`, error);
         }
       }
+    }
+
+    // 파일 삭제를 병렬로 실행
+    if (deletePromises.length > 0) {
+      await Promise.all(deletePromises);
     }
   }
 

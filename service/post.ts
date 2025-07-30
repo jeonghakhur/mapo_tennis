@@ -15,7 +15,7 @@ export async function getPublishedPosts(): Promise<Post[]> {
         },
       "likeCount": coalesce(likeCount, 0),
       "likedBy": coalesce(likedBy, []),
-      "commentCount": coalesce(commentCount, 0)
+      "commentCount": count(*[_type == "comment" && references(^._id)])
       }
   `);
 }
@@ -32,7 +32,7 @@ export async function getAllPosts(): Promise<Post[]> {
         },
       "likeCount": coalesce(likeCount, 0),
       "likedBy": coalesce(likedBy, []),
-      "commentCount": coalesce(commentCount, 0)
+      "commentCount": count(*[_type == "comment" && references(^._id)])
       }
   `);
 }

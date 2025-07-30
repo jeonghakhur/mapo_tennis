@@ -3,9 +3,7 @@ import { Dialog, TextField, Button, Text, Flex, Box } from '@radix-ui/themes';
 import { MessageCircle, Send, Trash2 } from 'lucide-react';
 import { useComments } from '@/hooks/useComments';
 import { useSession } from 'next-auth/react';
-import { useLoading } from '@/hooks/useLoading';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import LoadingOverlay from '@/components/LoadingOverlay';
 import type { Comment } from '@/model/comment';
 
 interface CommentDialogProps {
@@ -28,7 +26,6 @@ export default function CommentDialog({
     postId,
     initialComments,
   });
-  const { loading, withLoading } = useLoading();
   const [newComment, setNewComment] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState<string>('');
@@ -58,10 +55,8 @@ export default function CommentDialog({
   const confirmDelete = async () => {
     if (!commentToDelete) return;
 
-    await withLoading(async () => {
-      await deleteComment(commentToDelete);
-      setCommentToDelete('');
-    });
+    await deleteComment(commentToDelete);
+    setCommentToDelete('');
   };
 
   // 상대적 시간 포맷 함수
@@ -81,20 +76,19 @@ export default function CommentDialog({
     <>
       <Dialog.Root open={open} onOpenChange={onOpenChange}>
         <Dialog.Content style={{ maxWidth: 450 }}>
-          {loading && <LoadingOverlay size="3" />}
           <Dialog.Title>
             <Flex align="center" justify="between">
               <Flex align="center" gap="2">
                 <MessageCircle size={16} />
                 {postTitle}
               </Flex>
-              <Button size="1" variant="ghost" onClick={() => onOpenChange(false)}>
+              <Button size="3" variant="ghost" onClick={() => onOpenChange(false)}>
                 ✕
               </Button>
             </Flex>
           </Dialog.Title>
 
-          <Box style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+          <Box style={{ maxHeight: '60vh', overflowY: 'auto', overflowX: 'hidden' }}>
             {comments.length === 0 ? (
               <Text size="2" color="gray">
                 아직 코멘트가 없습니다.
@@ -122,12 +116,12 @@ export default function CommentDialog({
                           ? comment.author
                           : comment.author._id) && (
                         <Button
-                          size="1"
+                          size="3"
                           variant="ghost"
                           color="red"
                           onClick={() => handleDelete(comment._id)}
                         >
-                          <Trash2 size={12} />
+                          <Trash2 size={14} />
                         </Button>
                       )}
                     </Flex>

@@ -20,19 +20,21 @@ export async function getCommentsByPost(postId: string): Promise<Comment[]> {
 
 // 코멘트 생성
 export async function createComment(data: CommentInput): Promise<Comment> {
-  const comment = await client.create({
-    _type: 'comment',
-    ...data,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  });
-
-  // 포스트의 코멘트 수 증가 (기존 필드가 없을 경우 0으로 초기화)
-  await client
-    .patch(data.post._ref)
-    .setIfMissing({ commentCount: 0 })
-    .inc({ commentCount: 1 })
-    .commit();
+  // 코멘트 생성과 포스트 업데이트를 병렬로 처리
+  const [comment] = await Promise.all([
+    client.create({
+      _type: 'comment',
+      ...data,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }),
+    // 포스트의 코멘트 수 증가 (기존 필드가 없을 경우 0으로 초기화)
+    client
+      .patch(data.post._ref)
+      .setIfMissing({ commentCount: 0 })
+      .inc({ commentCount: 1 })
+      .commit(),
+  ]);
 
   // 생성된 코멘트의 확장된 정보 조회
   const createdComment = await client.fetch(
@@ -81,8 +83,8 @@ export async function updateComment(
 
 // 코멘트 삭제
 export async function deleteComment(id: string): Promise<void> {
-  // 코멘트 정보 조회 (포스트 ID 확인용)
-  const comment = await client.fetch(
+  // 코멘트 정보 조회와 삭제를 병렬로 처리
+  const commentPromise = client.fetch(
     `
     *[_type == "comment" && _id == $id][0]{
       post
@@ -91,17 +93,22 @@ export async function deleteComment(id: string): Promise<void> {
     { id },
   );
 
-  if (comment && comment.post) {
-    // 포스트의 코멘트 수 감소 (기존 필드가 없을 경우 0으로 초기화)
-    await client
-      .patch(comment.post._ref || comment.post)
-      .setIfMissing({ commentCount: 0 })
-      .dec({ commentCount: 1 })
-      .commit();
-  }
+  const comment = await commentPromise;
 
-  // 코멘트 삭제
-  await client.delete(id);
+  if (comment && comment.post) {
+    // 코멘트 삭제와 포스트 업데이트를 병렬로 처리
+    await Promise.all([
+      client.delete(id),
+      client
+        .patch(comment.post._ref || comment.post)
+        .setIfMissing({ commentCount: 0 })
+        .dec({ commentCount: 1 })
+        .commit(),
+    ]);
+  } else {
+    // 포스트 정보가 없으면 코멘트만 삭제
+    await client.delete(id);
+  }
 }
 
 // 포스트의 코멘트 수 조회

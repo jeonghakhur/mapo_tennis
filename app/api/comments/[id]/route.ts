@@ -32,8 +32,16 @@ async function deleteCommentHandler(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
+    const startTime = Date.now();
     const { id: commentId } = await context.params;
+
+    console.log('코멘트 삭제 시작:', { commentId });
+
     await deleteComment(commentId);
+
+    const endTime = Date.now();
+    console.log('코멘트 삭제 완료:', { duration: endTime - startTime, commentId });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('코멘트 삭제 오류:', error);

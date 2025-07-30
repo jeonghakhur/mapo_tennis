@@ -27,6 +27,7 @@ async function getCommentsHandler(req: NextRequest) {
 // 코멘트 생성 핸들러
 async function createCommentHandler(req: NextRequest, user: UserWithLevel) {
   try {
+    const startTime = Date.now();
     const data: CommentInput = await req.json();
 
     if (!data.content || !data.content.trim()) {
@@ -37,10 +38,18 @@ async function createCommentHandler(req: NextRequest, user: UserWithLevel) {
       return NextResponse.json({ error: '포스트 ID가 필요합니다.' }, { status: 400 });
     }
 
+    console.log('코멘트 생성 시작:', {
+      postId: data.post._ref,
+      contentLength: data.content.length,
+    });
+
     const comment = await createComment({
       ...data,
       author: { _ref: user.id },
     });
+
+    const endTime = Date.now();
+    console.log('코멘트 생성 완료:', { duration: endTime - startTime, commentId: comment._id });
 
     return NextResponse.json({ success: true, comment });
   } catch (error) {

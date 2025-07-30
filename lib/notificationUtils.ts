@@ -39,7 +39,7 @@ export function createNotificationLink(
       if (options?.admin) {
         return `/admin/questions/${entityId}`;
       }
-      return `/questions/${entityId}`;
+      return `/questions`;
 
     default:
       return '/';

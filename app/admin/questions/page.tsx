@@ -44,8 +44,8 @@ export default function AdminQuestionListPage() {
                 <Text size="4" weight="bold">
                   {q.title}
                 </Text>
-                <Text size="2" color="gray" ml="3">
-                  {new Date(q.createdAt).toLocaleDateString()}
+                <Text size="2" color="gray">
+                  {new Date(q._createdAt).toLocaleDateString()}
                 </Text>
                 <Text size="2" color={q.answer ? 'green' : 'red'} ml="3">
                   {q.answer ? '답변 완료' : '미답변'}

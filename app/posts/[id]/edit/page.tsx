@@ -93,7 +93,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     try {
       await withLoading(async () => await deletePost(id));
       alert('포스트가 삭제되었습니다.');
-      router.push('/posts');
+      router.push('/');
     } catch (error) {
       console.error('포스트 삭제 실패:', error);
       alert('포스트 삭제 중 오류가 발생했습니다.');
@@ -156,7 +156,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
           confirmColor="green"
           open={showSuccessDialog}
           onOpenChange={setShowSuccessDialog}
-          onConfirm={() => router.back()}
+          onConfirm={() => router.push('/')}
         />
         <form className="space-y-4">
           <Flex align="center" gap="3">

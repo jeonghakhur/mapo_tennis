@@ -173,7 +173,7 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
 
         <div className="flex flex-wrap gap-4 text-sm text-gray-600 border-b py-3">
           <span>작성자: {typeof post.author === 'string' ? post.author : post.author?.name}</span>
-          <span>생성일: {formatDate(post.createdAt)}</span>
+          <span>생성일: {formatDate(post._createdAt)}</span>
           {canManagePosts && (
             <>
               {post.updatedAt && <span>수정일: {formatDate(post.updatedAt)}</span>}

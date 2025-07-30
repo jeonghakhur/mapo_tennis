@@ -146,7 +146,7 @@ export default function CreatePostPage() {
           onOpenChange={(open) => {
             setDialog({ ...dialog, open });
             if (!open && dialog.title === '성공') {
-              router.push('/posts');
+              router.push('/');
             }
           }}
           title={dialog.title}

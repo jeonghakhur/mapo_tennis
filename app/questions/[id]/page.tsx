@@ -77,7 +77,7 @@ export default function QuestionDetailPage() {
         {question.title}
       </Text>
       <Text size="2" color="gray" mb="2">
-        {new Date(question.createdAt).toLocaleDateString()}
+        {new Date(question._createdAt).toLocaleDateString()}
       </Text>
       <Box mb="4" mt="2">
         <div dangerouslySetInnerHTML={{ __html: question.content }} />

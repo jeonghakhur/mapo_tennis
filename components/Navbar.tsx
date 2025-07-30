@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { Flex, Button, Badge, DropdownMenu } from '@radix-ui/themes';
+import { Flex, Button, Badge, DropdownMenu, TextField } from '@radix-ui/themes';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -23,6 +23,8 @@ import {
   BellRing,
   House,
   ZoomIn,
+  Search,
+  X,
 } from 'lucide-react';
 import { isAdmin, hasPermissionLevel } from '@/lib/authUtils';
 import { useState, useEffect } from 'react';
@@ -44,7 +46,6 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   // 일반 사용자(로그인 필요 없음 또는 authRequired만)
   { path: '/club', label: '클럽', icon: Users },
-  { path: '/posts', label: '포스트', icon: FileText },
   { path: '/tournaments', label: '대회일정', icon: Calendar },
   { path: '/awards', label: '대회결과', icon: Trophy },
   // 로그인한 사용자만
@@ -76,8 +77,6 @@ const NAV_ITEMS: NavItem[] = [
 const PAGE_TITLES: Record<string, string> = {
   '/club': '클럽',
   '/club-member': '클럽멤버',
-  '/posts': '포스트',
-  '/posts/create': '포스트작성',
   '/expenses': '지출내역',
   '/expenses/create': '지출내역등록',
   '/tournaments': '대회일정',
@@ -96,8 +95,6 @@ const PAGE_TITLES: Record<string, string> = {
 
 // 동적 라우트 제목 매핑
 const DYNAMIC_ROUTE_TITLES = [
-  { pattern: /^\/posts\/.*\/edit$/, title: '포스트수정' },
-  { pattern: /^\/posts\/.*$/, title: '포스트상세' },
   { pattern: /^\/club\/.*$/, title: '클럽상세' },
   { pattern: /^\/club-member\/.*$/, title: '클럽멤버상세' },
   { pattern: /^\/expenses\/.*\/edit$/, title: '지출내역수정' },
@@ -273,6 +270,10 @@ export default function Navbar() {
   const { user } = useUser(session?.user?.email);
   const { bigFont, toggleBigFont, isInitialized } = useBigFontMode();
 
+  // 검색 관련 상태
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState('');
+
   // 알림이 필요 없는 페이지 목록
   const notificationExcludedPaths = ['/simple', '/studio', '/tiptap'];
   const isNotificationPage = !notificationExcludedPaths.some((path) => pathname.startsWith(path));
@@ -291,6 +292,31 @@ export default function Navbar() {
       router.back();
     }
   };
+
+  // 검색 처리
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchKeyword.trim()) {
+      // 홈페이지로 이동하여 검색 결과 표시
+      router.push(`/?search=${encodeURIComponent(searchKeyword.trim())}`);
+      setSearchKeyword('');
+      setShowSearch(false);
+    }
+  };
+
+  // 검색 취소
+  const handleCancelSearch = () => {
+    setShowSearch(false);
+    setSearchKeyword('');
+  };
+
+  // 페이지 변경 시 검색 모드 종료
+  useEffect(() => {
+    if (pathname !== '/' && showSearch) {
+      setShowSearch(false);
+      setSearchKeyword('');
+    }
+  }, [pathname, showSearch]);
 
   // 초기화가 완료되지 않았으면 로딩 상태 표시
   if (!isInitialized) {
@@ -319,34 +345,72 @@ export default function Navbar() {
           )}
         </Flex>
 
-        {/* 중앙: 페이지 제목 */}
-        {canGoBack && (
+        {/* 중앙: 페이지 제목 또는 검색 필드 */}
+        {canGoBack ? (
           <Flex align="center" className="text-xl font-bold absolute left-1/2 -translate-x-1/2">
             {getPageTitle(pathname)}
           </Flex>
-        )}
+        ) : showSearch && pathname === '/' ? (
+          <form onSubmit={handleSearch} className="flex-1 max-w-md mx-4">
+            <TextField.Root
+              size="3"
+              placeholder="포스트 검색..."
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              autoFocus
+            />
+          </form>
+        ) : null}
 
-        {/* 우측: 알림 및 햄버거 메뉴 */}
+        {/* 우측: 검색, 홈, 알림 및 햄버거 메뉴 */}
         <Flex align="center" gap="2">
-          <Link href="/" className="navbar-icon">
-            <House size={24} className="text-gray-800" />
-          </Link>
+          {!showSearch && (
+            <>
+              <Link href="/" className="navbar-icon">
+                <House size={24} className="text-gray-800" />
+              </Link>
 
-          {/* 알림 버튼 */}
-          <Link href="/notifications" className="relative">
-            <BellRing size={24} className="text-gray-800" />
-            {session && user?._id && unreadCount > 0 && pathname !== '/welcome' && (
-              <Badge
-                color="red"
-                variant="solid"
-                size="1"
-                radius="full"
-                className="absolute -top-2 -right-2"
-              >
-                {unreadCount}
-              </Badge>
-            )}
-          </Link>
+              {/* 검색 버튼 - 홈페이지에서만 표시 */}
+              {pathname === '/' && (
+                <Button
+                  variant="ghost"
+                  size="2"
+                  onClick={() => setShowSearch(true)}
+                  style={{ padding: '4px 8px' }}
+                >
+                  <Search size={24} className="text-gray-800" />
+                </Button>
+              )}
+
+              {/* 알림 버튼 */}
+              <Link href="/notifications" className="relative">
+                <BellRing size={24} className="text-gray-800" />
+                {session && user?._id && unreadCount > 0 && pathname !== '/welcome' && (
+                  <Badge
+                    color="red"
+                    variant="solid"
+                    size="1"
+                    radius="full"
+                    className="absolute -top-2 -right-2"
+                  >
+                    {unreadCount}
+                  </Badge>
+                )}
+              </Link>
+            </>
+          )}
+
+          {/* 검색 모드일 때 취소 버튼 - 홈페이지에서만 표시 */}
+          {showSearch && pathname === '/' && (
+            <Button
+              variant="ghost"
+              size="2"
+              onClick={handleCancelSearch}
+              style={{ padding: '4px 8px' }}
+            >
+              <X size={24} className="text-gray-800" />
+            </Button>
+          )}
 
           {/* 햄버거 메뉴 */}
           <DropdownMenu.Root>

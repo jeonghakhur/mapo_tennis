@@ -1,5 +1,5 @@
 'use client';
-import { Box, Text, Button } from '@radix-ui/themes';
+import { Box, Text, Button, Flex } from '@radix-ui/themes';
 import Container from '@/components/Container';
 import { useRouter } from 'next/navigation';
 import { useClubs } from '@/hooks/useClubs';
@@ -14,6 +14,7 @@ import { useSession } from 'next-auth/react';
 import { useUser } from '@/hooks/useUser';
 import { Combobox } from '@/components/ui/combobox';
 import React from 'react';
+import { isModerator } from '@/lib/authUtils';
 
 const builder = imageUrlBuilder(client);
 
@@ -69,14 +70,14 @@ export default function ClubPage() {
   // 실제 목록 렌더링
   return (
     <Container>
-      <div style={{ maxWidth: 320, margin: '0 0 2rem 0' }}>
+      <Flex mb="4" direction="column" gap="4">
         <Combobox
           options={[{ value: '', label: '전체 클럽' }, ...clubOptions]}
           value={clubFilter}
           onValueChange={setClubFilter}
           placeholder="클럽명 선택"
         />
-      </div>
+      </Flex>
       {session?.user && myClubs.length > 0 && (
         <>
           <Text size="4" weight="bold" mb="2" as="div">
@@ -171,29 +172,31 @@ export default function ClubPage() {
       )}
 
       {/* 플로팅 클럽 등록 버튼 */}
-      <div
-        style={{
-          position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          zIndex: 1000,
-        }}
-      >
-        <Button
+      {isModerator(user) && (
+        <div
           style={{
-            width: '60px',
-            height: '60px',
-            borderRadius: '50%',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+            zIndex: 1000,
           }}
-          onClick={() => router.push('/club/create')}
         >
-          <NotebookPen size={24} />
-        </Button>
-      </div>
+          <Button
+            style={{
+              width: '60px',
+              height: '60px',
+              borderRadius: '50%',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            onClick={() => router.push('/club/create')}
+          >
+            <NotebookPen size={24} />
+          </Button>
+        </div>
+      )}
     </Container>
   );
 }

@@ -45,13 +45,31 @@ export async function notifyAdminsOnQuestionCreate(question: Question) {
 
 // 본인 문의 목록 조회
 export async function getMyQuestions(userId: string): Promise<Question[]> {
-  const query = `*[_type == "question" && author._ref == $userId] | order(createdAt desc)`;
+  const query = `*[_type == "question" && author._ref == $userId] {
+    _id,
+    _createdAt,
+    title,
+    content,
+    answer,
+    author->{
+      _id,
+      name,
+      email,
+      gender,
+      age,
+      club->{
+        _id,
+        name,
+        location
+      }
+    }
+  } | order(_createdAt desc)`;
   return await client.fetch(query, { userId });
 }
 
 // 전체 문의 목록(관리자)
 export async function getAllQuestions(): Promise<Question[]> {
-  const query = `*[_type == "question"] | order(createdAt desc)`;
+  const query = `*[_type == "question"] | order(_createdAt desc)`;
   return await client.fetch(query);
 }
 
@@ -59,8 +77,12 @@ export async function getAllQuestions(): Promise<Question[]> {
 export async function getQuestionById(id: string): Promise<Question | null> {
   const query = `*[_type == "question" && _id == $id][0]{
     ...,
-    author->{_id, name},
-    answeredBy->{_id, name}
+    author->{
+      _id, 
+      name, 
+    },
+    answeredBy->{_id, name},
+    answeredAt
   }`;
   return await client.fetch(query, { id });
 }

@@ -67,7 +67,7 @@ export function useCreateQuestion() {
                 {
                   ...data,
                   _id: 'optimistic-' + Date.now(),
-                  createdAt: new Date().toISOString(),
+                  _createdAt: new Date().toISOString(),
                   _type: 'question',
                   author:
                     typeof data.author === 'string'

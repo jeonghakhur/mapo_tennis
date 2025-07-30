@@ -2,12 +2,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Box, Text, Button, Flex } from '@radix-ui/themes';
+import { Box, Text, Button, Flex, Separator, Grid } from '@radix-ui/themes';
 import { SimpleEditor } from '@/components/tiptap-templates/simple/simple-editor';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import Image from 'next/image';
 import { useQuestionDetail, useAnswerQuestion, useDeleteQuestion } from '@/hooks/useQuestions';
 import Container from '@/components/Container';
+import { useUserById } from '@/hooks/useUser';
 
 export default function AdminQuestionDetailPage() {
   const router = useRouter();
@@ -27,6 +28,7 @@ export default function AdminQuestionDetailPage() {
   }>({ open: false, title: '', description: '', color: 'green' });
 
   useEffect(() => {
+    console.log(question);
     if (question && question.answer) setAnswer(question.answer);
   }, [question]);
 
@@ -42,7 +44,7 @@ export default function AdminQuestionDetailPage() {
   if (isError || !question) return <Text>문의 정보를 불러올 수 없습니다.</Text>;
 
   // 삭제 권한: 레벨 4 이상만
-  const canDelete = data?.user && data.user.level >= 4;
+  // const canDelete = data?.user && data.user.level >= 4;
 
   const handleSubmit = async () => {
     if (!answer) {
@@ -94,21 +96,64 @@ export default function AdminQuestionDetailPage() {
     }
   };
 
+  // 작성자 정보 컴포넌트
+  const AuthorInfo = ({ authorId }: { authorId: string }) => {
+    const { user: author } = useUserById(authorId);
+    console.log(author);
+    if (!author) return null;
+
+    // 나이 계산
+    const calculateAge = (birth: string) => {
+      const birthDate = new Date(birth);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      return age;
+    };
+
+    return (
+      <div
+        style={{
+          marginBottom: '1rem',
+          padding: '0.5rem',
+          background: '#f8f9fa',
+          borderRadius: '4px',
+        }}
+      >
+        <Text color="gray" mb="1" as="div" weight="bold">
+          작성자 정보
+        </Text>
+        <Grid columns="2" gap="3">
+          <Text color="gray">이름: {author.name}</Text>
+          <Text color="gray">이메일: {author.email}</Text>
+          <Text color="gray">성별: {author.gender}</Text>
+          <Text color="gray">나이: {author.birth ? calculateAge(author.birth) : 'N/A'}세</Text>
+          {author.clubs && author.clubs.length > 0 && (
+            <Text color="gray">
+              클럽: {author.clubs.map((club) => club.name || 'N/A').join(', ')}
+            </Text>
+          )}
+        </Grid>
+      </div>
+    );
+  };
+
   return (
     <Container>
-      <Flex justify="end" align="center" mb="4">
-        {canDelete && (
-          <Button size="3" color="red" variant="soft" onClick={() => setShowDelete(true)}>
-            삭제
-          </Button>
-        )}
+      {/* 작성자 정보 */}
+      {typeof question.author === 'object' && <AuthorInfo authorId={question.author._id} />}
+      <Flex justify="between" align="center">
+        <Text size="5" weight="bold" mb="2">
+          {question.title}
+        </Text>
+        <Text size="2" color="gray" mb="2">
+          {new Date(question._createdAt).toLocaleDateString()}
+        </Text>
       </Flex>
-      <Text size="5" weight="bold" mb="2">
-        {question.title}
-      </Text>
-      <Text size="2" color="gray" mb="2">
-        {new Date(question.createdAt).toLocaleDateString()}
-      </Text>
+      <Separator size="4" mb="3" />
       <Box mb="4" mt="2">
         <div dangerouslySetInnerHTML={{ __html: question.content }} />
       </Box>
@@ -126,12 +171,14 @@ export default function AdminQuestionDetailPage() {
           </Flex>
         </Box>
       )}
-      <Box mt="6" p="4" style={{ borderRadius: 8, background: '#f8fafc' }}>
-        <Text size="4" weight="bold" color="green" mb="2">
-          답변 작성
-        </Text>
-        <SimpleEditor value={answer} onChange={setAnswer} minHeight="120px" maxHeight="300px" />
-        <Button size="3" mt="4" onClick={handleSubmit} disabled={isSubmitting || isAnswering}>
+
+      <SimpleEditor value={answer} onChange={setAnswer} minHeight="120px" maxHeight="300px" />
+      <Box className="btn-wrap mt-4">
+        <Button size="3" color="red" variant="soft" onClick={() => setShowDelete(true)}>
+          삭제
+        </Button>
+
+        <Button size="3" onClick={handleSubmit} disabled={isSubmitting || isAnswering}>
           {isSubmitting || isAnswering ? '등록 중...' : '답변 등록'}
         </Button>
       </Box>

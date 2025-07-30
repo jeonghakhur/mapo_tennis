@@ -8,7 +8,7 @@ import { useTournament, useDeleteTournament } from '@/hooks/useTournaments';
 import { usePost } from '@/hooks/usePosts';
 import { useUser } from '@/hooks/useUser';
 import { useSession } from 'next-auth/react';
-import { isAdmin } from '@/lib/authUtils';
+import { hasPermissionLevel, isAdmin } from '@/lib/authUtils';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import SkeletonCard from '@/components/SkeletonCard';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -414,7 +414,7 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
           </div>
 
           {/* 플로팅 참가 신청 버튼 */}
-          {tournament.status === 'upcoming' && (
+          {tournament.status === 'upcoming' && hasPermissionLevel(user, 1) && (
             <div
               style={{
                 position: 'fixed',

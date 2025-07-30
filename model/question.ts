@@ -15,7 +15,7 @@ export interface Question {
   answer?: string; // HTML
   answeredBy?: { _id: string; name: string } | string;
   answeredAt?: string;
-  createdAt: string;
+  _createdAt: string;
 }
 
 export interface QuestionInput {

@@ -107,7 +107,6 @@ export const authOptions = {
           token.phone = kakaoAccount.phone_number;
           token.birth = kakaoAccount.birthyear;
           token.gender = kakaoAccount.gender;
-          console.log('token', token);
         } catch (error) {
           console.error('카카오 API 호출 중 오류 발생:', error);
         }
@@ -132,7 +131,6 @@ export const authOptions = {
           token.gender = user.gender; // F/M
           token.birth = user.birthyear; // "1990"
           token.phone = user.mobile; // "010-1234-5678"
-          console.log('token', token);
         } catch (error) {
           console.error('네이버 사용자 정보 오류:', error);
         }

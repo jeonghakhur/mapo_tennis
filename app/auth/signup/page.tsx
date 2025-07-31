@@ -7,14 +7,14 @@ export default function SignUpPage() {
     <Box
       style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
     >
-      <Card style={{ width: 340, padding: 32, background: '#fff' }}>
-        <Text size="5" weight="bold" align="center" style={{ color: '#222' }} as="div">
+      <Card style={{ width: '90vw', padding: 32, background: '#fff' }}>
+        <Text size="5" weight="bold" align="center" style={{ color: '#222' }} mr="2" as="div">
           회원가입
         </Text>
         <Text size="2" align="center" mb="5" style={{ color: '#222' }}>
           소셜 계정으로 간편하게 회원가입하세요.
         </Text>
-        <Separator my="4" size="4" />
+        <Separator my="4" size="4" mb="6" />
         <Suspense fallback={<div>로딩 중...</div>}>
           <SocialAuthButtons mode="signup" />
         </Suspense>

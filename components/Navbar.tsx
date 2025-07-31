@@ -49,8 +49,8 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/club', label: '클럽', icon: Users },
   { path: '/tournaments', label: '대회일정', icon: Calendar },
   { path: '/awards', label: '대회결과', icon: Trophy },
-  // 로그인한 사용자만
-  { path: '/questions', label: '1:1 문의', icon: FileText, authRequired: true },
+  // 레벨 1 이상 사용자만
+  { path: '/questions', label: '1:1 문의', icon: FileText, requiredLevel: 1 },
   {
     path: '/tournament-applications',
     label: '내참가신청',
@@ -230,7 +230,7 @@ function AuthMenuItems({
 
   if (status === 'loading') return null;
 
-  if (!session) {
+  if (!session || (session && session.user?.level === 0)) {
     return (
       <>
         <DropdownMenu.Separator />
@@ -256,6 +256,7 @@ function AuthMenuItems({
   return (
     <>
       <DropdownMenu.Separator />
+      {/* 로그아웃 - 레벨 1 이상 사용자에게만 표시 */}
       <DropdownMenu.Item
         color="red"
         onClick={handleLogout}
@@ -390,21 +391,23 @@ export default function Navbar() {
                 </Button>
               )}
 
-              {/* 알림 버튼 */}
-              <Link href="/notifications" className="relative">
-                <BellRing size={24} className="text-gray-800" />
-                {session && user?._id && unreadCount > 0 && pathname !== '/welcome' && (
-                  <Badge
-                    color="red"
-                    variant="solid"
-                    size="1"
-                    radius="full"
-                    className="absolute -top-2 -right-2"
-                  >
-                    {unreadCount}
-                  </Badge>
-                )}
-              </Link>
+              {/* 알림 버튼 - 레벨 1 이상 사용자만 */}
+              {session && user?.level && user.level >= 1 && (
+                <Link href="/notifications" className="relative">
+                  <BellRing size={24} className="text-gray-800" />
+                  {unreadCount > 0 && pathname !== '/welcome' && (
+                    <Badge
+                      color="red"
+                      variant="solid"
+                      size="1"
+                      radius="full"
+                      className="absolute -top-2 -right-2"
+                    >
+                      {unreadCount}
+                    </Badge>
+                  )}
+                </Link>
+              )}
             </>
           )}
 
@@ -428,7 +431,8 @@ export default function Navbar() {
               </Button>
             </DropdownMenu.Trigger>
             <DropdownMenu.Content className="navbar-dropdown-menu">
-              {status === 'authenticated' && session && (
+              {/* 프로필 - 레벨 1 이상 사용자만 */}
+              {status === 'authenticated' && session && user?.level && user.level >= 1 && (
                 <DropdownMenu.Item
                   onClick={() => router.push('/profile')}
                   style={{ fontSize: '18px', fontWeight: 'bold' }}

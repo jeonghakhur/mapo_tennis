@@ -167,6 +167,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             Boolean(permissionResult.isAdmin),
             existingApplication.createdBy,
           ),
+          requiredLevel: 4, // 레벨 4 (경기관리자) 이상
         });
       }
     }
@@ -225,14 +226,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       title,
       message,
       link: createNotificationLink('TOURNAMENT_APPLICATION', id),
-      changes: [
-        {
-          field: '상태',
-          oldValue: existingApplication.status,
-          newValue: status,
-        },
-      ],
       userId: existingApplication.createdBy, // 신청자에게만 알림
+      requiredLevel: 4, // 레벨 4 (경기관리자) 이상
     });
 
     return NextResponse.json({ ok: true, id: result._id });
@@ -294,6 +289,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
         Boolean(permissionResult.isAdmin),
         existingApplication.createdBy,
       ),
+      requiredLevel: 4, // 레벨 4 (경기관리자) 이상
     });
 
     // 참가신청 삭제

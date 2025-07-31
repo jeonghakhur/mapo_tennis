@@ -29,9 +29,10 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId') || undefined;
+    const userLevel = session.user.level || 1;
 
-    const notifications = await getNotifications(userId);
-    const unreadCount = await getUnreadNotificationCount(userId);
+    const notifications = await getNotifications(userId, userLevel);
+    const unreadCount = await getUnreadNotificationCount(userId, userLevel);
 
     const response = NextResponse.json({
       notifications,

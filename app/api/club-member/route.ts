@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
       entityId: result._id,
       title,
       message,
+      requiredLevel: 4, // 레벨 4 (경기관리자)만 알림 수신
     });
 
     return NextResponse.json({ ok: true, id: result._id });
@@ -89,6 +90,7 @@ export async function PATCH(req: NextRequest) {
         title,
         message,
         changes,
+        requiredLevel: 4, // 레벨 4 (경기관리자)만 알림 수신
       });
     }
 
@@ -115,6 +117,7 @@ export async function DELETE(req: NextRequest) {
         entityId: 'all',
         title,
         message,
+        requiredLevel: 4, // 레벨 4 (경기관리자)만 알림 수신
       });
 
       return NextResponse.json({ ok: true, deleted: result });
@@ -141,6 +144,7 @@ export async function DELETE(req: NextRequest) {
       entityId: id,
       title,
       message,
+      requiredLevel: 4, // 레벨 4 (경기관리자)만 알림 수신
     });
 
     return NextResponse.json({ ok: true });

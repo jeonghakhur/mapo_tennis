@@ -280,7 +280,7 @@ export default function Navbar() {
 
   // 관리자 권한 확인
   const admin = isAdmin(user);
-  const { unreadCount } = useNotifications(admin ? undefined : user?._id, {
+  const { unreadCount } = useNotifications(admin ? undefined : user?._id, user?.level, {
     pause: !isNotificationPage,
   });
 

@@ -3,8 +3,7 @@ import { getTournaments, createTournament } from '@/service/tournament';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { parseTournamentFormData } from '@/lib/tournamentUtils';
-import { createNotification, createNotificationMessage } from '@/service/notification';
-import { createNotificationLink } from '@/lib/notificationUtils';
+
 import type { TournamentFormData } from '@/model/tournament';
 
 // 대회 목록 조회
@@ -46,22 +45,7 @@ export async function POST(req: NextRequest) {
         session.user.name,
       );
 
-      // 토너먼트 알림 생성 (모든 사용자가 받음)
-      if (tournament._id) {
-        const { title } = createNotificationMessage('CREATE', 'TOURNAMENT', tournamentData.title);
-
-        // 상세한 토너먼트 메시지 생성
-        const detailedMessage = `새로운 토너먼트가 등록되었습니다.\n\n대회명: ${tournamentData.title}\n기간: ${tournamentData.startDate} ~ ${tournamentData.endDate}\n장소: ${tournamentData.location}\n대회 유형: ${tournamentData.tournamentType}\n등록자: ${session.user.name}`;
-
-        await createNotification({
-          type: 'CREATE',
-          entityType: 'TOURNAMENT',
-          entityId: tournament._id,
-          title,
-          message: detailedMessage,
-          link: createNotificationLink('TOURNAMENT', tournament._id),
-        });
-      }
+      // 토너먼트 관련 알림 기능 제거 (새로운 알림 레벨 시스템에 따라)
 
       return NextResponse.json(tournament);
     } catch (error) {

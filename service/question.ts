@@ -1,7 +1,7 @@
 import { client } from '@/sanity/lib/client';
 import type { Question, QuestionInput } from '@/model/question';
 import { getUserById } from './user';
-import { getUsersLevel4AndAbove } from './user';
+
 import { createNotification, createNotificationMessage } from './notification';
 import { createNotificationLink } from '@/lib/notificationUtils';
 
@@ -22,23 +22,18 @@ export async function createQuestion(data: QuestionInput): Promise<Question> {
 // 문의 작성 시 레벨 4 이상 회원에게 알림 생성
 export async function notifyAdminsOnQuestionCreate(question: Question) {
   try {
-    const admins = await getUsersLevel4AndAbove();
     const { title, message } = createNotificationMessage('CREATE', 'QUESTION', question.title);
     const link = createNotificationLink('QUESTION', question._id, { admin: true });
 
-    await Promise.all(
-      admins.map((admin) =>
-        createNotification({
-          type: 'CREATE',
-          entityType: 'QUESTION',
-          entityId: question._id,
-          title,
-          message,
-          link,
-          userId: admin._id,
-        }),
-      ),
-    );
+    await createNotification({
+      type: 'CREATE',
+      entityType: 'QUESTION',
+      entityId: question._id,
+      title,
+      message,
+      link,
+      requiredLevel: 4, // 레벨 4 (경기관리자)만 알림 수신
+    });
   } catch (e) {
     console.error('문의 알림 생성 오류:', e);
   }
@@ -143,7 +138,8 @@ export async function notifyUserOnAnswer(question: Question) {
       title,
       message,
       link,
-      userId: authorId,
+      userId: authorId, // 문의 작성자에게만 알림
+      requiredLevel: 1, // 개인 알림이므로 레벨 1 이상
     });
   } catch (e) {
     console.error('문의 답변 알림 생성 오류:', e);

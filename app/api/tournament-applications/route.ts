@@ -7,7 +7,7 @@ import {
 } from '@/service/tournamentApplication';
 import { getUserByEmail } from '@/service/user';
 import { createNotification, createNotificationMessage } from '@/service/notification';
-import { getNotificationUserId } from '@/lib/apiUtils';
+
 import { createNotificationLink } from '@/lib/notificationUtils';
 import type { TournamentApplicationInput } from '@/model/tournamentApplication';
 
@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
       title,
       message: detailedMessage,
       link: createNotificationLink('TOURNAMENT_APPLICATION', result._id!),
-      userId: getNotificationUserId(user.level >= 4, user._id), // 관리자는 전체 알림, 일반 사용자는 개인 알림
+      requiredLevel: 4, // 레벨 4 (경기관리자)만 알림 수신
     });
 
     return NextResponse.json({ ok: true, id: result._id });

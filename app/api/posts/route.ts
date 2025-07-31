@@ -9,7 +9,7 @@ import {
   getPostsByCategory,
 } from '@/service/post';
 import type { PostInput } from '@/model/post';
-import { createNotification, createNotificationMessage } from '@/service/notification';
+
 import { withPermission, PERMISSION_LEVELS } from '@/lib/apiUtils';
 
 export async function GET(req: NextRequest) {
@@ -55,18 +55,7 @@ export async function POST(req: NextRequest) {
         author: { _ref: typeof data.author === 'string' ? data.author : data.author._ref },
       });
 
-      // 발행된 포스트에만 알림 생성 (성능 최적화)
-      if (data.isPublished) {
-        const { title, message } = createNotificationMessage('CREATE', 'POST', data.title);
-
-        await createNotification({
-          type: 'CREATE',
-          entityType: 'POST',
-          entityId: result._id,
-          title,
-          message,
-        });
-      }
+      // 게시글 관련 알림 기능 제거 (새로운 알림 레벨 시스템에 따라)
 
       return NextResponse.json({ ok: true, id: result._id });
     } catch (e) {
@@ -88,23 +77,7 @@ export async function PATCH(req: NextRequest) {
       const updateFields: Partial<PostInput> = await req.json();
       const result = await updatePost(id, updateFields);
 
-      // 발행 상태 변경이나 중요한 수정에만 알림 생성
-      const shouldNotify =
-        updateFields.isPublished !== undefined ||
-        updateFields.mainPriority !== undefined ||
-        updateFields.category !== undefined;
-
-      if (shouldNotify) {
-        const { title, message } = createNotificationMessage('UPDATE', 'POST', result.title);
-
-        await createNotification({
-          type: 'UPDATE',
-          entityType: 'POST',
-          entityId: id,
-          title,
-          message,
-        });
-      }
+      // 게시글 관련 알림 기능 제거 (새로운 알림 레벨 시스템에 따라)
 
       return NextResponse.json({ ok: true, post: result });
     } catch (e) {
@@ -131,18 +104,7 @@ export async function DELETE(req: NextRequest) {
 
       await deletePost(id);
 
-      // 발행된 포스트 삭제에만 알림 생성
-      if (existingPost.isPublished) {
-        const { title, message } = createNotificationMessage('DELETE', 'POST', existingPost.title);
-
-        await createNotification({
-          type: 'DELETE',
-          entityType: 'POST',
-          entityId: id,
-          title,
-          message,
-        });
-      }
+      // 게시글 관련 알림 기능 제거 (새로운 알림 레벨 시스템에 따라)
 
       return NextResponse.json({ ok: true });
     } catch (e) {

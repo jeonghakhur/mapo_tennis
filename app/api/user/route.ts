@@ -66,15 +66,16 @@ export async function POST(req: NextRequest) {
       }
 
       // 상세한 회원가입 메시지 생성
-      const detailedMessage = `새로운 회원이 가입했습니다.\n\n이름: ${name}\n이메일: ${email}\n연락처: ${phone}\n성별: ${gender === 'male' ? '남성' : '여성'}\n생년월일: ${birth}\n테니스 점수: ${score}점${clubInfo}`;
+      const detailedMessage = `새로운 회원이 가입했습니다.\n\n이름: ${name}\n이메일: ${email}\n연락처: ${phone}\n성별: ${gender}\n생년월일: ${birth}\n테니스 점수: ${score}점${clubInfo}`;
 
       await createNotification({
         type: 'CREATE',
         entityType: 'USER',
-        entityId: result._id,
+        entityId: 'system', // 회원가입 알림은 시스템 알림으로 처리
         title,
         message: detailedMessage,
         link: createNotificationLink('USER', result._id),
+        requiredLevel: 5, // 레벨 5 (어드민)만 알림 수신
       });
     }
 
@@ -129,9 +130,7 @@ export async function PUT(req: NextRequest) {
         changes.push(`연락처: ${existingUser.phone} → ${phone}`);
       }
       if (existingUser.gender !== gender) {
-        changes.push(
-          `성별: ${existingUser.gender === 'male' ? '남성' : '여성'} → ${gender === 'male' ? '남성' : '여성'}`,
-        );
+        changes.push(`성별: ${existingUser.gender} → ${gender}`);
       }
       if (existingUser.birth !== birth) {
         changes.push(`생년월일: ${existingUser.birth} → ${birth}`);
@@ -183,6 +182,7 @@ export async function PUT(req: NextRequest) {
           title,
           message: detailedMessage,
           link: createNotificationLink('USER', result._id),
+          requiredLevel: 5, // 레벨 5 (어드민)만 알림 수신
         });
       }
     }

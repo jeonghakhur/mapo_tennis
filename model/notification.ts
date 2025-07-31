@@ -18,6 +18,7 @@ export interface Notification {
   changes?: Change[];
   readAt?: string;
   userId?: string;
+  requiredLevel: number; // 필요 권한 레벨
   createdAt: string;
 }
 
@@ -45,4 +46,5 @@ export interface NotificationInput {
   link?: string; // 바로가기 링크
   changes?: Change[];
   userId?: string;
+  requiredLevel: number; // 필요 권한 레벨
 }

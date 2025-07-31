@@ -61,6 +61,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
           title,
           message: detailedMessage,
           link: createNotificationLink('TOURNAMENT', tournament._id),
+          requiredLevel: 1, // 레벨 1 (클럽가입회원) 이상
         });
       }
 
@@ -110,6 +111,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       entityId: id,
       title,
       message: detailedMessage,
+      requiredLevel: 1, // 레벨 1 (클럽가입회원) 이상
     });
 
     return NextResponse.json({ success: true });

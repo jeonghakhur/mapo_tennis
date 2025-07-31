@@ -113,6 +113,7 @@ export async function POST(req: NextRequest) {
         title,
         message: detailedMessage,
         link: createNotificationLink('EXPENSE', expense._id),
+        requiredLevel: 5, // 레벨 5 (어드민)만 알림 수신
       });
     }
 

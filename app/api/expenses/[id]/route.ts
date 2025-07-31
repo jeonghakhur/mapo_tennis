@@ -96,6 +96,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         title,
         message: detailedMessage,
         link: createNotificationLink('EXPENSE', expense._id),
+        requiredLevel: 5, // 레벨 5 (어드민)만 알림 수신
       });
     }
 
@@ -132,6 +133,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       entityId: id,
       title,
       message: detailedMessage,
+      requiredLevel: 5, // 레벨 5 (어드민)만 알림 수신
     });
 
     return NextResponse.json({ success: true });

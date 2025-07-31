@@ -1,14 +1,29 @@
 import useSWR, { mutate } from 'swr';
 import { useSession } from 'next-auth/react';
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    const error = new Error('An error occurred while fetching the data.');
+    // @ts-expect-error - Adding custom properties to Error object
+    error.info = await res.json();
+    // @ts-expect-error - Adding custom properties to Error object
+    error.status = res.status;
+    throw error;
+  }
+  return res.json();
+};
 
 const DEFAULT_REFRESH_INTERVAL =
   typeof window !== 'undefined' && process.env.NEXT_PUBLIC_NOTI_REFRESH_INTERVAL
     ? Number(process.env.NEXT_PUBLIC_NOTI_REFRESH_INTERVAL)
     : 10000;
 
-export function useNotifications(userId?: string, options?: { pause?: boolean }) {
+export function useNotifications(
+  userId?: string,
+  userLevel?: number,
+  options?: { pause?: boolean },
+) {
   const { status } = useSession();
   const { pause } = options || {};
   const shouldFetch = status === 'authenticated' && !pause;

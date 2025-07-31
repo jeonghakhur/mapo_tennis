@@ -86,6 +86,22 @@ export default defineType({
       description: '특정 사용자에게만 보내는 경우',
     }),
     defineField({
+      name: 'requiredLevel',
+      title: '필요 권한 레벨',
+      type: 'number',
+      options: {
+        list: [
+          { title: '레벨 1 (클럽가입회원)', value: 1 },
+          { title: '레벨 2 (클럽관리자)', value: 2 },
+          { title: '레벨 3 (협회 관계자)', value: 3 },
+          { title: '레벨 4 (경기관리자)', value: 4 },
+          { title: '레벨 5 (어드민)', value: 5 },
+        ],
+      },
+      validation: (Rule) => Rule.required(),
+      description: '이 알림을 볼 수 있는 최소 권한 레벨',
+    }),
+    defineField({
       name: 'createdAt',
       title: '생성 시간',
       type: 'datetime',

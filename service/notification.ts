@@ -21,25 +21,47 @@ export async function createNotification(data: NotificationInput): Promise<Notif
   return notification as Notification;
 }
 
-// 알림 목록 조회
-export async function getNotifications(userId?: string): Promise<Notification[]> {
-  const query = `
-    *[_type == "notification" ${userId ? `&& userId == $userId` : ''}]
-    | order(createdAt desc)
-  `;
+// 알림 목록 조회 (사용자 레벨에 따른 필터링)
+export async function getNotifications(
+  userId?: string,
+  userLevel?: number,
+): Promise<Notification[]> {
+  // 개인 알림과 레벨별 알림을 분리해서 조회
+  const personalQuery = `*[_type == "notification" && userId == $userId]`;
+  const levelQuery = `*[_type == "notification" && requiredLevel <= $userLevel && !defined(userId)]`;
 
-  const params = userId ? { userId } : {};
-  return await client.fetch(query, params);
+  const params = { userId, userLevel };
+
+  // 개인 알림과 레벨별 알림을 각각 조회
+  const [personalNotifications, levelNotifications] = await Promise.all([
+    userId ? client.fetch(personalQuery, params) : Promise.resolve([]),
+    userLevel !== undefined ? client.fetch(levelQuery, params) : Promise.resolve([]),
+  ]);
+
+  // 중복 제거 (ID 기준)
+  const allNotifications = [...personalNotifications, ...levelNotifications];
+  const uniqueNotifications = allNotifications.filter(
+    (notification, index, self) => index === self.findIndex((n) => n._id === notification._id),
+  );
+
+  // 생성일 기준으로 정렬
+  const sortedNotifications = uniqueNotifications.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+
+  return sortedNotifications;
 }
 
-// 읽지 않은 알림 개수 조회
-export async function getUnreadNotificationCount(userId?: string): Promise<number> {
-  const query = `
-    count(*[_type == "notification" && !defined(readAt) ${userId ? `&& userId == $userId` : ''}])
-  `;
+// 읽지 않은 알림 개수 조회 (사용자 레벨에 따른 필터링)
+export async function getUnreadNotificationCount(
+  userId?: string,
+  userLevel?: number,
+): Promise<number> {
+  // 중복 제거를 위해 전체 알림을 조회하고 개수 계산
+  const allNotifications = await getNotifications(userId, userLevel);
+  const unreadNotifications = allNotifications.filter((notification) => !notification.readAt);
 
-  const params = userId ? { userId } : {};
-  return await client.fetch(query, params);
+  return unreadNotifications.length;
 }
 
 // 알림 읽음 처리

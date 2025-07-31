@@ -447,3 +447,14 @@ export function getDivisionLabel(value: string): string {
   const found = DIVISION_OPTIONS.find((option) => option.value === value);
   return found ? found.label : value;
 }
+
+/**
+ * 대회 유형을 한글로 변환하는 함수
+ */
+export function getTournamentTypeLabel(value: string): string {
+  const typeMap: Record<string, string> = {
+    individual: '개인전',
+    team: '단체전',
+  };
+  return typeMap[value] || value;
+}

@@ -27,6 +27,7 @@ export async function getTournaments(): Promise<Tournament[]> {
     accountHolder,
     divisions,
     status,
+    isDraft,
     createdAt,
     updatedAt,
     createdBy
@@ -61,6 +62,7 @@ export async function getTournament(id: string): Promise<Tournament | null> {
     accountHolder,
     divisions,
     status,
+    isDraft,
     createdAt,
     updatedAt,
     createdBy
@@ -78,6 +80,7 @@ export async function createTournament(
     _type: 'tournament',
     ...data,
     status: 'upcoming',
+    isDraft: true, // 기본적으로 임시저장 상태로 생성
     createdAt: new Date().toISOString(),
     createdBy,
   };

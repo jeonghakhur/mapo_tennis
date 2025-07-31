@@ -74,6 +74,7 @@ export default function TournamentsPage() {
                       <Badge color={getStatusColor(tournament.status)}>
                         {getStatusLabel(tournament.status)}
                       </Badge>
+                      {tournament.isDraft && <Badge color="orange">임시저장</Badge>}
                       <Text size="5" weight="bold" className="block mb-2">
                         {tournament.title}
                       </Text>
@@ -107,19 +108,21 @@ export default function TournamentsPage() {
 
                       {/* 액션 버튼 */}
                       <div className="btn-wrap">
-                        {tournament.status === 'upcoming' && hasPermissionLevel(user, 1) && (
-                          <Button
-                            variant="solid"
-                            color="blue"
-                            size="3"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              router.push(`/tournaments/${tournament._id}/apply`);
-                            }}
-                          >
-                            참가 신청
-                          </Button>
-                        )}
+                        {tournament.status === 'upcoming' &&
+                          hasPermissionLevel(user, 1) &&
+                          !tournament.isDraft && (
+                            <Button
+                              variant="solid"
+                              color="blue"
+                              size="3"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/tournaments/${tournament._id}/apply`);
+                              }}
+                            >
+                              참가 신청
+                            </Button>
+                          )}
                         <Button
                           variant="soft"
                           size="3"

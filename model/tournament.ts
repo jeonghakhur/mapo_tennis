@@ -11,6 +11,7 @@ export interface Tournament {
   descriptionPostId?: string;
   rulesPostId?: string;
   status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+  isDraft: boolean;
   host?: string;
   organizer?: string;
   participants?: string;
@@ -48,6 +49,7 @@ export interface TournamentFormData {
   registrationDeadline?: string;
   descriptionPostId?: string | null;
   rulesPostId?: string | null;
+  isDraft?: boolean;
   host?: string;
   organizer?: string;
   participants?: string;

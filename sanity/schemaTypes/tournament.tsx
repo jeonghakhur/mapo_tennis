@@ -68,6 +68,13 @@ export default defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
+      name: 'isDraft',
+      title: '임시저장 여부',
+      type: 'boolean',
+      initialValue: true,
+      description: '임시저장 상태인지 여부를 나타냅니다',
+    }),
+    defineField({
       name: 'descriptionPostId',
       title: '대회 설명 포스트 ID',
       type: 'string',

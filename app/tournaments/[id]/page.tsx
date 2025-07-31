@@ -17,6 +17,7 @@ import LoadingOverlay from '@/components/LoadingOverlay';
 import { useLoading } from '@/hooks/useLoading';
 import { mutate } from 'swr';
 import { Tournament } from '@/model/tournament';
+
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { wrapTextWithSpans } from '@/lib/utils';
@@ -37,6 +38,7 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
   const [contentLoaded, setContentLoaded] = useState(false);
   const { trigger: deleteTournament, isMutating: isDeleting } = useDeleteTournament(id);
   const { loading, withLoading } = useLoading();
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   // 포스트 데이터 가져오기
   const { post: descriptionPost, isLoading: isLoadingDescription } = usePost(
     tournament?.descriptionPostId || '',
@@ -375,6 +377,66 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
 
             {/* 액션 버튼 */}
             <Flex gap="3" justify="end" pt="6" className="border-t">
+              {admin && (
+                <Button
+                  variant={tournament.isDraft ? 'solid' : 'soft'}
+                  color={tournament.isDraft ? 'green' : 'orange'}
+                  disabled={isUpdatingStatus}
+                  onClick={async () => {
+                    if (isUpdatingStatus) return;
+
+                    setIsUpdatingStatus(true);
+                    try {
+                      const response = await fetch(`/api/tournaments/${id}/publish`, {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                          isDraft: !tournament.isDraft,
+                        }),
+                      });
+
+                      if (response.ok) {
+                        const updatedTournament = await response.json();
+
+                        // SWR 캐시 업데이트 - 개별 대회 데이터
+                        mutate(`/api/tournaments/${id}`, updatedTournament, false);
+
+                        // SWR 캐시 업데이트 - 대회 목록 데이터
+                        mutate(
+                          '/api/tournaments',
+                          (currentData: Tournament[] | undefined) => {
+                            if (!currentData) return currentData;
+                            return currentData.map((t) =>
+                              t._id === id ? { ...t, isDraft: !tournament.isDraft } : t,
+                            );
+                          },
+                          false,
+                        );
+
+                        // 성공 메시지
+                        alert(tournament.isDraft ? '게시되었습니다.' : '임시저장되었습니다.');
+                      } else {
+                        alert(
+                          tournament.isDraft ? '게시에 실패했습니다.' : '임시저장에 실패했습니다.',
+                        );
+                      }
+                    } catch {
+                      alert(
+                        tournament.isDraft
+                          ? '게시 중 오류가 발생했습니다.'
+                          : '임시저장 중 오류가 발생했습니다.',
+                      );
+                    } finally {
+                      setIsUpdatingStatus(false);
+                    }
+                  }}
+                  size="3"
+                >
+                  {isUpdatingStatus ? '처리 중...' : tournament.isDraft ? '게시' : '임시저장'}
+                </Button>
+              )}
               {admin && (
                 <Button
                   variant="soft"

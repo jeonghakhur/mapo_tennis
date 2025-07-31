@@ -194,7 +194,7 @@ export default function NotificationsPage() {
                       {notification.link && <ExternalLink size={14} className="text-blue-500" />}
                     </div>
 
-                    <Text size="2" color="gray" className="block mb-2">
+                    <Text size="2" color="gray" className="block mb-2 whitespace-pre-line">
                       {notification.message}
                     </Text>
 

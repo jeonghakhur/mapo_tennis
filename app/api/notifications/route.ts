@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getNotifications, getUnreadNotificationCount } from '@/service/notification';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
+import { getUserByEmail } from '@/service/user';
 
 // CORS 헤더 설정 함수
 function setCorsHeaders(response: NextResponse) {
@@ -31,8 +32,12 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('userId') || undefined;
     const userLevel = session.user.level || 1;
 
-    const notifications = await getNotifications(userId, userLevel);
-    const unreadCount = await getUnreadNotificationCount(userId, userLevel);
+    // 사용자 정보 조회하여 생성일 가져오기
+    const user = await getUserByEmail(session.user.email);
+    const userCreatedAt = user?._createdAt;
+
+    const notifications = await getNotifications(userId, userLevel, userCreatedAt);
+    const unreadCount = await getUnreadNotificationCount(userId, userLevel, userCreatedAt);
 
     const response = NextResponse.json({
       notifications,

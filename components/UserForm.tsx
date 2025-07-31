@@ -312,6 +312,33 @@ export default function UserForm({
               </td>
             </tr>
             <tr>
+              <th>점수</th>
+              <td>
+                <Select.Root
+                  size="3"
+                  value={score}
+                  onValueChange={(v) => {
+                    if (v !== '') {
+                      setScore(v);
+                    }
+                  }}
+                >
+                  <Select.Trigger
+                    placeholder="점수를 선택하세요"
+                    ref={scoreRef}
+                    style={{ width: '100%' }}
+                  />
+                  <Select.Content>
+                    {[...Array(10)].map((_, i) => (
+                      <Select.Item key={i + 1} value={String(i + 1)}>
+                        {i + 1}점
+                      </Select.Item>
+                    ))}
+                  </Select.Content>
+                </Select.Root>
+              </td>
+            </tr>
+            <tr>
               <th>가입 클럽</th>
               <td>
                 <ClubSelector
@@ -345,33 +372,6 @@ export default function UserForm({
         <h2 className="my-4 text-xl font-bold">회원정보 선택항목</h2>
         <table>
           <tbody>
-            <tr>
-              <th>점수</th>
-              <td>
-                <Select.Root
-                  size="3"
-                  value={score}
-                  onValueChange={(v) => {
-                    if (v !== '') {
-                      setScore(v);
-                    }
-                  }}
-                >
-                  <Select.Trigger
-                    placeholder="점수를 선택하세요"
-                    ref={scoreRef}
-                    style={{ width: '100%' }}
-                  />
-                  <Select.Content>
-                    {[...Array(10)].map((_, i) => (
-                      <Select.Item key={i + 1} value={String(i + 1)}>
-                        {i + 1}점
-                      </Select.Item>
-                    ))}
-                  </Select.Content>
-                </Select.Root>
-              </td>
-            </tr>
             <tr>
               <th>주소</th>
               <td>

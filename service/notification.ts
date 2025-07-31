@@ -25,12 +25,21 @@ export async function createNotification(data: NotificationInput): Promise<Notif
 export async function getNotifications(
   userId?: string,
   userLevel?: number,
+  userCreatedAt?: string,
 ): Promise<Notification[]> {
   // 개인 알림과 레벨별 알림을 분리해서 조회
   const personalQuery = `*[_type == "notification" && userId == $userId]`;
-  const levelQuery = `*[_type == "notification" && requiredLevel <= $userLevel && !defined(userId)]`;
 
-  const params = { userId, userLevel };
+  // 사용자 가입 시점 이후의 레벨별 알림만 조회 (또는 최근 7일)
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const sevenDaysAgoISO = sevenDaysAgo.toISOString();
+
+  const levelQuery = userCreatedAt
+    ? `*[_type == "notification" && requiredLevel <= $userLevel && !defined(userId) && createdAt >= $userCreatedAt]`
+    : `*[_type == "notification" && requiredLevel <= $userLevel && !defined(userId) && createdAt >= $sevenDaysAgoISO]`;
+
+  const params = { userId, userLevel, userCreatedAt, sevenDaysAgoISO };
 
   // 개인 알림과 레벨별 알림을 각각 조회
   const [personalNotifications, levelNotifications] = await Promise.all([
@@ -56,9 +65,10 @@ export async function getNotifications(
 export async function getUnreadNotificationCount(
   userId?: string,
   userLevel?: number,
+  userCreatedAt?: string,
 ): Promise<number> {
   // 중복 제거를 위해 전체 알림을 조회하고 개수 계산
-  const allNotifications = await getNotifications(userId, userLevel);
+  const allNotifications = await getNotifications(userId, userLevel, userCreatedAt);
   const unreadNotifications = allNotifications.filter((notification) => !notification.readAt);
 
   return unreadNotifications.length;

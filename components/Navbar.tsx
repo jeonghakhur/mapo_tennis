@@ -232,6 +232,8 @@ function AuthMenuItems({
   if (!session) {
     return (
       <>
+        <DropdownMenu.Separator />
+
         <DropdownMenu.Item
           onClick={() => router.push('/auth/signin')}
           style={{ fontSize: '18px', fontWeight: 'bold' }}
@@ -249,17 +251,21 @@ function AuthMenuItems({
       </>
     );
   }
-
-  return (
-    <DropdownMenu.Item
-      color="red"
-      onClick={handleLogout}
-      style={{ fontSize: '18px', fontWeight: 'bold' }}
-    >
-      <LogOut size={14} />
-      로그아웃
-    </DropdownMenu.Item>
-  );
+  if (session.user.level > 0) {
+    return (
+      <>
+        <DropdownMenu.Separator />
+        <DropdownMenu.Item
+          color="red"
+          onClick={handleLogout}
+          style={{ fontSize: '18px', fontWeight: 'bold' }}
+        >
+          <LogOut size={14} />
+          로그아웃
+        </DropdownMenu.Item>
+      </>
+    );
+  }
 }
 
 // 메인 Navbar 컴포넌트
@@ -363,7 +369,7 @@ export default function Navbar() {
         ) : null}
 
         {/* 우측: 검색, 홈, 알림 및 햄버거 메뉴 */}
-        <Flex align="center" gap="2">
+        <Flex align="center" gap="3">
           {!showSearch && (
             <>
               <Link href="/" className="navbar-icon">
@@ -440,8 +446,6 @@ export default function Navbar() {
                 <ZoomIn size={14} />
                 큰글씨모드
               </DropdownMenu.CheckboxItem>
-
-              <DropdownMenu.Separator />
 
               <AuthMenuItems session={session} status={status} router={router} />
             </DropdownMenu.Content>

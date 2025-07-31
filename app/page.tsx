@@ -164,9 +164,6 @@ function HomePageContent() {
           {/* 대회 섹션 */}
           {tournaments.length > 0 && (
             <div className="space-y-4" style={{ marginBottom: 32 }}>
-              <Text size="5" weight="bold" mb="4" as="div">
-                대회 정보
-              </Text>
               {tournaments.map((tournament) => (
                 <Flex direction="column" gap="4" key={tournament._id}>
                   <div className="flex items-center gap-3">

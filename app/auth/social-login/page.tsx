@@ -22,9 +22,7 @@ function SocialLoginContent() {
         )}
       </Text>
       <Separator my="4" size="4" />
-      <Suspense fallback={<div>로딩 중...</div>}>
-        <SocialAuthButtons mode="login" />
-      </Suspense>
+      <SocialAuthButtons mode="login" />
     </Card>
   );
 }

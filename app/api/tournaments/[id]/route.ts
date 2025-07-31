@@ -3,8 +3,6 @@ import { getTournament, updateTournament, deleteTournament } from '@/service/tou
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { parseTournamentFormData } from '@/lib/tournamentUtils';
-import { createNotification, createNotificationMessage } from '@/service/notification';
-import { createNotificationLink } from '@/lib/notificationUtils';
 
 // 대회 개별 조회
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -47,23 +45,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
       const tournament = await updateTournament(id, updateData);
 
-      // 토너먼트 수정 알림 생성 (모든 사용자가 받음)
-      if (tournament._id) {
-        const { title } = createNotificationMessage('UPDATE', 'TOURNAMENT', tournament.title);
-
-        // 상세한 토너먼트 수정 메시지 생성
-        const detailedMessage = `토너먼트 정보가 수정되었습니다.\n\n대회명: ${tournament.title}\n기간: ${tournament.startDate} ~ ${tournament.endDate}\n장소: ${tournament.location}\n대회 유형: ${tournament.tournamentType}\n수정자: ${session.user.name}`;
-
-        await createNotification({
-          type: 'UPDATE',
-          entityType: 'TOURNAMENT',
-          entityId: tournament._id,
-          title,
-          message: detailedMessage,
-          link: createNotificationLink('TOURNAMENT', tournament._id),
-          requiredLevel: 1, // 레벨 1 (클럽가입회원) 이상
-        });
-      }
+      // 토너먼트 수정 알림 기능 제거 (새로운 알림 레벨 시스템에 따라)
 
       return NextResponse.json(tournament);
     } catch (error) {
@@ -99,20 +81,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
     await deleteTournament(id);
 
-    // 토너먼트 삭제 알림 생성 (모든 사용자가 받음)
-    const { title } = createNotificationMessage('DELETE', 'TOURNAMENT', tournament.title);
-
-    // 상세한 토너먼트 삭제 메시지 생성
-    const detailedMessage = `토너먼트가 삭제되었습니다.\n\n대회명: ${tournament.title}\n기간: ${tournament.startDate} ~ ${tournament.endDate}\n장소: ${tournament.location}\n대회 유형: ${tournament.tournamentType}\n삭제자: ${session.user.name}`;
-
-    await createNotification({
-      type: 'DELETE',
-      entityType: 'TOURNAMENT',
-      entityId: id,
-      title,
-      message: detailedMessage,
-      requiredLevel: 1, // 레벨 1 (클럽가입회원) 이상
-    });
+    // 토너먼트 삭제 알림 기능 제거 (새로운 알림 레벨 시스템에 따라)
 
     return NextResponse.json({ success: true });
   } catch (error) {

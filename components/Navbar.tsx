@@ -31,6 +31,7 @@ import { useState, useEffect } from 'react';
 import { Session } from 'next-auth';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import type { User as UserType } from '@/model/user';
+import Image from 'next/image';
 
 // 네비게이션 아이템 타입 정의
 interface NavItem {
@@ -251,21 +252,20 @@ function AuthMenuItems({
       </>
     );
   }
-  if (session.user.level > 0) {
-    return (
-      <>
-        <DropdownMenu.Separator />
-        <DropdownMenu.Item
-          color="red"
-          onClick={handleLogout}
-          style={{ fontSize: '18px', fontWeight: 'bold' }}
-        >
-          <LogOut size={14} />
-          로그아웃
-        </DropdownMenu.Item>
-      </>
-    );
-  }
+
+  return (
+    <>
+      <DropdownMenu.Separator />
+      <DropdownMenu.Item
+        color="red"
+        onClick={handleLogout}
+        style={{ fontSize: '18px', fontWeight: 'bold' }}
+      >
+        <LogOut size={14} />
+        로그아웃
+      </DropdownMenu.Item>
+    </>
+  );
 }
 
 // 메인 Navbar 컴포넌트
@@ -327,11 +327,9 @@ export default function Navbar() {
   // 초기화가 완료되지 않았으면 로딩 상태 표시
   if (!isInitialized) {
     return (
-      <nav className="navbar-loading">
-        <Flex align="center" px="4" py="3" justify="center">
-          <div>Loading...</div>
-        </Flex>
-      </nav>
+      <Flex align="center" px="4" py="3" justify="center" className="navbar-loading">
+        {/* <div>Loading...</div> */}
+      </Flex>
     );
   }
 
@@ -345,9 +343,13 @@ export default function Navbar() {
               <ArrowLeft size={24} className="text-gray-800" />
             </Button>
           ) : (
-            <Link href="/" className="text-xl font-bold">
-              마포구 테니스 협회
-            </Link>
+            <Image
+              src="/icon-192x192.png"
+              alt="마포구테니스협회"
+              width={42}
+              height={42}
+              className="rounded-full"
+            />
           )}
         </Flex>
 

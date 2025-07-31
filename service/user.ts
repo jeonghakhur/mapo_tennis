@@ -150,3 +150,24 @@ export async function getUsersLevel4AndAbove(): Promise<User[]> {
     `*[_type == "user" && level >= 4]{ ... } | order(createdAt desc)`,
   );
 }
+
+// 회원 탈퇴 (사용자 삭제)
+export async function deleteUser(email: string): Promise<void> {
+  if (!email) throw new Error('email is required');
+
+  try {
+    const user = await getUserByEmail(email);
+    if (!user) {
+      throw new Error('사용자를 찾을 수 없습니다.');
+    }
+
+    if (!user._id) {
+      throw new Error('사용자 ID가 없습니다.');
+    }
+
+    await client.delete(user._id);
+  } catch (error) {
+    console.error('deleteUser 오류:', error);
+    throw error;
+  }
+}

@@ -15,13 +15,13 @@ export default function WelcomePage() {
   const { data: session } = useSession();
   const email = session?.user?.email;
   const { loading, withLoading } = useLoading();
-  const { user, isLoading: userLoading } = useUser(email);
+  const { user: userData, isLoading: userLoading } = useUser(email);
   const { signup } = useUserManagement();
   const [error, setError] = useState('');
 
   useEffect(() => {
-    setAlreadyRegistered(!!user);
-  }, [user]);
+    setAlreadyRegistered(!!userData);
+  }, [userData]);
 
   const handleSubmit = async (data: UserData) => {
     setError('');
@@ -38,6 +38,22 @@ export default function WelcomePage() {
     }
   };
 
+  // 전화번호와 성별 데이터 가공
+  const processedUser = session?.user
+    ? {
+        ...session.user,
+        phone: session.user.phone
+          ? session.user.phone.replace(/^\+82\s*/, '').replace(/[-\s]/g, '')
+          : undefined,
+        gender:
+          session.user.gender === 'male' || session.user.gender === 'M'
+            ? '남성'
+            : session.user.gender === 'female' || session.user.gender === 'F'
+              ? '여성'
+              : session.user.gender,
+      }
+    : undefined;
+
   return (
     <Container>
       {alreadyRegistered && <AlreadyRegisteredDialog open={!!alreadyRegistered} />}
@@ -45,7 +61,7 @@ export default function WelcomePage() {
         <>
           {loading && <LoadingOverlay />}
           <UserForm
-            user={{ email: session.user.email }}
+            user={processedUser}
             onSubmit={handleSubmit}
             loading={loading}
             submitText="회원가입 완료"

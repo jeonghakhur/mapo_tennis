@@ -15,6 +15,7 @@ import ClubSelector from './ClubSelector';
 import type { ButtonProps } from '@radix-ui/themes';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useSession } from 'next-auth/react';
+import type { UserData } from '@/hooks/useUser';
 
 interface UserFormProps {
   user: {
@@ -28,17 +29,8 @@ interface UserFormProps {
     clubs?: { _ref: string }[];
     isApprovedUser?: boolean;
   } | null;
-  onSubmit: (data: {
-    name: string;
-    email?: string;
-    phone: string;
-    gender: string;
-    birth: string;
-    score: number;
-    address?: string;
-    clubs: string[];
-    isApprovedUser?: boolean;
-  }) => Promise<void>;
+  onSubmit: (data: UserData) => Promise<void>;
+  onWithdraw?: (reason: string) => Promise<void>;
   loading?: boolean;
   disabled?: boolean;
   showLogout?: boolean;
@@ -47,11 +39,13 @@ interface UserFormProps {
   submitButtonProps?: Partial<ButtonProps>;
   isAdmin?: boolean;
   showAgreements?: boolean;
+  showWithdraw?: boolean;
 }
 
 export default function UserForm({
   user,
   onSubmit,
+  onWithdraw,
   loading = false,
   disabled = false,
   showLogout = false,
@@ -60,6 +54,7 @@ export default function UserForm({
   submitButtonProps,
   isAdmin = false,
   showAgreements = false,
+  showWithdraw = false,
 }: UserFormProps) {
   const { data: session } = useSession();
   useEffect(() => {
@@ -88,6 +83,11 @@ export default function UserForm({
   const [agreement3, setAgreement3] = useState(false);
   // const [agreement4, setAgreement4] = useState(false);
 
+  // 탈퇴 관련 상태
+  const [showWithdrawSection, setShowWithdrawSection] = useState(false);
+  const [withdrawReason, setWithdrawReason] = useState('');
+  const [withdrawConfirmOpen, setWithdrawConfirmOpen] = useState(false);
+
   // 약관 dialog 상태
   const [termsDialogOpen, setTermsDialogOpen] = useState(false);
   const [privacyDialogOpen, setPrivacyDialogOpen] = useState(false);
@@ -115,8 +115,7 @@ export default function UserForm({
       if (user.clubs) setSelectedClubIds(user.clubs.map((club) => club._ref));
       if (user.isApprovedUser) setIsApprovedUser(user.isApprovedUser);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
   // 모든 필수 항목이 완료되었는지 확인하는 함수
   const isFormComplete = () => {
@@ -222,6 +221,35 @@ export default function UserForm({
       clubs: selectedClubIds,
       isApprovedUser,
     });
+  };
+
+  const handleWithdraw = async () => {
+    if (!onWithdraw) return;
+
+    if (!withdrawReason.trim()) {
+      setError('탈퇴 사유를 입력해 주세요.');
+      setFocusMoveFn(null);
+      setErrorDialogOpen(true);
+      return;
+    }
+
+    setWithdrawConfirmOpen(true);
+  };
+
+  const confirmWithdraw = async () => {
+    if (!onWithdraw) return;
+
+    try {
+      await onWithdraw(withdrawReason.trim());
+      setWithdrawConfirmOpen(false);
+      setShowWithdrawSection(false);
+      setWithdrawReason('');
+    } catch (error) {
+      console.error('회원 탈퇴 중 오류가 발생했습니다:', error);
+      setError('회원 탈퇴 중 오류가 발생했습니다.');
+      setFocusMoveFn(null);
+      setErrorDialogOpen(true);
+    }
   };
 
   return (
@@ -388,6 +416,27 @@ export default function UserForm({
           </tbody>
         </table>
       </div>
+      <Box className="btn-wrap" mt="4">
+        {showLogout && onLogout && (
+          <Button variant="outline" size="3" onClick={onLogout}>
+            로그아웃
+          </Button>
+        )}
+
+        <Button
+          type="submit"
+          size="3"
+          {...submitButtonProps}
+          disabled={!isFormComplete() || disabled || loading}
+          style={{
+            ...submitButtonProps?.style,
+            opacity: isFormComplete() ? 1 : 0.5,
+            cursor: isFormComplete() ? 'pointer' : 'not-allowed',
+          }}
+        >
+          {submitText}
+        </Button>
+      </Box>
 
       {/* 동의사항 문단 */}
       {showAgreements && (
@@ -487,9 +536,52 @@ export default function UserForm({
         </Box>
       )}
 
+      {/* 회원 탈퇴 섹션 */}
+      {showWithdraw && (
+        <Box mt="6" style={{ borderTop: '2px solid #ef4444', paddingTop: '16px' }}>
+          <Text size="4" weight="bold" mb="4" style={{ display: 'block', color: '#ef4444' }}>
+            회원 탈퇴
+          </Text>
+
+          <Box style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <Flex align="center" gap="2">
+              <Checkbox
+                checked={showWithdrawSection}
+                onCheckedChange={(checked) => setShowWithdrawSection(checked as boolean)}
+                disabled={disabled || loading}
+                id="withdrawCheckbox"
+              />
+              <Text size="3" htmlFor="withdrawCheckbox" as="label" style={{ color: '#ef4444' }}>
+                회원 탈퇴를 원합니다
+              </Text>
+            </Flex>
+
+            {showWithdrawSection && (
+              <Box>
+                <Text size="3" mb="2" style={{ display: 'block', color: '#666' }}>
+                  탈퇴 사유를 입력해 주세요 (선택사항)
+                </Text>
+                <TextField.Root
+                  placeholder="탈퇴 사유를 입력하세요"
+                  value={withdrawReason}
+                  onChange={(e) => setWithdrawReason(e.target.value)}
+                  size="3"
+                  radius="large"
+                  style={{ width: '100%' }}
+                  disabled={disabled || loading}
+                />
+                <Text size="2" color="gray" mt="2" style={{ display: 'block' }}>
+                  * 탈퇴 시 모든 회원 정보가 삭제되며, 복구할 수 없습니다.
+                </Text>
+              </Box>
+            )}
+          </Box>
+        </Box>
+      )}
+
       {/* 약관 Dialog들 */}
       <Dialog.Root open={termsDialogOpen} onOpenChange={setTermsDialogOpen}>
-        <Dialog.Content style={{ maxWidth: 600, maxHeight: 500, overflow: 'auto' }}>
+        <Dialog.Content style={{ maxWidth: 600, maxHeight: '80vh', overflow: 'auto' }}>
           <Dialog.Title>서비스 이용약관</Dialog.Title>
           <Box p="4" style={{ lineHeight: '1.8' }}>
             <Text
@@ -617,7 +709,7 @@ export default function UserForm({
       </Dialog.Root>
 
       <Dialog.Root open={privacyDialogOpen} onOpenChange={setPrivacyDialogOpen}>
-        <Dialog.Content style={{ maxWidth: 600, maxHeight: 500, overflow: 'auto' }}>
+        <Dialog.Content style={{ maxWidth: 600, maxHeight: '80vh', overflow: 'auto' }}>
           <Dialog.Title>개인정보 수집 및 이용 동의</Dialog.Title>
           <Box p="4" style={{ lineHeight: '1.8' }}>
             <Text
@@ -634,9 +726,9 @@ export default function UserForm({
               </Text>
               <Text size="3" style={{ display: 'block', paddingLeft: '16px' }}>
                 <Text weight="bold" style={{ display: 'inline' }}>
-                  필수:
+                  필수 항목:
                 </Text>{' '}
-                이름, 생년월일, 성별, 휴대전화번호, 이메일, 소속(클럽명)
+                이름, 성별, 출생 연도, 전화번호
               </Text>
             </Box>
 
@@ -646,10 +738,13 @@ export default function UserForm({
               </Text>
               <Box style={{ paddingLeft: '16px' }}>
                 <Text size="3" style={{ display: 'block', marginBottom: '4px' }}>
-                  • 테니스 대회 참가 신청 접수 및 운영
+                  • 회원 식별 및 본인 확인을 위한 회원가입 절차 진행
+                </Text>
+                <Text size="3" style={{ display: 'block', marginBottom: '4px' }}>
+                  • 서비스 이용 및 테니스 대회 참가 신청 기능 제공
                 </Text>
                 <Text size="3" style={{ display: 'block' }}>
-                  • 참가자 확인, 경기편성, 공지사항 전달 등
+                  • 참가자 확인, 경기 편성, 공지사항 전달 등 관련 운영
                 </Text>
               </Box>
             </Box>
@@ -659,7 +754,8 @@ export default function UserForm({
                 3. 보유 및 이용 기간
               </Text>
               <Text size="3" style={{ display: 'block', paddingLeft: '16px' }}>
-                수집일로부터 1년간 보관 후 파기 (단, 관련 법령에 따라 일정 기간 보존될 수 있음)
+                회원 탈퇴 시 또는 수집일로부터 1년까지 보관 후 지체 없이 파기 (단, 관련 법령에 따라
+                일정 기간 보존될 수 있음)
               </Text>
             </Box>
 
@@ -668,8 +764,9 @@ export default function UserForm({
                 4. 동의 거부 권리 및 불이익
               </Text>
               <Text size="3" style={{ display: 'block', paddingLeft: '16px' }}>
-                귀하는 개인정보 제공에 동의하지 않을 수 있으나, 이 경우 대회 신청이 불가능할 수
-                있습니다.
+                귀하는 개인정보 제공에 동의하지 않을 수 있습니다.
+                <br />
+                다만, 동의하지 않을 경우 회원가입 및 대회 신청이 제한될 수 있습니다.
               </Text>
             </Box>
 
@@ -700,7 +797,7 @@ export default function UserForm({
       </Dialog.Root>
 
       <Dialog.Root open={thirdPartyDialogOpen} onOpenChange={setThirdPartyDialogOpen}>
-        <Dialog.Content style={{ maxWidth: 600, maxHeight: 500, overflow: 'auto' }}>
+        <Dialog.Content style={{ maxWidth: 600, maxHeight: '80vh', overflow: 'auto' }}>
           <Dialog.Title>제3자 정보 제공 동의</Dialog.Title>
           <Box p="4" style={{ lineHeight: '1.8' }}>
             <Text
@@ -818,25 +915,34 @@ export default function UserForm({
         />
       )}
 
+      {/* 탈퇴 확인 다이얼로그 */}
+      {withdrawConfirmOpen && (
+        <ConfirmDialog
+          title="회원 탈퇴 확인"
+          description="정말로 회원 탈퇴를 진행하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+          confirmText="탈퇴"
+          confirmColor="red"
+          open={withdrawConfirmOpen}
+          onOpenChange={setWithdrawConfirmOpen}
+          onConfirm={confirmWithdraw}
+        />
+      )}
+
       <Box className="btn-wrap" mt="4">
-        {showLogout && onLogout && (
-          <Button variant="outline" size="3" onClick={onLogout}>
-            로그아웃
+        {/* 탈퇴 버튼 */}
+        {showWithdraw && showWithdrawSection && onWithdraw && (
+          <Button
+            type="button"
+            size="3"
+            color="red"
+            variant="outline"
+            onClick={handleWithdraw}
+            disabled={disabled || loading}
+            style={{ marginRight: '8px' }}
+          >
+            회원 탈퇴
           </Button>
         )}
-        <Button
-          type="submit"
-          size="3"
-          {...submitButtonProps}
-          disabled={!isFormComplete() || disabled || loading}
-          style={{
-            ...submitButtonProps?.style,
-            opacity: isFormComplete() ? 1 : 0.5,
-            cursor: isFormComplete() ? 'pointer' : 'not-allowed',
-          }}
-        >
-          {submitText}
-        </Button>
       </Box>
     </form>
   );

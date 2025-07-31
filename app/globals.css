@@ -135,7 +135,12 @@
   }
 }
 
+.navbar-loading {
+  height: 66px;
+}
+
 .navbar {
+  height: 66px;
   position: sticky;
   top: 0;
   background-color: #fff;

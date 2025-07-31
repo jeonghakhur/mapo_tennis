@@ -38,6 +38,34 @@ export default function ProfileForm() {
     }
   };
 
+  const handleWithdraw = async (reason: string) => {
+    try {
+      await withLoading(async () => {
+        // 회원 탈퇴 API 호출
+        const response = await fetch('/api/user/withdraw', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: session?.user?.email,
+            reason,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('회원 탈퇴 중 오류가 발생했습니다.');
+        }
+
+        // 로그아웃 처리
+        await signOut({ callbackUrl: '/' });
+      });
+    } catch (error) {
+      console.error('회원 탈퇴 중 오류가 발생했습니다:', error);
+      throw error;
+    }
+  };
+
   if (swrError)
     return (
       <span style={{ color: 'red', textAlign: 'center' }}>
@@ -57,10 +85,12 @@ export default function ProfileForm() {
           <UserForm
             user={user}
             onSubmit={handleSubmit}
+            onWithdraw={handleWithdraw}
             loading={loading}
             showLogout={true}
             onLogout={() => signOut({ callbackUrl: '/' })}
             submitText="회원 정보 수정"
+            showWithdraw={true}
           />
         </>
       )}

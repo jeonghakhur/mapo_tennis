@@ -7,7 +7,7 @@ import { Box, Text, Flex, Badge, Button } from '@radix-ui/themes';
 import type { Post } from '@/model/post';
 import type { Tournament } from '@/model/tournament';
 import type { Comment } from '@/model/comment';
-import { Calendar, MapPin, NotebookPen } from 'lucide-react';
+import { Calendar, CalendarCheck, MapPin, NotebookPen } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import SkeletonCard from '@/components/SkeletonCard';
 import { hasPermissionLevel } from '@/lib/authUtils';
@@ -181,24 +181,23 @@ function HomePageContent() {
                     <div className="flex items-center gap-2">
                       <Calendar size={16} />
                       <Text>
-                        {formatDate(tournament.startDate)} ~ {formatDate(tournament.endDate)}
+                        대회기간: {formatDate(tournament.startDate)} ~{' '}
+                        {formatDate(tournament.endDate)}
                       </Text>
                     </div>
-                    <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <CalendarCheck size={16} />
                       {tournament.registrationStartDate && (
-                        <Text color="gray">
-                          등록시작: {formatDate(tournament.registrationStartDate)}
-                        </Text>
-                      )}
-                      {tournament.registrationDeadline && (
-                        <Text color="gray">
-                          등록마감: {formatDate(tournament.registrationDeadline)}
+                        <Text>
+                          참가신청: {formatDate(tournament.registrationStartDate)} ~{' '}
+                          {tournament.registrationDeadline &&
+                            formatDate(tournament.registrationDeadline)}
                         </Text>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
                       <MapPin size={16} />
-                      <Text>{tournament.location}</Text>
+                      장소: <Text>{tournament.location}</Text>
                     </div>
                   </div>
                   <div className="btn-wrap">

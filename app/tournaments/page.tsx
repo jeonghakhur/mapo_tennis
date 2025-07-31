@@ -1,7 +1,7 @@
 'use client';
 import { Box, Text, Button, Badge, Card } from '@radix-ui/themes';
 import Container from '@/components/Container';
-import { Calendar, MapPin, NotebookPen } from 'lucide-react';
+import { Calendar, CalendarCheck, MapPin, NotebookPen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTournaments } from '@/hooks/useTournaments';
 import SkeletonCard from '@/components/SkeletonCard';
@@ -85,24 +85,23 @@ export default function TournamentsPage() {
                         <div className="flex items-center gap-2">
                           <Calendar size={16} />
                           <Text>
-                            {formatDate(tournament.startDate)} ~ {formatDate(tournament.endDate)}
+                            대회기간: {formatDate(tournament.startDate)} ~{' '}
+                            {formatDate(tournament.endDate)}
                           </Text>
                         </div>
-                        <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <CalendarCheck size={16} />
                           {tournament.registrationStartDate && (
-                            <Text color="gray">
-                              등록시작: {formatDate(tournament.registrationStartDate)}
-                            </Text>
-                          )}
-                          {tournament.registrationDeadline && (
-                            <Text color="gray">
-                              등록마감: {formatDate(tournament.registrationDeadline)}
+                            <Text>
+                              참가신청: {formatDate(tournament.registrationStartDate)} ~{' '}
+                              {tournament.registrationDeadline &&
+                                formatDate(tournament.registrationDeadline)}
                             </Text>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
                           <MapPin size={16} />
-                          <Text>{tournament.location}</Text>
+                          장소: <Text>{tournament.location}</Text>
                         </div>
                       </div>
 

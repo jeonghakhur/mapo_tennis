@@ -27,7 +27,7 @@ import {
   X,
 } from 'lucide-react';
 import { isAdmin, hasPermissionLevel } from '@/lib/authUtils';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Session } from 'next-auth';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import type { User as UserType } from '@/model/user';
@@ -269,18 +269,9 @@ function AuthMenuItems({
   );
 }
 
-// 메인 Navbar 컴포넌트
-export default function Navbar() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const pathname = usePathname();
+// 검색 파라미터를 처리하는 컴포넌트
+function SearchParamsHandler() {
   const searchParams = useSearchParams();
-  const { user } = useUser(session?.user?.email);
-  const { bigFont, toggleBigFont, isInitialized } = useBigFontMode();
-
-  // 검색 관련 상태
-  const [showSearch, setShowSearch] = useState(false);
-  const [searchKeyword, setSearchKeyword] = useState('');
 
   // URL에서 검색어 가져오기
   const currentSearchKeyword = (() => {
@@ -291,6 +282,21 @@ export default function Navbar() {
       return '';
     }
   })();
+
+  return <NavbarContent currentSearchKeyword={currentSearchKeyword} />;
+}
+
+// 메인 Navbar 컴포넌트
+function NavbarContent({ currentSearchKeyword }: { currentSearchKeyword: string }) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const pathname = usePathname();
+  const { user } = useUser(session?.user?.email);
+  const { bigFont, toggleBigFont, isInitialized } = useBigFontMode();
+
+  // 검색 관련 상태
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState('');
 
   // 알림이 필요 없는 페이지 목록
   const notificationExcludedPaths = ['/simple', '/studio', '/tiptap'];
@@ -495,5 +501,22 @@ export default function Navbar() {
         </Flex>
       </Flex>
     </nav>
+  );
+}
+
+// 메인 Navbar 컴포넌트 (Suspense로 감싸기)
+export default function Navbar() {
+  return (
+    <Suspense
+      fallback={
+        <nav className="navbar">
+          <Flex align="center" px="4" py="3" justify="center" className="navbar-loading">
+            {/* 로딩 상태 */}
+          </Flex>
+        </nav>
+      }
+    >
+      <SearchParamsHandler />
+    </Suspense>
   );
 }

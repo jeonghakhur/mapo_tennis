@@ -6,16 +6,11 @@ export function TournamentParticipationForm({
   availableDivisions,
   division,
   setDivision,
-  contact,
-  setContact,
-  email,
-  setEmail,
   memo,
   setMemo,
   isFeePaid,
   setIsFeePaid,
   divisionRef,
-  contactRef,
 }: TournamentParticipationFormProps) {
   return (
     <div className="table-form">
@@ -40,30 +35,7 @@ export function TournamentParticipationForm({
               </div>
             </td>
           </tr>
-          <tr>
-            <th>연락처 *</th>
-            <td>
-              <TextField.Root
-                size="3"
-                value={contact}
-                onChange={(e) => setContact(e.target.value)}
-                placeholder="연락처를 입력하세요"
-                ref={contactRef}
-              />
-            </td>
-          </tr>
-          <tr>
-            <th>이메일</th>
-            <td>
-              <TextField.Root
-                size="3"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="이메일을 입력하세요"
-              />
-            </td>
-          </tr>
+
           <tr>
             <th>메모</th>
             <td>

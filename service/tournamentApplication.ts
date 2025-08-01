@@ -17,8 +17,7 @@ export async function createTournamentApplication(
     division: data.division,
     tournamentType: data.tournamentType,
     teamMembers: data.teamMembers,
-    contact: data.contact,
-    email: data.email,
+
     status: 'pending',
     memo: data.memo,
     isFeePaid: data.isFeePaid,
@@ -139,8 +138,7 @@ export async function updateTournamentApplication(
   if (data.division) updateData.division = data.division;
   if (data.tournamentType) updateData.tournamentType = data.tournamentType;
   if (data.teamMembers) updateData.teamMembers = data.teamMembers;
-  if (data.contact) updateData.contact = data.contact;
-  if (data.email !== undefined) updateData.email = data.email;
+
   if (data.memo !== undefined) updateData.memo = data.memo;
   if (data.isFeePaid !== undefined) updateData.isFeePaid = data.isFeePaid;
 

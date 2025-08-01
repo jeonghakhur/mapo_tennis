@@ -53,8 +53,7 @@ export default function TournamentApplicationForm({
 
   // 폼 상태
   const [division, setDivision] = useState<string>('');
-  const [contact, setContact] = useState<string>('');
-  const [email, setEmail] = useState<string>('');
+
   const [memo, setMemo] = useState<string>('');
   const [isFeePaid, setIsFeePaid] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,7 +65,6 @@ export default function TournamentApplicationForm({
 
   // 필드 refs
   const divisionRef = useRef<HTMLDivElement>(null);
-  const contactRef = useRef<HTMLInputElement>(null);
 
   // 초기화 상태 추적
   const isInitialized = useRef(false);
@@ -107,8 +105,7 @@ export default function TournamentApplicationForm({
   useEffect(() => {
     if (isEdit && initialData) {
       setDivision(initialData.division);
-      setContact(initialData.contact);
-      setEmail(initialData.email || '');
+
       setMemo(initialData.memo || '');
       setIsFeePaid(initialData.isFeePaid);
     }
@@ -238,8 +235,8 @@ export default function TournamentApplicationForm({
 
   // 통합된 검증 함수
   const validateForm = useMemo(
-    () => createValidationFunction(activeParticipants, isIndividual, division, contact),
-    [activeParticipants, isIndividual, division, contact],
+    () => createValidationFunction(activeParticipants, isIndividual, division),
+    [activeParticipants, isIndividual, division],
   );
 
   // 대회ID+부서별 전체 신청 목록
@@ -281,9 +278,7 @@ export default function TournamentApplicationForm({
             case 'division':
               divisionRef.current?.focus();
               break;
-            case 'contact':
-              contactRef.current?.focus();
-              break;
+
             default:
               const match = validation.field.match(/player(\d+)(\w+)/);
               if (match) {
@@ -344,8 +339,6 @@ export default function TournamentApplicationForm({
             );
           });
 
-          formData.append('contact', contact);
-          if (email) formData.append('email', email);
           if (memo) formData.append('memo', memo);
           formData.append('isFeePaid', isFeePaid.toString());
 
@@ -397,8 +390,7 @@ export default function TournamentApplicationForm({
       clubs,
       tournament,
       division,
-      contact,
-      email,
+
       memo,
       isFeePaid,
       isEdit,
@@ -448,16 +440,11 @@ export default function TournamentApplicationForm({
           availableDivisions={availableDivisions}
           division={division}
           setDivision={setDivision}
-          contact={contact}
-          setContact={setContact}
-          email={email}
-          setEmail={setEmail}
           memo={memo}
           setMemo={setMemo}
           isFeePaid={isFeePaid}
           setIsFeePaid={setIsFeePaid}
           divisionRef={divisionRef}
-          contactRef={contactRef}
         />
 
         <Flex gap="3" justify="end" className="btn-wrap">

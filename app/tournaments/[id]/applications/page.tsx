@@ -183,8 +183,7 @@ export default function TournamentApplicationsPage() {
                       <Text color="gray">
                         신청자: {application.applicant?.name || '알 수 없음'}
                       </Text>
-                      <Text color="gray">연락처: {application.contact}</Text>
-                      {application.email && <Text color="gray">이메일: {application.email}</Text>}
+
                       <Text color="gray">참가자: {application.teamMembers.length}명</Text>
                       {application.memo && <Text color="gray">메모: {application.memo}</Text>}
                       <Text color="gray">

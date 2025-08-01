@@ -350,25 +350,6 @@ export default function TournamentApplicationsAdminPage() {
 
                     {/* 연락처 정보와 참가비 납부 여부를 좌우로 배치 */}
                     <div className="flex gap-4 flex-col ">
-                      {/* 연락처 정보 */}
-                      <div className="space-y-2">
-                        <Text size="3" weight="bold">
-                          연락처 정보
-                        </Text>
-                        <div className="flex items-center justify-between mt-2">
-                          <Text weight="bold">연락처</Text>
-                          <Text>{application.contact}</Text>
-                        </div>
-                        {application.email && (
-                          <div>
-                            <Text size="2" weight="bold" color="gray">
-                              이메일
-                            </Text>
-                            <Text size="3">{application.email}</Text>
-                          </div>
-                        )}
-                      </div>
-
                       {/* 참가비 납부 여부 */}
                       <div className="flex items-center justify-between">
                         <Text size="3" weight="bold">

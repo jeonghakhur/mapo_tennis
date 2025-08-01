@@ -4,7 +4,6 @@ export function createValidationFunction(
   participants: ParticipantHookReturn[],
   isIndividual: boolean,
   division: string,
-  contact: string,
 ) {
   return (): { error: string; field: string } | null => {
     // 참가자 정보 검증
@@ -42,7 +41,6 @@ export function createValidationFunction(
     }
 
     if (!division) return { error: '참가부서를 선택해주세요.', field: 'division' };
-    if (!contact) return { error: '연락처를 입력해주세요.', field: 'contact' };
     return null;
   };
 }

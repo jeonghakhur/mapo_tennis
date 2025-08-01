@@ -19,8 +19,7 @@ export interface TournamentApplication {
   }>;
 
   // 신청 정보
-  contact: string; // 연락처
-  email?: string; // 이메일
+
   status: 'pending' | 'approved' | 'rejected' | 'cancelled'; // 신청 상태
   memo?: string; // 메모
   isFeePaid: boolean; // 참가비 납부 여부
@@ -64,8 +63,7 @@ export interface TournamentApplicationInput {
     isRegisteredMember: boolean;
     isInfoValid?: boolean;
   }>;
-  contact: string;
-  email?: string;
+
   memo?: string;
   isFeePaid: boolean;
 }

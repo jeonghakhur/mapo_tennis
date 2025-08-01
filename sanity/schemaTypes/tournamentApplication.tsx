@@ -95,17 +95,7 @@ export default defineType({
         },
       ],
     }),
-    defineField({
-      name: 'contact',
-      type: 'string',
-      title: '연락처',
-      validation: (Rule) => Rule.required(),
-    }),
-    defineField({
-      name: 'email',
-      type: 'string',
-      title: '이메일',
-    }),
+
     defineField({
       name: 'status',
       type: 'string',

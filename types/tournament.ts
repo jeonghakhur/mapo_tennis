@@ -41,16 +41,11 @@ export interface TournamentParticipationFormProps {
   availableDivisions: Array<{ value: string; label: string } | undefined>;
   division: string;
   setDivision: (value: string) => void;
-  contact: string;
-  setContact: (value: string) => void;
-  email: string;
-  setEmail: (value: string) => void;
   memo: string;
   setMemo: (value: string) => void;
   isFeePaid: boolean;
   setIsFeePaid: (value: boolean) => void;
   divisionRef: React.RefObject<HTMLDivElement | null>;
-  contactRef: React.RefObject<HTMLInputElement | null>;
 }
 
 // useParticipant 훅의 반환 타입

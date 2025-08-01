@@ -272,16 +272,7 @@ export default function TournamentApplicationsPage() {
                             <Text weight="bold" color="gray">
                               연락처
                             </Text>
-                            <Text size="3">{application.contact}</Text>
                           </div>
-                          {application.email && (
-                            <div>
-                              <Text weight="bold" color="gray">
-                                이메일
-                              </Text>
-                              <Text size="3">{application.email}</Text>
-                            </div>
-                          )}
                         </div>
                       </div>
 

@@ -41,12 +41,10 @@ export async function POST(req: NextRequest) {
     const tournamentId = formData.get('tournamentId') as string;
     const division = formData.get('division') as string;
     const tournamentType = formData.get('tournamentType') as 'individual' | 'team';
-    const contact = formData.get('contact') as string;
-    const email = formData.get('email') as string;
     const memo = formData.get('memo') as string;
     const isFeePaid = formData.get('isFeePaid') === 'true';
 
-    if (!tournamentId || !division || !tournamentType || !contact) {
+    if (!tournamentId || !division || !tournamentType) {
       return NextResponse.json({ error: '필수 정보 누락' }, { status: 400 });
     }
 
@@ -115,8 +113,7 @@ export async function POST(req: NextRequest) {
       division,
       tournamentType,
       teamMembers,
-      contact,
-      email: email || undefined,
+
       memo: memo || undefined,
       isFeePaid,
     };

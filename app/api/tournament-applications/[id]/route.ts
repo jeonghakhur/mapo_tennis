@@ -70,12 +70,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     // 기본 정보 파싱
     const division = formData.get('division') as string;
     const tournamentType = formData.get('tournamentType') as 'individual' | 'team';
-    const contact = formData.get('contact') as string;
-    const email = formData.get('email') as string;
     const memo = formData.get('memo') as string;
     const isFeePaid = formData.get('isFeePaid') === 'true';
 
-    if (!division || !tournamentType || !contact) {
+    if (!division || !tournamentType) {
       return NextResponse.json({ error: '필수 정보 누락' }, { status: 400 });
     }
 
@@ -122,8 +120,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       division,
       tournamentType,
       teamMembers,
-      contact,
-      email: email || undefined,
+
       memo: memo || undefined,
       isFeePaid,
     };

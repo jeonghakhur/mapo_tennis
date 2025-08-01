@@ -1,7 +1,7 @@
 'use client';
 import { Box, Text, Button, Flex, Badge } from '@radix-ui/themes';
 import Container from '@/components/Container';
-import { Edit, Trash2, Users, NotebookPen } from 'lucide-react';
+import { NotebookPen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { use } from 'react';
 import { useTournament, useDeleteTournament } from '@/hooks/useTournaments';
@@ -32,6 +32,7 @@ interface TournamentDetailPageProps {
 export default function TournamentDetailPage({ params }: TournamentDetailPageProps) {
   const { id } = use(params);
   const router = useRouter();
+
   const { tournament, isLoading, error } = useTournament(id);
   const { data: session } = useSession();
   const { user } = useUser(session?.user?.email);
@@ -375,9 +376,8 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
               </div>
             )}
 
-            {/* 액션 버튼 */}
-            <Flex gap="3" justify="end" pt="6" className="border-t">
-              {admin && (
+            {admin && (
+              <div className="btn-wrap border-t pt-4">
                 <Button
                   variant={tournament.isDraft ? 'solid' : 'soft'}
                   color={tournament.isDraft ? 'green' : 'orange'}
@@ -436,43 +436,39 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
                 >
                   {isUpdatingStatus ? '처리 중...' : tournament.isDraft ? '게시' : '임시저장'}
                 </Button>
-              )}
-              {admin && (
+                <Button
+                  variant="soft"
+                  onClick={() => router.push(`/tournaments/${id}/edit`)}
+                  size="3"
+                  disabled={isDeleting}
+                >
+                  수정
+                </Button>
+                <ConfirmDialog
+                  title="대회 삭제"
+                  description={`"${tournament.title}" 대회를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`}
+                  confirmText="삭제"
+                  cancelText="취소"
+                  confirmColor="red"
+                  onConfirm={handleDelete}
+                  disabled={isDeleting}
+                  trigger={
+                    <Button variant="soft" color="red" size="3" disabled={isDeleting}>
+                      {isDeleting ? '삭제 중...' : '삭제'}
+                    </Button>
+                  }
+                />
+
                 <Button
                   variant="soft"
                   color="green"
                   onClick={() => router.push(`/tournaments/${id}/applications`)}
                   size="3"
                 >
-                  <Users size={16} />
-                  참가신청 관리
+                  참가목록
                 </Button>
-              )}
-              <Button
-                variant="soft"
-                onClick={() => router.push(`/tournaments/${id}/edit`)}
-                size="3"
-                disabled={isDeleting}
-              >
-                <Edit size={16} />
-                수정
-              </Button>
-              <ConfirmDialog
-                title="대회 삭제"
-                description={`"${tournament.title}" 대회를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`}
-                confirmText="삭제"
-                cancelText="취소"
-                confirmColor="red"
-                onConfirm={handleDelete}
-                disabled={isDeleting}
-                trigger={
-                  <Button variant="soft" color="red" size="3" disabled={isDeleting}>
-                    <Trash2 size={16} />
-                    {isDeleting ? '삭제 중...' : '삭제'}
-                  </Button>
-                }
-              />
-            </Flex>
+              </div>
+            )}
           </div>
 
           {/* 플로팅 참가 신청 버튼 */}

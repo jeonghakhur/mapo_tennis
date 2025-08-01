@@ -44,7 +44,7 @@ export async function checkPermission(minLevel: number = 1): Promise<PermissionR
   if (userLevel < minLevel) {
     return {
       hasPermission: false,
-      error: `권한이 없습니다. 관리자에게 문의해주세요.`,
+      error: `권한이 없습니다. (필요 권한: 레벨 ${minLevel}, 현재 레벨: ${userLevel})`,
       status: 403,
     };
   }

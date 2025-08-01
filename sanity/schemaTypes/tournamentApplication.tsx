@@ -88,7 +88,6 @@ export default defineType({
         },
       ],
     }),
-
     defineField({
       name: 'status',
       type: 'string',

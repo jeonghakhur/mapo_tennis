@@ -14,7 +14,7 @@ import {
 import ClubSelector from './ClubSelector';
 import type { ButtonProps } from '@radix-ui/themes';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import { useSession } from 'next-auth/react';
+
 import type { UserData } from '@/hooks/useUser';
 
 interface UserFormProps {
@@ -56,12 +56,8 @@ export default function UserForm({
   showAgreements = false,
   showWithdraw = false,
 }: UserFormProps) {
-  const { data: session } = useSession();
-  useEffect(() => {
-    if (session) {
-      console.log(session);
-    }
-  }, [session]);
+  // 세션 데이터는 UserForm에서 직접 사용하지 않음
+  // user prop을 통해 전달받은 데이터만 사용
 
   const [name, setName] = useState('');
   const [nameForClubSelector, setNameForClubSelector] = useState('');
@@ -102,6 +98,7 @@ export default function UserForm({
   // 최초 마운트 시에만 상태 초기화
   useEffect(() => {
     if (user) {
+      console.log(user);
       if (user.name) {
         setName(user.name);
         setNameForClubSelector(user.name);
@@ -372,7 +369,10 @@ export default function UserForm({
                 <ClubSelector
                   userName={nameForClubSelector}
                   selectedClubIds={selectedClubIds}
-                  onClubsChange={setSelectedClubIds}
+                  onClubsChange={(v) => {
+                    if (!v) return;
+                    setSelectedClubIds(v);
+                  }}
                   disabled={disabled || loading}
                   isNameEntered={!!nameForClubSelector}
                 />
@@ -559,7 +559,7 @@ export default function UserForm({
             {showWithdrawSection && (
               <Box>
                 <Text size="3" mb="2" style={{ display: 'block', color: '#666' }}>
-                  탈퇴 사유를 입력해 주세요 (선택사항)
+                  탈퇴 사유를 입력해 주세요 (필수)
                 </Text>
                 <TextField.Root
                   placeholder="탈퇴 사유를 입력하세요"

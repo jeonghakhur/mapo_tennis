@@ -185,6 +185,7 @@ export default function ClubSelector({
       {selectedClubIds.length > 0 && (
         <Box mt="4" pl="1">
           {selectedClubIds.map((clubId) => {
+            console.log(clubId);
             const club = allClubs.find((c) => c._id === clubId);
             return (
               <Flex key={clubId} align="center" gap="3" mb="2">

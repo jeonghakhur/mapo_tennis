@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
       await createNotification({
         type: 'CREATE',
         entityType: 'USER',
-        entityId: 'system', // 회원가입 알림은 시스템 알림으로 처리
+        entityId: result._id, // 실제 사용자 ID 사용
         title,
         message: detailedMessage,
         link: createNotificationLink('USER', result._id),

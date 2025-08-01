@@ -95,11 +95,6 @@ export async function getUserById(id: string): Promise<User | null> {
   return await client.fetch<User>(
     `*[_type == "user" && _id == $id][0]{
       ...,
-      clubs[]->{
-        _id,
-        name,
-        location
-      }
     }`,
     { id },
   );

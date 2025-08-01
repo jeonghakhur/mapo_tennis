@@ -31,6 +31,7 @@ export default defineType({
           { title: '사용자', value: 'USER' },
           { title: '지출내역', value: 'EXPENSE' },
           { title: '토너먼트', value: 'TOURNAMENT' },
+          { title: '문의', value: 'QUESTION' },
         ],
       },
       validation: (Rule) => Rule.required(),

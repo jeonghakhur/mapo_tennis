@@ -27,7 +27,7 @@ export function createNotificationLink(
       return `/tournament-applications/${entityId}/edit`;
 
     case 'USER':
-      return `/profile`; // 사용자 정보는 프로필 페이지git로
+      return `/admin/users/${entityId}`; // 사용자 정보는 관리자 페이지로
 
     case 'EXPENSE':
       return `/expenses/${entityId}`;

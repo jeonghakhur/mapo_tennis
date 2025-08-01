@@ -136,11 +136,13 @@
 }
 
 .navbar-loading {
-  height: 66px;
+  height: 62px;
 }
 
 .navbar {
-  height: 66px;
+  height: 62px;
+  padding-top: 10px;
+  padding-bottom: 10px;
   position: sticky;
   top: 0;
   background-color: #fff;

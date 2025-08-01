@@ -7,7 +7,7 @@ import { Box, Text, Flex, Badge, Button } from '@radix-ui/themes';
 import type { Post } from '@/model/post';
 import type { Tournament } from '@/model/tournament';
 import type { Comment } from '@/model/comment';
-import { Calendar, CalendarCheck, MapPin, NotebookPen } from 'lucide-react';
+import { NotebookPen } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import SkeletonCard from '@/components/SkeletonCard';
 import { hasPermissionLevel } from '@/lib/authUtils';
@@ -19,6 +19,7 @@ import Zoom from 'yet-another-react-lightbox/plugins/zoom';
 import PostLikeButton from '@/components/PostLikeButton';
 import CommentButton from '@/components/CommentButton';
 import CommentDialog from '@/components/CommentDialog';
+import TournamentCard from '@/components/TournamentCard';
 import 'yet-another-react-lightbox/styles.css';
 
 function HomePageContent() {
@@ -56,39 +57,14 @@ function HomePageContent() {
 
   // URL 파라미터에서 검색어 가져오기
   useEffect(() => {
-    const searchParam = searchParams.get('search');
-    if (searchParam) {
-      setSearchKeyword(searchParam);
+    try {
+      const searchParam = searchParams.get('search');
+      setSearchKeyword(searchParam || '');
+    } catch (error) {
+      console.error('검색 파라미터 처리 중 오류:', error);
+      setSearchKeyword('');
     }
   }, [searchParams]);
-
-  const getStatusColor = (status: string) => {
-    const colorMap: Record<string, 'red' | 'blue' | 'green' | 'gray'> = {
-      upcoming: 'blue',
-      ongoing: 'green',
-      completed: 'gray',
-      cancelled: 'red',
-    };
-    return colorMap[status] || 'gray';
-  };
-
-  const getStatusLabel = (status: string) => {
-    const labelMap: Record<string, string> = {
-      upcoming: '예정',
-      ongoing: '진행중',
-      completed: '완료',
-      cancelled: '취소',
-    };
-    return labelMap[status] || status;
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
 
   // 상대적 시간 포맷 함수
   function formatRelativeTime(dateString: string) {
@@ -155,74 +131,40 @@ function HomePageContent() {
       return true;
     }) || [];
 
+  // 필터링된 대회
+  const filteredTournaments = tournaments.filter((tournament) => {
+    if (searchKeyword.trim()) {
+      const keyword = searchKeyword.toLowerCase();
+      const titleMatch = tournament.title.toLowerCase().includes(keyword);
+      const locationMatch = tournament.location.toLowerCase().includes(keyword);
+      return titleMatch || locationMatch;
+    }
+    return true;
+  });
+
   return (
     <Container>
       {loading ? (
         <SkeletonCard />
       ) : (
         <>
-          {/* 대회 섹션 */}
-          {tournaments.length > 0 && (
+          {/* 대회 섹션 - 검색어가 없을 때만 예정 대회 표시 */}
+          {!searchKeyword && filteredTournaments.length > 0 && (
             <div className="space-y-4" style={{ marginBottom: 32 }}>
-              {tournaments.map((tournament) => (
-                <Flex direction="column" gap="4" key={tournament._id}>
-                  <div className="flex items-center gap-3">
-                    <Badge color={getStatusColor(tournament.status)} size="2">
-                      {getStatusLabel(tournament.status)}
-                    </Badge>
-                    <Text size="5" weight="bold" className="block mb-2">
-                      {tournament.title}
-                    </Text>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Calendar size={16} />
-                      <Text>
-                        대회기간: {formatDate(tournament.startDate)} ~{' '}
-                        {formatDate(tournament.endDate)}
-                      </Text>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CalendarCheck size={16} />
-                      {tournament.registrationStartDate && (
-                        <Text>
-                          참가신청: {formatDate(tournament.registrationStartDate)} ~{' '}
-                          {tournament.registrationDeadline &&
-                            formatDate(tournament.registrationDeadline)}
-                        </Text>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin size={16} />
-                      장소: <Text>{tournament.location}</Text>
-                    </div>
-                  </div>
-                  <div className="btn-wrap">
-                    {hasPermissionLevel(user, 1) && (
-                      <Button
-                        variant="solid"
-                        color="blue"
-                        size="3"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(`/tournaments/${tournament._id}/apply`);
-                        }}
-                      >
-                        참가 신청
-                      </Button>
-                    )}
-                    <Button
-                      variant="soft"
-                      size="3"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(`/tournaments/${tournament._id}`);
-                      }}
-                    >
-                      상세보기
-                    </Button>
-                  </div>
-                </Flex>
+              {filteredTournaments.map((tournament) => (
+                <TournamentCard key={tournament._id} tournament={tournament} user={user} />
+              ))}
+            </div>
+          )}
+
+          {/* 검색 결과에 포함된 대회 표시 */}
+          {searchKeyword && filteredTournaments.length > 0 && (
+            <div className="space-y-4" style={{ marginBottom: 32 }}>
+              <Text size="4" weight="bold" className="mb-4">
+                대회 검색 결과
+              </Text>
+              {filteredTournaments.map((tournament) => (
+                <TournamentCard key={tournament._id} tournament={tournament} user={user} />
               ))}
             </div>
           )}
@@ -230,12 +172,23 @@ function HomePageContent() {
           {/* 포스트 섹션 */}
           <div className="space-y-4">
             {/* 포스트 목록 */}
+            {searchKeyword && filteredPosts.length > 0 && (
+              <Text size="4" weight="bold" className="mb-4">
+                포스트 검색 결과
+              </Text>
+            )}
             {postsLoading ? (
               <SkeletonCard lines={6} />
-            ) : filteredPosts.length === 0 ? (
+            ) : searchKeyword && filteredPosts.length === 0 && filteredTournaments.length === 0 ? (
               <Box className="text-center py-8">
                 <Text size="4" color="gray">
-                  {searchKeyword ? '검색 결과가 없습니다.' : '포스트가 없습니다.'}
+                  검색 결과가 없습니다.
+                </Text>
+              </Box>
+            ) : !searchKeyword && filteredPosts.length === 0 ? (
+              <Box className="text-center py-8">
+                <Text size="4" color="gray">
+                  포스트가 없습니다.
                 </Text>
               </Box>
             ) : (

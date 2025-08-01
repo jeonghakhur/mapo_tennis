@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Flex, Button, Badge, DropdownMenu, TextField } from '@radix-ui/themes';
 import { useSession, signOut } from 'next-auth/react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useUser } from '@/hooks/useUser';
 import {
@@ -274,12 +274,23 @@ export default function Navbar() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user } = useUser(session?.user?.email);
   const { bigFont, toggleBigFont, isInitialized } = useBigFontMode();
 
   // 검색 관련 상태
   const [showSearch, setShowSearch] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
+
+  // URL에서 검색어 가져오기
+  const currentSearchKeyword = (() => {
+    try {
+      return searchParams.get('search') || '';
+    } catch (error) {
+      console.error('검색 파라미터 처리 중 오류:', error);
+      return '';
+    }
+  })();
 
   // 알림이 필요 없는 페이지 목록
   const notificationExcludedPaths = ['/simple', '/studio', '/tiptap'];
@@ -293,6 +304,7 @@ export default function Navbar() {
 
   // 뒤로가기 가능한 페이지인지 확인
   const canGoBack = pathname !== '/' && !pathname.startsWith('/auth');
+  const homePage = pathname === '/';
 
   const handleGoBack = () => {
     if (canGoBack) {
@@ -336,7 +348,7 @@ export default function Navbar() {
 
   return (
     <nav className="navbar">
-      <Flex align="center" px="4" py="3" justify="between">
+      <Flex align="center" px="4" justify="between" className="h-[42px]">
         {/* 좌측: 뒤로가기 버튼 또는 홈 링크 */}
         <Flex align="center" gap="3">
           {canGoBack ? (
@@ -345,16 +357,16 @@ export default function Navbar() {
             </Button>
           ) : (
             <Image
-              src="/icon-192x192.png"
+              src="/logo_home.png"
               alt="마포구테니스협회"
-              width={42}
+              width={70}
               height={42}
-              className="rounded-full"
+              className="rounded-lg"
             />
           )}
         </Flex>
 
-        {/* 중앙: 페이지 제목 또는 검색 필드 */}
+        {/* 중앙: 페이지 제목, 검색어 표시 또는 검색 필드 */}
         {canGoBack ? (
           <Flex align="center" className="text-xl font-bold absolute left-1/2 -translate-x-1/2">
             {getPageTitle(pathname)}
@@ -363,24 +375,48 @@ export default function Navbar() {
           <form onSubmit={handleSearch} className="flex-1 max-w-md mx-4">
             <TextField.Root
               size="3"
-              placeholder="포스트 검색..."
+              placeholder="대회 및 포스트 검색..."
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
               autoFocus
             />
           </form>
+        ) : currentSearchKeyword && pathname === '/' ? (
+          <Flex align="center" className="text-lg font-bold absolute left-1/2 -translate-x-1/2">
+            검색어: &ldquo;{currentSearchKeyword}&rdquo;
+          </Flex>
         ) : null}
 
         {/* 우측: 검색, 홈, 알림 및 햄버거 메뉴 */}
         <Flex align="center" gap="3">
           {!showSearch && (
             <>
-              <Link href="/" className="navbar-icon">
-                <House size={24} className="text-gray-800" />
-              </Link>
+              {!homePage && (
+                <Link href="/" className="navbar-icon">
+                  <House size={24} className="text-gray-800" />
+                </Link>
+              )}
+
+              {/* 검색어 취소 버튼 - 홈페이지에서 검색어가 있을 때만 */}
+              {pathname === '/' && currentSearchKeyword && (
+                <Button
+                  variant="ghost"
+                  size="2"
+                  onClick={() => {
+                    router.push('/');
+                    // 검색어 초기화를 위해 URL 파라미터 제거
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('search');
+                    router.replace(url.pathname);
+                  }}
+                  style={{ padding: '4px 8px' }}
+                >
+                  <X size={24} className="text-gray-800" />
+                </Button>
+              )}
 
               {/* 검색 버튼 - 홈페이지에서만 표시 */}
-              {pathname === '/' && (
+              {pathname === '/' && !currentSearchKeyword && (
                 <Button
                   variant="ghost"
                   size="2"

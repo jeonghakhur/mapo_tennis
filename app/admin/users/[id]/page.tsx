@@ -40,7 +40,7 @@ export default function AdminUserEditPage() {
           // clubs가 있으면 첫 번째 클럽 기준으로 clubMember의 approvedByAdmin을 불러옴
           if (userData && userData.clubs && userData.clubs.length > 0) {
             const club = userData.clubs[0] as ClubRef;
-            const clubId = club._ref || club._id;
+            const clubId = club._id;
             if (clubId) {
               // User의 isApprovedUser를 사용
               setIsApprovedUser(userData.isApprovedUser ?? false);

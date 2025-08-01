@@ -126,7 +126,7 @@ export default function AdminQuestionDetailPage() {
         <Text color="gray" mb="1" as="div" weight="bold">
           작성자 정보
         </Text>
-        <Grid columns="2" gap="3">
+        <Grid columns="1" gap="3">
           <Text color="gray">이름: {author.name}</Text>
           <Text color="gray">이메일: {author.email}</Text>
           <Text color="gray">성별: {author.gender}</Text>

@@ -58,12 +58,63 @@ function getRequiredLevel(pathname: string): number | null {
     return 5; // 모든 admin 경로는 레벨 5 필요
   }
 
+  // 레벨 5 (관리자) 필요 경로
   if (pathname.match(/\/tournaments\/[^\/]+\/edit$/)) {
-    return 5; // 대회 수정은 레벨 5 필요
+    return 5; // 대회 수정
   }
 
+  // 레벨 4 (경기관리자) 필요 경로
+  if (pathname.startsWith('/posts/') && pathname.includes('/edit')) {
+    return 4; // 포스트 수정
+  }
+  if (pathname.startsWith('/posts/create')) {
+    return 4; // 포스트 생성
+  }
+  if (pathname.startsWith('/club/') && pathname.includes('/edit')) {
+    return 4; // 클럽 수정
+  }
+  if (pathname.startsWith('/club/create')) {
+    return 4; // 클럽 생성
+  }
+  if (pathname.startsWith('/club-member/') && pathname.includes('/edit')) {
+    return 4; // 클럽멤버 수정
+  }
+  if (pathname.startsWith('/club-member/create')) {
+    return 4; // 클럽멤버 생성
+  }
+  if (pathname.startsWith('/expenses/') && pathname.includes('/edit')) {
+    return 4; // 지출내역 수정
+  }
+  if (pathname.startsWith('/expenses/create')) {
+    return 4; // 지출내역 생성
+  }
+  if (pathname.startsWith('/awards/') && pathname.includes('/edit')) {
+    return 3; // 수상 수정
+  }
+  if (pathname.startsWith('/awards/create')) {
+    return 3; // 수상 생성
+  }
+
+  // 레벨 3 (중급 사용자) 필요 경로
   if (pathname.match(/\/tournaments\/[^\/]+\/applications$/)) {
-    return 3; // 대회 신청 목록은 레벨 3 필요
+    return 3; // 대회 신청 목록
+  }
+
+  // 레벨 1 (기본 사용자) 필요 경로
+  if (pathname.startsWith('/profile')) {
+    return 1; // 프로필 관리
+  }
+  if (pathname.startsWith('/tournament-applications') && !pathname.includes('/admin')) {
+    return 1; // 내 신청 목록
+  }
+  if (pathname.startsWith('/notifications')) {
+    return 1; // 알림 페이지
+  }
+  if (pathname.startsWith('/questions/') && pathname.includes('/edit')) {
+    return 1; // 문의 수정 (로그인 사용자)
+  }
+  if (pathname.startsWith('/questions/create')) {
+    return 1; // 문의 생성 (로그인 사용자)
   }
 
   return null; // 권한 체크 불필요

@@ -98,7 +98,6 @@ export default function UserForm({
   // 최초 마운트 시에만 상태 초기화
   useEffect(() => {
     if (user) {
-      console.log(user);
       if (user.name) {
         setName(user.name);
         setNameForClubSelector(user.name);

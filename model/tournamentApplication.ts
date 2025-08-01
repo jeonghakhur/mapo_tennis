@@ -15,7 +15,6 @@ export interface TournamentApplication {
     birth?: string;
     score?: number;
     isRegisteredMember: boolean; // 등록된 회원인지 여부
-    isInfoValid?: boolean; // 참가자 정보 검증 여부
   }>;
 
   // 신청 정보
@@ -61,7 +60,6 @@ export interface TournamentApplicationInput {
     birth?: string;
     score?: number;
     isRegisteredMember: boolean;
-    isInfoValid?: boolean;
   }>;
 
   memo?: string;

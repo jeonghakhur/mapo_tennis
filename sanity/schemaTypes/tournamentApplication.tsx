@@ -84,13 +84,6 @@ export default defineType({
               title: '등록된 회원 여부',
               initialValue: false,
             },
-            {
-              name: 'isInfoValid',
-              type: 'boolean',
-              title: '참가자 정보 검증 여부',
-              description: '이름과 클럽이 일치하는지 확인',
-              initialValue: false,
-            },
           ],
         },
       ],

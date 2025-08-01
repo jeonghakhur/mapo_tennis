@@ -18,13 +18,14 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useSession } from 'next-auth/react';
-import { AlertCircle } from 'lucide-react';
 import { useTournaments } from '@/hooks/useTournaments';
 
 export default function TournamentApplicationsAdminPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [tournamentFilter, setTournamentFilter] = useState<string>('all');
-  const [clubMismatchFilter, setClubMismatchFilter] = useState<'all' | 'only' | 'exclude'>('all');
+  const [registeredMemberFilter, setRegisteredMemberFilter] = useState<'all' | 'only' | 'exclude'>(
+    'all',
+  );
   const [participantNameSearch, setParticipantNameSearch] = useState('');
   const router = useRouter();
   const { data: session } = useSession();
@@ -95,12 +96,12 @@ export default function TournamentApplicationsAdminPage() {
     if (filterStatus !== 'all' && application.status !== filterStatus) {
       return false;
     }
-    // 클럽 불일치 필터
-    const hasMismatch = application.teamMembers.some(
-      (m) => m.clubName !== application.teamMembers[0].clubName,
+    // 등록된 회원 필터 - 스키마의 isRegisteredMember 필드 활용
+    const hasUnregisteredMember = application.teamMembers.some(
+      (m) => m.isRegisteredMember === false,
     );
-    if (clubMismatchFilter === 'only' && !hasMismatch) return false;
-    if (clubMismatchFilter === 'exclude' && hasMismatch) return false;
+    if (registeredMemberFilter === 'only' && !hasUnregisteredMember) return false;
+    if (registeredMemberFilter === 'exclude' && hasUnregisteredMember) return false;
     // 참가자 이름 검색
     if (participantNameSearch.trim()) {
       const search = participantNameSearch.trim().toLowerCase();
@@ -156,10 +157,8 @@ export default function TournamentApplicationsAdminPage() {
           <Flex gap="3" mb="4" align="center" justify="between">
             {/* 기본 대회 필터 */}
             <Flex gap="3" align="center">
-              <Text size="3" weight="bold">
-                대회:
-              </Text>
-              <Select.Root size="3" value={tournamentFilter} onValueChange={setTournamentFilter}>
+              <Text weight="bold">대회:</Text>
+              <Select.Root value={tournamentFilter} onValueChange={setTournamentFilter}>
                 <Select.Trigger placeholder="전체 대회" />
                 <Select.Content>
                   <Select.Item value="all">전체</Select.Item>
@@ -175,23 +174,21 @@ export default function TournamentApplicationsAdminPage() {
             {/* 필터 아이콘 */}
             <Popover.Root>
               <Popover.Trigger>
-                <Button variant="soft" size="3">
+                <Button variant="soft">
                   <Filter size={16} />
                   <Text size="2">필터</Text>
                 </Button>
               </Popover.Trigger>
               <Popover.Content className="w-80">
                 <div className="space-y-4 p-2">
-                  <Text size="3" weight="bold">
-                    고급 필터
-                  </Text>
+                  <Text weight="bold">고급 필터</Text>
 
                   {/* 상태 필터 */}
                   <div className="flex items-center pt-3">
-                    <Text size="3" weight="bold" mr="4">
+                    <Text weight="bold" mr="4">
                       상태
                     </Text>
-                    <Select.Root size="3" value={filterStatus} onValueChange={setFilterStatus}>
+                    <Select.Root value={filterStatus} onValueChange={setFilterStatus}>
                       <Select.Trigger placeholder="전체" />
                       <Select.Content>
                         <Select.Item value="all">전체</Select.Item>
@@ -203,32 +200,32 @@ export default function TournamentApplicationsAdminPage() {
                     </Select.Root>
                   </div>
 
-                  {/* 클럽 불일치 필터 */}
+                  {/* 등록된 회원 필터 */}
                   <div className="flex items-center">
-                    <Text size="3" weight="bold" mr="4">
-                      클럽
+                    <Text weight="bold" mr="4">
+                      회원 등록
                     </Text>
                     <Select.Root
-                      size="3"
-                      value={clubMismatchFilter}
-                      onValueChange={(v) => setClubMismatchFilter(v as 'all' | 'only' | 'exclude')}
+                      value={registeredMemberFilter}
+                      onValueChange={(v) =>
+                        setRegisteredMemberFilter(v as 'all' | 'only' | 'exclude')
+                      }
                     >
                       <Select.Trigger placeholder="전체" />
                       <Select.Content>
                         <Select.Item value="all">전체</Select.Item>
-                        <Select.Item value="only">불일치만</Select.Item>
-                        <Select.Item value="exclude">불일치 제외</Select.Item>
+                        <Select.Item value="only">미등록 회원만</Select.Item>
+                        <Select.Item value="exclude">미등록 회원 제외</Select.Item>
                       </Select.Content>
                     </Select.Root>
                   </div>
 
                   {/* 참가자 이름 검색 */}
                   <div className="flex items-center">
-                    <Text size="3" weight="bold" mr="4">
+                    <Text weight="bold" mr="4">
                       이름
                     </Text>
                     <TextField.Root
-                      size="3"
                       type="text"
                       value={participantNameSearch}
                       onChange={(e) => setParticipantNameSearch(e.target.value)}
@@ -242,9 +239,7 @@ export default function TournamentApplicationsAdminPage() {
 
           {filteredApplications.length === 0 ? (
             <div className="p-6 text-center">
-              <Text size="3" color="gray">
-                참가 신청 내역이 없습니다.
-              </Text>
+              <Text color="gray">참가 신청 내역이 없습니다.</Text>
             </div>
           ) : (
             <div className="space-y-4">
@@ -289,58 +284,51 @@ export default function TournamentApplicationsAdminPage() {
                           <Text size="2" weight="bold" color="gray">
                             참가 클럽
                           </Text>
-                          <Text size="3" weight="bold" color="blue">
+                          <Text weight="bold" color="blue">
                             {application.teamMembers[0]?.clubName || '-'}
+                          </Text>
+                          <Text weight="bold">
+                            참가자 목록 ({application.teamMembers.length}명)
                           </Text>
                         </div>
                       )}
 
                       {/* 참가자 목록 */}
                       <div className="space-y-2">
-                        <Text size="3" weight="bold">
-                          참가자 목록 ({application.teamMembers.length}명)
-                        </Text>
                         <div className="grid gap-2 pt-3">
                           {application.teamMembers.map((member, index) => (
                             <div
                               key={index}
-                              className={`p-3 rounded ${
-                                application.tournamentType === 'individual'
-                                  ? 'bg-gray-50 grid grid-cols-1 md:grid-cols-3 gap-4'
-                                  : 'bg-gray-50 flex items-center justify-between'
-                              }`}
+                              className={`p-3 rounded bg-gray-50 flex items-center justify-between`}
                             >
                               <div className="flex items-center gap-3">
                                 <Text size="2" weight="bold" color="gray">
                                   {index + 1}번
                                 </Text>
-                                <Text size="3" weight="bold">
+                                <Text weight="bold">
                                   {member.name}
+                                  {application.tournamentType === 'individual' && (
+                                    <> / {member.clubName}</>
+                                  )}
                                 </Text>
-                                {/* 클럽 불일치 표시 (어드민 전용) */}
-                                {member.clubName !== application.teamMembers[0].clubName && (
-                                  <span className="text-orange-600 flex items-center">
-                                    <AlertCircle size={14} className="mr-1" />
-                                    <span className="text-xs">클럽 불일치</span>
-                                  </span>
+                                {/* 등록된 회원 여부 표시 (어드민 전용) */}
+                                {member.isRegisteredMember === false && (
+                                  <Badge color="red" size="1">
+                                    미등록
+                                  </Badge>
+                                )}
+                                {member.isRegisteredMember === true && (
+                                  <Badge color="green" size="1">
+                                    등록회원
+                                  </Badge>
                                 )}
                               </div>
 
-                              {/* 개인전인 경우에만 클럽명 표시 */}
-                              {application.tournamentType === 'individual' && (
-                                <div>
-                                  <Text size="2" weight="bold" color="gray">
-                                    클럽
-                                  </Text>
-                                  <Text size="3">{member.clubName}</Text>
-                                </div>
-                              )}
-
                               <div>
-                                <Text size="2" weight="bold" color="gray">
+                                <Text size="2" weight="bold" color="gray" mr="1">
                                   점수
                                 </Text>
-                                <Text size="3">{member.score || '-'}</Text>
+                                <Text>{member.score || '-'}</Text>
                               </div>
                             </div>
                           ))}
@@ -352,18 +340,12 @@ export default function TournamentApplicationsAdminPage() {
                     <div className="flex gap-4 flex-col ">
                       {/* 참가비 납부 여부 */}
                       <div className="flex items-center justify-between">
-                        <Text size="3" weight="bold">
-                          참가비 납부
-                        </Text>
+                        <Text weight="bold">참가비 납부</Text>
                         <div className="flex items-center gap-2">
                           <div
                             className={`w-4 h-4 rounded-full ${application.isFeePaid ? 'bg-green-500' : 'bg-red-500'}`}
                           />
-                          <Text
-                            size="3"
-                            weight="bold"
-                            color={application.isFeePaid ? 'green' : 'red'}
-                          >
+                          <Text weight="bold" color={application.isFeePaid ? 'green' : 'red'}>
                             {application.isFeePaid ? '납부 완료' : '미납'}
                           </Text>
                         </div>
@@ -373,17 +355,13 @@ export default function TournamentApplicationsAdminPage() {
                     {/* 메모 */}
                     {application.memo && (
                       <div>
-                        <Text size="3" weight="bold">
-                          메모
-                        </Text>
-                        <Text size="3" className="block mt-1">
-                          {application.memo}
-                        </Text>
+                        <Text weight="bold">메모</Text>
+                        <Text className="block mt-1">{application.memo}</Text>
                       </div>
                     )}
 
                     {/* 액션 버튼 */}
-                    <Flex gap="3" justify="end" pt="4" className="border-t">
+                    <div className="btn-wrap border-t pt-4">
                       <Button
                         variant="soft"
                         color="red"
@@ -398,15 +376,13 @@ export default function TournamentApplicationsAdminPage() {
                       </Button>
                       <Button
                         variant="soft"
-                        color="green"
                         size="2"
                         onClick={(e) => {
                           e.stopPropagation();
-                          openStatusDialog(application, 'approved');
+                          router.push(`/tournament-applications/${application._id}/edit`);
                         }}
-                        disabled={isUpdating}
                       >
-                        승인
+                        수정
                       </Button>
                       <Button
                         variant="soft"
@@ -422,28 +398,17 @@ export default function TournamentApplicationsAdminPage() {
                       </Button>
                       <Button
                         variant="soft"
+                        color="green"
                         size="2"
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push(`/tournament-applications/${application._id}/edit`);
+                          openStatusDialog(application, 'approved');
                         }}
+                        disabled={isUpdating}
                       >
-                        수정
+                        승인
                       </Button>
-                      <Button
-                        variant="soft"
-                        size="2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const tournamentId = application.tournamentId;
-                          if (tournamentId && tournamentId.trim() !== '') {
-                            router.push(`/tournaments/${tournamentId as string}`);
-                          }
-                        }}
-                      >
-                        대회 상세보기
-                      </Button>
-                    </Flex>
+                    </div>
                   </div>
                 </div>
               ))}

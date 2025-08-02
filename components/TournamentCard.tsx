@@ -44,6 +44,15 @@ export default function TournamentCard({ tournament, user }: TournamentCardProps
     });
   };
 
+  // 대회 타입을 한글명으로 변환
+  const getTournamentTypeLabel = (type: string) => {
+    const typeMap: Record<string, string> = {
+      individual: '개인전',
+      team: '단체전',
+    };
+    return typeMap[type] || type;
+  };
+
   // 참가 신청 기간 확인
   const isRegistrationPeriod = () => {
     if (!tournament.registrationStartDate || !tournament.registrationDeadline) {
@@ -117,7 +126,7 @@ export default function TournamentCard({ tournament, user }: TournamentCardProps
           {getStatusLabel(tournament.status)}
         </Badge>
         <Text size="5" weight="bold" className="block mb-2">
-          {tournament.title}
+          {tournament.title} - {getTournamentTypeLabel(tournament.tournamentType)}
         </Text>
       </div>
       <div className="space-y-2">

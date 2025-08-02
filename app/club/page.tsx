@@ -70,6 +70,9 @@ export default function ClubPage() {
   // 실제 목록 렌더링
   return (
     <Container>
+      <Box mb="6">
+        <Image src="/images/club_names.png" alt="club" width={1000} height={100} />
+      </Box>
       <Flex mb="4" direction="column" gap="4">
         <Combobox
           options={[{ value: '', label: '전체 클럽' }, ...clubOptions]}

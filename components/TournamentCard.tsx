@@ -2,6 +2,8 @@ import { Flex, Badge, Text, Button } from '@radix-ui/themes';
 import { Calendar, CalendarCheck, MapPin } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { hasPermissionLevel } from '@/lib/authUtils';
+import { useState } from 'react';
+import ConfirmDialog from './ConfirmDialog';
 import type { Tournament } from '@/model/tournament';
 import type { User } from '@/model/user';
 
@@ -12,6 +14,7 @@ interface TournamentCardProps {
 
 export default function TournamentCard({ tournament, user }: TournamentCardProps) {
   const router = useRouter();
+  const [showPeriodDialog, setShowPeriodDialog] = useState(false);
 
   const getStatusColor = (status: string) => {
     const colorMap: Record<string, 'red' | 'blue' | 'green' | 'gray'> = {
@@ -39,6 +42,72 @@ export default function TournamentCard({ tournament, user }: TournamentCardProps
       month: 'long',
       day: 'numeric',
     });
+  };
+
+  // 참가 신청 기간 확인
+  const isRegistrationPeriod = () => {
+    if (!tournament.registrationStartDate || !tournament.registrationDeadline) {
+      return false;
+    }
+
+    const now = new Date();
+    const startDate = new Date(tournament.registrationStartDate);
+    const endDate = new Date(tournament.registrationDeadline);
+
+    return now >= startDate && now <= endDate;
+  };
+
+  // 참가 신청 기간이 시작되었는지 확인
+  const isRegistrationStarted = () => {
+    if (!tournament.registrationStartDate) {
+      return false;
+    }
+
+    const now = new Date();
+    const startDate = new Date(tournament.registrationStartDate);
+
+    return now >= startDate;
+  };
+
+  // 참가 신청 기간이 종료되었는지 확인
+  const isRegistrationEnded = () => {
+    if (!tournament.registrationDeadline) {
+      return false;
+    }
+
+    const now = new Date();
+    const endDate = new Date(tournament.registrationDeadline);
+
+    return now > endDate;
+  };
+
+  // 참가 신청 버튼 클릭 핸들러
+  const handleApplyClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (!isRegistrationPeriod()) {
+      setShowPeriodDialog(true);
+      return;
+    }
+
+    router.push(`/tournaments/${tournament._id}/apply`);
+  };
+
+  // 참가 신청 버튼 텍스트 결정
+  const getApplyButtonText = () => {
+    if (!tournament.registrationStartDate) {
+      return '참가 신청';
+    }
+
+    if (!isRegistrationStarted()) {
+      return '참가 신청 대기';
+    }
+
+    if (isRegistrationEnded()) {
+      return '참가 신청 마감';
+    }
+
+    return '참가 신청';
   };
 
   return (
@@ -78,12 +147,10 @@ export default function TournamentCard({ tournament, user }: TournamentCardProps
             variant="solid"
             color="blue"
             size="3"
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/tournaments/${tournament._id}/apply`);
-            }}
+            // disabled={isApplyButtonDisabled()}
+            onClick={handleApplyClick}
           >
-            참가 신청
+            {getApplyButtonText()}
           </Button>
         )}
         <Button
@@ -97,6 +164,25 @@ export default function TournamentCard({ tournament, user }: TournamentCardProps
           상세보기
         </Button>
       </div>
+
+      {/* 참가 신청 기간 안내 다이얼로그 */}
+      <ConfirmDialog
+        title="참가 신청 기간 안내"
+        description={
+          !tournament.registrationStartDate
+            ? '이 대회는 참가 신청 기간이 설정되지 않았습니다.'
+            : !isRegistrationStarted()
+              ? `참가 신청은 ${formatDate(tournament.registrationStartDate)}부터 시작됩니다.`
+              : isRegistrationEnded()
+                ? `참가 신청은 ${tournament.registrationDeadline ? formatDate(tournament.registrationDeadline) : '설정된 날짜'}에 마감되었습니다.`
+                : '참가 신청 기간이 아닙니다.'
+        }
+        confirmText="확인"
+        confirmColor="blue"
+        open={showPeriodDialog}
+        onOpenChange={setShowPeriodDialog}
+        onConfirm={() => setShowPeriodDialog(false)}
+      />
     </Flex>
   );
 }

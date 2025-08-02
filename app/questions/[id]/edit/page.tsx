@@ -1,5 +1,5 @@
 'use client';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, redirect } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { Text } from '@radix-ui/themes';
@@ -7,6 +7,7 @@ import Container from '@/components/Container';
 import QuestionForm, { QuestionFormValues } from '@/components/QuestionForm';
 import { useQuestionDetail, useUpdateQuestion } from '@/hooks/useQuestions';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import SkeletonCard from '@/components/SkeletonCard';
 
 export default function QuestionEditPage() {
   const router = useRouter();
@@ -20,7 +21,6 @@ export default function QuestionEditPage() {
     description: '',
     color: 'green' as 'green' | 'red',
   });
-  const [forbiddenDialog, setForbiddenDialog] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -28,19 +28,16 @@ export default function QuestionEditPage() {
     }
   }, [status, router]);
 
-  // 본인만 접근 가능
-  useEffect(() => {
-    if (
-      status === 'authenticated' &&
-      question &&
-      (!data?.user || typeof question.author !== 'object' || question.author._id !== data.user.id)
-    ) {
-      setForbiddenDialog(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  if (isLoading)
+    return (
+      <Container>
+        <SkeletonCard />
+      </Container>
+    );
+  if (question?.author._id !== data?.user?.id) {
+    redirect('/access-denied');
+  }
 
-  if (isLoading) return <Text>로딩 중...</Text>;
   if (isError || !question) return <Text>문의 정보를 불러올 수 없습니다.</Text>;
 
   const handleSubmit = async (form: QuestionFormValues) => {
@@ -78,6 +75,11 @@ export default function QuestionEditPage() {
     }
   };
 
+  if (question.author._id !== data?.user?.id) {
+    console.log(question.author._id, data?.user?.id);
+    return <Text>권한이 없습니다.</Text>;
+  }
+
   return (
     <Container>
       <QuestionForm
@@ -102,18 +104,6 @@ export default function QuestionEditPage() {
         onConfirm={() => {
           setDialog((d) => ({ ...d, open: false }));
           if (dialog.color === 'green') router.push(`/questions/`);
-        }}
-      />
-      <ConfirmDialog
-        title="권한 없음"
-        description="본인만 수정할 수 있습니다."
-        confirmText="확인"
-        confirmColor="red"
-        open={forbiddenDialog}
-        onOpenChange={setForbiddenDialog}
-        onConfirm={() => {
-          setForbiddenDialog(false);
-          router.replace(`/questions/`);
         }}
       />
     </Container>

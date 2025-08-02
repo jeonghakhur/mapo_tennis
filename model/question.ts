@@ -11,7 +11,7 @@ export interface Question {
   title: string;
   content: string; // HTML
   attachments?: QuestionAttachment[];
-  author: { _id: string; name: string } | string;
+  author: { _id: string; name: string };
   answer?: string; // HTML
   answeredBy?: { _id: string; name: string } | string;
   answeredAt?: string;

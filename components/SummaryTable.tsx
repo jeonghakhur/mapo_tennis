@@ -119,7 +119,9 @@ export default function SummaryTable({ awards }: { awards: Award[] }) {
                                                 <Text>{award.club}</Text>
                                               </div>
                                               <div className="flex items-center gap-2">
-                                                <Text weight="bold">선수</Text>
+                                                <Text weight="bold" className="whitespace-nowrap">
+                                                  선수
+                                                </Text>
                                                 <Separator orientation="vertical" />
                                                 <Text>{award.players.join(', ')}</Text>
                                               </div>
@@ -128,7 +130,9 @@ export default function SummaryTable({ awards }: { awards: Award[] }) {
                                             // 개인전: 선수 → 클럽
                                             <>
                                               <div className="flex items-center gap-2">
-                                                <Text weight="bold">선수</Text>
+                                                <Text weight="bold" className="whitespace-nowrap">
+                                                  선수
+                                                </Text>
                                                 <Separator orientation="vertical" />
                                                 <Text>{award.players.join(', ')}</Text>
                                               </div>
@@ -157,7 +161,9 @@ export default function SummaryTable({ awards }: { awards: Award[] }) {
                                             <Text>{clubs.join(', ')}</Text>
                                           </Flex>,
                                           <Flex key={cat + 'players'} align="center" gap="2">
-                                            <Text weight="bold">선수</Text>
+                                            <Text weight="bold" className="whitespace-nowrap">
+                                              선수
+                                            </Text>
                                             <Separator orientation="vertical" />
                                             <Text>{allPlayers.join(', ')}</Text>
                                           </Flex>,
@@ -165,7 +171,9 @@ export default function SummaryTable({ awards }: { awards: Award[] }) {
                                       })()
                                     : categories[cat].map((award, idx) => (
                                         <Flex key={cat + idx} align="center" gap="2">
-                                          <Text weight="bold">선수</Text>
+                                          <Text weight="bold" className="whitespace-nowrap">
+                                            선수
+                                          </Text>
                                           <Text>{award.players.join(', ')}</Text>
                                           <Separator orientation="vertical" mx="2" />
                                           <Text weight="bold">클럽</Text>

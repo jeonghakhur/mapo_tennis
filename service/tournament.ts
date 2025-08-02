@@ -25,6 +25,7 @@ export async function getTournaments(): Promise<Tournament[]> {
     entryFee,
     bankAccount,
     accountHolder,
+    openingCeremony,
     divisions,
     status,
     isDraft,
@@ -60,6 +61,7 @@ export async function getTournament(id: string): Promise<Tournament | null> {
     entryFee,
     bankAccount,
     accountHolder,
+    openingCeremony,
     divisions,
     status,
     isDraft,
@@ -94,6 +96,10 @@ export async function updateTournament(
   id: string,
   data: Partial<TournamentFormData> & { status?: string },
 ): Promise<Tournament> {
+  // 디버깅을 위한 로그
+  console.log('업데이트 데이터:', data);
+  console.log('개회식 데이터:', data.openingCeremony);
+
   const updateDoc = {
     ...data,
     updatedAt: new Date().toISOString(),
@@ -146,6 +152,7 @@ export async function getUpcomingTournaments(): Promise<Tournament[]> {
     entryFee,
     bankAccount,
     accountHolder,
+    openingCeremony,
     divisions,
     status,
     createdAt,

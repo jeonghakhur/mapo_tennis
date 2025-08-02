@@ -105,6 +105,42 @@ export default defineType({
       description: '계좌 예금주를 입력하세요',
     }),
     defineField({
+      name: 'openingCeremony',
+      title: '개회식 정보',
+      type: 'object',
+      fields: [
+        {
+          name: 'isHeld',
+          title: '개회식 진행 여부',
+          type: 'boolean',
+          initialValue: false,
+          description: '개회식을 진행하는지 여부를 선택하세요',
+        },
+        {
+          name: 'date',
+          title: '개회식 날짜',
+          type: 'date',
+          description: '개회식 날짜를 선택하세요',
+          hidden: ({ parent }) => !parent?.isHeld,
+        },
+        {
+          name: 'time',
+          title: '개회식 시간',
+          type: 'string',
+          description: '개회식 시간을 입력하세요 (예: 09:00)',
+          hidden: ({ parent }) => !parent?.isHeld,
+        },
+        {
+          name: 'location',
+          title: '개회식 장소',
+          type: 'string',
+          description: '개회식 장소를 입력하세요',
+          hidden: ({ parent }) => !parent?.isHeld,
+        },
+      ],
+      description: '개회식 관련 정보를 입력하세요',
+    }),
+    defineField({
       name: 'host',
       title: '주최',
       type: 'string',

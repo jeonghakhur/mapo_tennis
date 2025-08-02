@@ -247,6 +247,12 @@ export function createDefaultTournamentFormData(): TournamentFormData {
     entryFee: 30000,
     bankAccount: '1001-8348-6182 (토스뱅크)',
     accountHolder: '허정학',
+    openingCeremony: {
+      isHeld: false,
+      date: '',
+      time: '',
+      location: '',
+    },
   };
 }
 
@@ -405,6 +411,7 @@ export function parseTournamentFormData(
   const bankAccount = formData.get('bankAccount') as string;
   const accountHolder = formData.get('accountHolder') as string;
   const divisions = formData.get('divisions') as string;
+  const openingCeremony = formData.get('openingCeremony') as string;
 
   let parsedDivisions;
   try {
@@ -412,6 +419,14 @@ export function parseTournamentFormData(
   } catch (error) {
     console.error('divisions 파싱 오류:', error);
     throw new Error('참가부서 데이터 형식이 올바르지 않습니다.');
+  }
+
+  let parsedOpeningCeremony;
+  try {
+    parsedOpeningCeremony = openingCeremony ? JSON.parse(openingCeremony) : undefined;
+  } catch (error) {
+    console.error('openingCeremony 파싱 오류:', error);
+    parsedOpeningCeremony = undefined;
   }
 
   return {
@@ -437,6 +452,7 @@ export function parseTournamentFormData(
     bankAccount: bankAccount || undefined,
     accountHolder: accountHolder || undefined,
     divisions: parsedDivisions,
+    openingCeremony: parsedOpeningCeremony,
   };
 }
 

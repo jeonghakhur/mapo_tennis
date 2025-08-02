@@ -186,7 +186,25 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
                           {wrapTextWithSpans('개회식')}
                         </Flex>
                       </th>
-                      <td className="!text-left">없음</td>
+                      <td className="!text-left">
+                        {tournament.openingCeremony?.isHeld ? (
+                          <div>
+                            <div>
+                              {tournament.openingCeremony.date &&
+                                formatDate(tournament.openingCeremony.date)}{' '}
+                              - {tournament.openingCeremony.time}
+                            </div>
+
+                            {tournament.openingCeremony.location && (
+                              <div className="text-sm text-gray-600">
+                                {tournament.openingCeremony.location}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          '없음'
+                        )}
+                      </td>
                     </tr>
 
                     <tr>

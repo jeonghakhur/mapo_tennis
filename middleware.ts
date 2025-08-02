@@ -71,16 +71,16 @@ function getRequiredLevel(pathname: string): number | null {
     return 4; // 포스트 생성
   }
   if (pathname.startsWith('/club/') && pathname.includes('/edit')) {
-    return 4; // 클럽 수정
+    return 1; // 클럽 수정
   }
   if (pathname.startsWith('/club/create')) {
     return 4; // 클럽 생성
   }
   if (pathname.startsWith('/club-member/') && pathname.includes('/edit')) {
-    return 4; // 클럽멤버 수정
+    return 1; // 클럽멤버 수정
   }
   if (pathname.startsWith('/club-member/create')) {
-    return 4; // 클럽멤버 생성
+    return 1; // 클럽멤버 생성
   }
   if (pathname.startsWith('/expenses/') && pathname.includes('/edit')) {
     return 4; // 지출내역 수정

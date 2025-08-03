@@ -33,8 +33,16 @@ export async function POST(req: NextRequest) {
     const data: ClubMemberInput = await req.json();
     const result = await createClubMember(data);
 
+    // 클럽 정보 조회
+    const clubMember = await getClubMember(result._id);
+    const clubName = clubMember?.club?.name || '알 수 없는 클럽';
+
     // 알림 생성
-    const { title, message } = createNotificationMessage('CREATE', 'CLUB_MEMBER', data.user);
+    const { title, message } = createNotificationMessage(
+      'CREATE',
+      'CLUB_MEMBER',
+      `${data.user} (${clubName})`,
+    );
 
     await createNotification({
       type: 'CREATE',
@@ -42,6 +50,7 @@ export async function POST(req: NextRequest) {
       entityId: result._id,
       title,
       message,
+      link: `/club-member/${result._id}`, // 클럽회원 상세 페이지 링크
       requiredLevel: 4, // 레벨 4 (경기관리자)만 알림 수신
     });
 
@@ -76,11 +85,12 @@ export async function PATCH(req: NextRequest) {
     );
 
     if (changes.length > 0) {
-      // 알림 생성
+      // 클럽 이름 포함하여 알림 생성
+      const clubName = result?.club?.name || '알 수 없는 클럽';
       const { title, message } = createNotificationMessage(
         'UPDATE',
         'CLUB_MEMBER',
-        result?.user || '',
+        `${result?.user || ''} (${clubName})`,
       );
 
       await createNotification({
@@ -89,6 +99,7 @@ export async function PATCH(req: NextRequest) {
         entityId: id,
         title,
         message,
+        link: `/club-member/${id}`, // 클럽회원 상세 페이지 링크
         changes,
         requiredLevel: 4, // 레벨 4 (경기관리자)만 알림 수신
       });
@@ -131,11 +142,12 @@ export async function DELETE(req: NextRequest) {
 
     await deleteClubMember(id);
 
-    // 삭제 알림 생성
+    // 클럽 이름 포함하여 삭제 알림 생성
+    const clubName = existingMember.club?.name || '알 수 없는 클럽';
     const { title, message } = createNotificationMessage(
       'DELETE',
       'CLUB_MEMBER',
-      existingMember.user,
+      `${existingMember.user} (${clubName})`,
     );
 
     await createNotification({

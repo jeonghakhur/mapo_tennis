@@ -15,6 +15,7 @@ interface ClubWithApproval {
   _key?: string;
   name?: string;
   approvedByAdmin?: boolean;
+  role?: string;
 }
 
 export default function AdminUsersPage() {
@@ -212,6 +213,11 @@ export default function AdminUsersPage() {
                           <Badge color="blue" variant="soft">
                             {club.name}
                           </Badge>
+                          {club.role && (
+                            <Badge color="green" variant="soft">
+                              {club.role}
+                            </Badge>
+                          )}
                         </span>
                       ))}
                     </Flex>

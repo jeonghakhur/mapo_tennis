@@ -118,7 +118,7 @@ export default function AdminUserEditPage() {
         <>
           {loading && <LoadingOverlay />}
           <UserForm
-            user={{ ...user, isApprovedUser }}
+            user={{ ...user, isApprovedUser, level: user?.level }}
             onSubmit={handleSubmit}
             loading={false} // loading state removed
             submitText="회원 정보 수정"

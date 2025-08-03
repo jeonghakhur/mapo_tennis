@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const { name, phone, gender, birth, score, email, address, clubs, isApprovedUser } =
+    const { name, phone, gender, birth, score, email, address, clubs, isApprovedUser, level } =
       await req.json();
     if (!name || !phone || !gender || !birth || !score || !email) {
       return NextResponse.json({ error: '필수 정보 누락' }, { status: 400 });
@@ -107,7 +107,7 @@ export async function PUT(req: NextRequest) {
       birth,
       score: Number(score),
       email,
-      level: existingUser.level || 1, // 기존 레벨 유지
+      level: level !== undefined ? Number(level) : existingUser.level || 1, // level 필드 처리
       address,
       clubs: clubs || [],
       isApprovedUser:
@@ -146,6 +146,20 @@ export async function PUT(req: NextRequest) {
         } else if (existingUser.address && !address) {
           changes.push(`주소: 삭제됨`);
         }
+      }
+      if (level !== undefined && existingUser.level !== Number(level)) {
+        const levelNames = {
+          1: '일반회원',
+          2: '클럽관리자',
+          3: '대회관리자',
+          4: '경기관리자',
+          5: '시스템관리자',
+        };
+        const oldLevelName =
+          levelNames[existingUser.level as keyof typeof levelNames] || `레벨 ${existingUser.level}`;
+        const newLevelName =
+          levelNames[Number(level) as keyof typeof levelNames] || `레벨 ${level}`;
+        changes.push(`회원 레벨: ${oldLevelName} → ${newLevelName}`);
       }
 
       // 클럽 정보 변경 확인

@@ -28,6 +28,7 @@ interface UserFormProps {
     address?: string;
     clubs?: { _ref: string }[];
     isApprovedUser?: boolean;
+    level?: number;
   } | null;
   onSubmit: (data: UserData) => Promise<void>;
   onWithdraw?: (reason: string) => Promise<void>;
@@ -69,6 +70,7 @@ export default function UserForm({
   const [address, setAddress] = useState('');
   const [selectedClubIds, setSelectedClubIds] = useState<string[]>([]);
   const [isApprovedUser, setIsApprovedUser] = useState<boolean>(false);
+  const [level, setLevel] = useState<string>('');
   const [error, setError] = useState('');
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [focusMoveFn, setFocusMoveFn] = useState<(() => void) | null>(null);
@@ -110,6 +112,7 @@ export default function UserForm({
       if (user.address) setAddress(user.address);
       if (user.clubs) setSelectedClubIds(user.clubs.map((club) => club._ref));
       if (user.isApprovedUser) setIsApprovedUser(user.isApprovedUser);
+      if (user.level) setLevel(String(user.level));
     }
   }, [user]);
 
@@ -216,6 +219,7 @@ export default function UserForm({
       address,
       clubs: selectedClubIds,
       isApprovedUser,
+      level: Number(level),
     });
   };
 
@@ -391,6 +395,34 @@ export default function UserForm({
                       {isApprovedUser ? '승인됨' : '미승인'}
                     </Text>
                   </Flex>
+                </td>
+              </tr>
+            )}
+            {isAdmin && (
+              <tr>
+                <th>회원 레벨</th>
+                <td>
+                  <Select.Root
+                    size="3"
+                    value={level}
+                    onValueChange={(v) => {
+                      if (v !== '') {
+                        setLevel(v);
+                      }
+                    }}
+                  >
+                    <Select.Trigger
+                      placeholder="회원 레벨을 선택하세요"
+                      style={{ width: '100%' }}
+                    />
+                    <Select.Content>
+                      <Select.Item value="1">레벨 1 - 일반회원</Select.Item>
+                      <Select.Item value="2">레벨 2 - 클럽관리자</Select.Item>
+                      <Select.Item value="3">레벨 3 - 대회관리자</Select.Item>
+                      <Select.Item value="4">레벨 4 - 경기관리자</Select.Item>
+                      <Select.Item value="5">레벨 5 - 시스템관리자</Select.Item>
+                    </Select.Content>
+                  </Select.Root>
                 </td>
               </tr>
             )}

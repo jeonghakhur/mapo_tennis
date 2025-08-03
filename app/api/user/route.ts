@@ -49,8 +49,6 @@ export async function POST(req: NextRequest) {
 
     // 회원가입 알림 생성 (관리자만 받음)
     if (result._id) {
-      const { title } = createNotificationMessage('CREATE', 'USER', name);
-
       // 클럽 정보 가져오기
       let clubInfo = '';
       if (clubs && clubs.length > 0) {
@@ -58,12 +56,14 @@ export async function POST(req: NextRequest) {
           const allClubs = await getClubs();
           const selectedClubs = allClubs.filter((club) => clubs.includes(club._id!));
           if (selectedClubs.length > 0) {
-            clubInfo = `\n가입 클럽: ${selectedClubs.map((club) => club.name).join(', ')}`;
+            clubInfo = ` (${selectedClubs.map((club) => club.name).join(', ')})`;
           }
         } catch (error) {
           console.error('클럽 정보 조회 실패:', error);
         }
       }
+
+      const { title } = createNotificationMessage('CREATE', 'USER', `${name}${clubInfo}`);
 
       // 상세한 회원가입 메시지 생성
       const detailedMessage = `새로운 회원이 가입했습니다.\n\n이름: ${name}\n이메일: ${email}\n연락처: ${phone}\n성별: ${gender}\n생년월일: ${birth}\n테니스 점수: ${score}점${clubInfo}`;
@@ -118,7 +118,19 @@ export async function PUT(req: NextRequest) {
 
     // 회원 정보 수정 알림 생성 (관리자만 받음)
     if (result._id) {
-      const { title } = createNotificationMessage('UPDATE', 'USER', name);
+      // 클럽 정보 가져오기
+      let clubInfo = '';
+      try {
+        const allClubs = await getClubs();
+        const userClubs = allClubs.filter((club) => (clubs || []).includes(club._id!));
+        if (userClubs.length > 0) {
+          clubInfo = ` (${userClubs.map((club) => club.name).join(', ')})`;
+        }
+      } catch (error) {
+        console.error('클럽 정보 조회 실패:', error);
+      }
+
+      const { title } = createNotificationMessage('UPDATE', 'USER', `${name}${clubInfo}`);
 
       // 변경된 내용만 추출하여 메시지 생성
       const changes = [];
@@ -187,7 +199,7 @@ export async function PUT(req: NextRequest) {
 
       // 변경된 내용이 있을 때만 알림 생성
       if (changes.length > 0) {
-        const detailedMessage = `회원 정보가 수정되었습니다.\n\n변경된 내용:\n${changes.join('\n')}`;
+        const detailedMessage = `${name}${clubInfo} 회원 정보가 수정되었습니다.\n\n변경된 내용:\n${changes.join('\n')}`;
 
         await createNotification({
           type: 'UPDATE',

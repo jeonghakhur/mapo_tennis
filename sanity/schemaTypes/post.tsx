@@ -54,7 +54,7 @@ export default defineType({
       name: 'createdAt',
       title: '생성일',
       type: 'datetime',
-      readOnly: true,
+      initialValue: () => new Date().toISOString(),
     }),
     defineField({
       name: 'updatedAt',

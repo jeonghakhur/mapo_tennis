@@ -3,6 +3,7 @@ import clubMember from './clubMember';
 import comment from './comment';
 import expense from './expense';
 import notification from './notification';
+import notificationStatus from './notificationStatus';
 import post from './post';
 import tournament from './tournament';
 import tournamentApplication from './tournamentApplication';
@@ -16,6 +17,7 @@ export const schemaTypes = [
   comment,
   expense,
   notification,
+  notificationStatus,
   post,
   tournament,
   tournamentApplication,

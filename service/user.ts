@@ -14,6 +14,103 @@ function normalizeClubs(clubs?: string[] | ClubRef[]): ClubRef[] {
   return clubs as ClubRef[];
 }
 
+// 신규 회원가입 (재가입 포함)
+export async function createUser({
+  name,
+  phone,
+  gender,
+  birth,
+  score,
+  email,
+  level,
+  address,
+  clubs,
+  isApprovedUser,
+}: Omit<User, '_id' | '_type'> & { clubs?: string[] | ClubRef[] }): Promise<User> {
+  try {
+    if (!email) throw new Error('email is required');
+
+    // 탈퇴한 사용자 포함하여 모든 사용자 조회
+    const existing = await client.fetch<User>(`*[_type == "user" && email == $email][0]`, {
+      email,
+    });
+
+    if (existing && existing._id) {
+      // 재가입 처리
+      const isRejoining = existing.isActive === false;
+
+      if (isRejoining) {
+        console.log(`재가입: ${email} (이전 탈퇴 사유: ${existing.deactivatedReason})`);
+      }
+
+      const updateData: Partial<Omit<User, '_id' | '_type'>> = {
+        name,
+        phone,
+        gender,
+        birth,
+        score,
+        address,
+        // 재가입 시 활성 상태로 변경
+        isActive: true,
+        deactivatedAt: undefined,
+        deactivatedReason: undefined,
+        // 재가입인 경우 무조건 레벨 1
+        level: 1,
+      };
+
+      if (clubs !== undefined) {
+        updateData.clubs = normalizeClubs(clubs);
+      }
+      if (isApprovedUser !== undefined) {
+        updateData.isApprovedUser = isApprovedUser;
+      }
+
+      return (await client.patch(existing._id).set(updateData).commit()) as User;
+    } else {
+      // 신규 유저: level을 1로 저장
+      const createData = {
+        _type: 'user',
+        name,
+        phone,
+        gender,
+        birth,
+        score,
+        email,
+        level: level || 1,
+        address,
+        clubs: clubs ? normalizeClubs(clubs) : [],
+        isApprovedUser: isApprovedUser ?? false,
+        isActive: true,
+      };
+      return (await client.create(createData)) as User;
+    }
+  } catch (error) {
+    console.error('createUser 오류:', error);
+    throw error;
+  }
+}
+
+// 이메일로 사용자 찾아서 업데이트 (일반 사용자용)
+export async function updateUserByEmail(
+  email: string,
+  userData: Partial<Omit<User, '_id' | '_type'>> & { clubs?: string[] | ClubRef[] },
+): Promise<User> {
+  try {
+    if (!email) throw new Error('email is required');
+
+    const existing = await getUserByEmail(email);
+    if (!existing || !existing._id) {
+      throw new Error('활성 회원을 찾을 수 없습니다.');
+    }
+
+    return await updateUser(existing._id, userData);
+  } catch (error) {
+    console.error('updateUserByEmail 오류:', error);
+    throw error;
+  }
+}
+
+// 기존 upsertUser 함수 (하위 호환성을 위해 유지)
 export async function upsertUser({
   name,
   phone,
@@ -29,51 +126,37 @@ export async function upsertUser({
   try {
     if (!email) throw new Error('email is required');
 
-    const existing = await client.fetch<User>(`*[_type == "user" && email == $email][0]`, {
-      email,
-    });
+    const existing = await getUserByEmail(email);
 
-    let result;
-    if (existing && existing._id) {
-      // 기존 유저: 전달된 level을 사용하거나 기존 레벨 유지
-      const updateData: Partial<Omit<User, '_id' | '_type'>> = {
-        name,
-        phone,
-        gender,
-        birth,
-        score,
-        address,
-      };
-      if (level !== undefined) {
-        updateData.level = level;
-      }
-      if (clubs !== undefined) {
-        updateData.clubs = normalizeClubs(clubs);
-      }
-      if (isApprovedUser !== undefined) {
-        updateData.isApprovedUser = isApprovedUser;
-      }
-      result = await client.patch(existing._id).set(updateData).commit();
-    } else if (!existing) {
-      // 신규 유저: level을 1로 저장
-      const createData = {
-        _type: 'user',
+    if (existing) {
+      // 기존 활성 회원 정보 수정
+      return await updateUserByEmail(email, {
         name,
         phone,
         gender,
         birth,
         score,
         email,
-        level: level || 1,
+        level,
         address,
-        clubs: clubs ? normalizeClubs(clubs) : [],
-        isApprovedUser: isApprovedUser ?? false,
-      };
-      result = await client.create(createData);
+        clubs,
+        isApprovedUser,
+      });
     } else {
-      throw new Error('기존 유저의 _id가 없습니다.');
+      // 신규 회원가입
+      return await createUser({
+        name,
+        phone,
+        gender,
+        birth,
+        score,
+        email,
+        level,
+        address,
+        clubs,
+        isApprovedUser,
+      });
     }
-    return result as User;
   } catch (error) {
     console.error('upsertUser 오류:', error);
     throw error;
@@ -83,7 +166,7 @@ export async function upsertUser({
 export async function getUserByEmail(email: string): Promise<User | null> {
   if (!email) throw new Error('email is required');
   return await client.fetch<User>(
-    `*[_type == "user" && email == $email][0]{
+    `*[_type == "user" && email == $email && isActive != false][0]{
       ...,
     }`,
     { email },
@@ -93,7 +176,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 export async function getUserById(id: string): Promise<User | null> {
   if (!id) throw new Error('id is required');
   return await client.fetch<User>(
-    `*[_type == "user" && _id == $id][0]{
+    `*[_type == "user" && _id == $id && isActive != false][0]{
       ...,
       clubs[]->{
       '_ref': _id,
@@ -144,15 +227,20 @@ export async function setUserApproved(userId: string) {
   return await client.patch(userId).set({ isApprovedUser: true }).commit();
 }
 
-// 레벨 4 이상 회원 조회
+// 레벨 4 이상 회원 조회 (활성 사용자만)
 export async function getUsersLevel4AndAbove(): Promise<User[]> {
   return await client.fetch<User[]>(
-    `*[_type == "user" && level >= 4]{ ... } | order(createdAt desc)`,
+    `*[_type == "user" && level >= 4 && isActive != false]{ ... } | order(createdAt desc)`,
   );
 }
 
+// 모든 사용자 조회 (관리자용 - 탈퇴한 사용자 포함)
+export async function getAllUsers(): Promise<User[]> {
+  return await client.fetch<User[]>(`*[_type == "user"]{ ... } | order(createdAt desc)`);
+}
+
 // 회원 탈퇴 (사용자 삭제)
-export async function deleteUser(email: string): Promise<void> {
+export async function deleteUser(email: string, reason?: string): Promise<void> {
   if (!email) throw new Error('email is required');
 
   try {
@@ -165,7 +253,15 @@ export async function deleteUser(email: string): Promise<void> {
       throw new Error('사용자 ID가 없습니다.');
     }
 
-    await client.delete(user._id);
+    // 실제 삭제 대신 탈퇴 상태로 업데이트
+    await client
+      .patch(user._id)
+      .set({
+        isActive: false,
+        deactivatedAt: new Date().toISOString(),
+        deactivatedReason: reason || '사용자 요청',
+      })
+      .commit();
   } catch (error) {
     console.error('deleteUser 오류:', error);
     throw error;

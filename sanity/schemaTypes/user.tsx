@@ -66,6 +66,32 @@ export default defineType({
       title: '점수',
       type: 'number',
     }),
+    defineField({
+      name: 'isActive',
+      title: '활동 상태',
+      type: 'boolean',
+      initialValue: true,
+    }),
+    defineField({
+      name: 'deactivatedAt',
+      title: '탈퇴 시각',
+      type: 'datetime',
+    }),
+    defineField({
+      name: 'deactivatedReason',
+      title: '탈퇴 사유',
+      type: 'string',
+    }),
+    defineField({
+      name: 'reactivatedAt',
+      title: '재가입 시각',
+      type: 'datetime',
+    }),
+    defineField({
+      name: 'lastActiveAt',
+      title: '마지막 로그인',
+      type: 'datetime',
+    }),
   ],
   preview: {
     select: {

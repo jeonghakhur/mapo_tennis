@@ -76,15 +76,11 @@ export default defineType({
       ],
     }),
     defineField({
-      name: 'readAt',
-      title: '읽은 시간',
-      type: 'datetime',
-    }),
-    defineField({
-      name: 'userId',
-      title: '대상 사용자 ID',
-      type: 'string',
-      description: '특정 사용자에게만 보내는 경우',
+      name: 'targetUsers',
+      title: '대상 사용자 목록',
+      type: 'array',
+      of: [{ type: 'reference', to: [{ type: 'user' }] }],
+      description: '특정 사용자들에게만 보내는 경우 (비어있으면 모든 사용자에게)',
     }),
     defineField({
       name: 'requiredLevel',
@@ -106,7 +102,7 @@ export default defineType({
       name: 'createdAt',
       title: '생성 시간',
       type: 'datetime',
-      readOnly: true,
+      initialValue: () => new Date().toISOString(),
     }),
   ],
   preview: {

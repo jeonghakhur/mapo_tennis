@@ -11,5 +11,8 @@ export interface User {
   address?: string;
   clubs?: { _key: string; _ref: string; name?: string }[]; // 클럽
   isApprovedUser?: boolean;
+  isActive?: boolean; // 활동 상태
+  deactivatedAt?: string; // 탈퇴 시각
+  deactivatedReason?: string; // 탈퇴 사유
   _createdAt?: string;
 }

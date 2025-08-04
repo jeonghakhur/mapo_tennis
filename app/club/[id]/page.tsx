@@ -41,7 +41,6 @@ export default function ClubDetailPage({ params }: { params: Promise<{ id: strin
   let isMyClub = false;
   if (user?.clubs && club?._id) {
     isMyClub = user.clubs.some((c) => c._ref === club._id);
-    console.log(user?.clubs, club?._id);
   }
 
   // 내 역할 찾기
@@ -51,8 +50,6 @@ export default function ClubDetailPage({ params }: { params: Promise<{ id: strin
     myRole = myMember?.role;
   }
 
-  console.log(myRole, isMyClub);
-
   // 권한 체크: 4레벨 이상 또는 내가 가입한 클럽에서 회장/총무
   let canEdit = false;
   let canDelete = false;
@@ -61,7 +58,10 @@ export default function ClubDetailPage({ params }: { params: Promise<{ id: strin
     if (userLevel >= 4) {
       canEdit = true;
       canDelete = true;
-    } else if (isMyClub && (myRole === '회장' || myRole === '총무')) {
+    } else if (
+      isMyClub &&
+      (myRole === '회장' || myRole === '총무' || myRole === '경기이사' || userLevel >= 2)
+    ) {
       canEdit = true;
     }
   }

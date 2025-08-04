@@ -139,7 +139,8 @@ export const authOptions = {
       if (user && user.email) {
         // DB에서 level 조회
         const dbUser = await getUserByEmail(user.email);
-        token.name = token.name ?? dbUser?.name ?? user.name;
+        // DB에 저장된 이름을 우선 사용, 없으면 소셜 로그인에서 받은 이름 사용
+        token.name = dbUser?.name ?? token.name ?? user.name;
         token.level = dbUser?.level ?? 0;
         token.id = dbUser?._id as string;
       }

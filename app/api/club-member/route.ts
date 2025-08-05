@@ -12,6 +12,7 @@ import {
   createNotification,
   trackChanges,
   createNotificationMessage,
+  createNotificationStatuses,
 } from '@/service/notification';
 
 export async function GET(req: NextRequest) {
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
       `${data.user} (${clubName})`,
     );
 
-    await createNotification({
+    const notification = await createNotification({
       type: 'CREATE',
       entityType: 'CLUB_MEMBER',
       entityId: result._id,
@@ -53,6 +54,9 @@ export async function POST(req: NextRequest) {
       link: `/club-member/${result._id}`, // 클럽회원 상세 페이지 링크
       requiredLevel: 4, // 레벨 4 (경기관리자)만 알림 수신
     });
+
+    // 새로운 notificationStatus 구조에 맞게 알림 상태 생성
+    await createNotificationStatuses(notification._id, undefined, 4);
 
     return NextResponse.json({ ok: true, id: result._id });
   } catch (e) {
@@ -93,7 +97,7 @@ export async function PATCH(req: NextRequest) {
         `${result?.user || ''} (${clubName})`,
       );
 
-      await createNotification({
+      const notification = await createNotification({
         type: 'UPDATE',
         entityType: 'CLUB_MEMBER',
         entityId: id,
@@ -103,6 +107,9 @@ export async function PATCH(req: NextRequest) {
         changes,
         requiredLevel: 4, // 레벨 4 (경기관리자)만 알림 수신
       });
+
+      // 새로운 notificationStatus 구조에 맞게 알림 상태 생성
+      await createNotificationStatuses(notification._id, undefined, 4);
     }
 
     return NextResponse.json({ ok: true, member: result });
@@ -122,7 +129,7 @@ export async function DELETE(req: NextRequest) {
       // 전체 삭제 알림 생성
       const { title, message } = createNotificationMessage('DELETE', 'CLUB_MEMBER', '모든 회원');
 
-      await createNotification({
+      const notification = await createNotification({
         type: 'DELETE',
         entityType: 'CLUB_MEMBER',
         entityId: 'all',
@@ -130,6 +137,9 @@ export async function DELETE(req: NextRequest) {
         message,
         requiredLevel: 4, // 레벨 4 (경기관리자)만 알림 수신
       });
+
+      // 새로운 notificationStatus 구조에 맞게 알림 상태 생성
+      await createNotificationStatuses(notification._id, undefined, 4);
 
       return NextResponse.json({ ok: true, deleted: result });
     }
@@ -150,7 +160,7 @@ export async function DELETE(req: NextRequest) {
       `${existingMember.user} (${clubName})`,
     );
 
-    await createNotification({
+    const notification = await createNotification({
       type: 'DELETE',
       entityType: 'CLUB_MEMBER',
       entityId: id,
@@ -158,6 +168,9 @@ export async function DELETE(req: NextRequest) {
       message,
       requiredLevel: 4, // 레벨 4 (경기관리자)만 알림 수신
     });
+
+    // 새로운 notificationStatus 구조에 맞게 알림 상태 생성
+    await createNotificationStatuses(notification._id, undefined, 4);
 
     return NextResponse.json({ ok: true });
   } catch (e) {

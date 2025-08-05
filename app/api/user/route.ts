@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserByEmail, getUserById, upsertUser } from '@/service/user';
-import { createNotification, createNotificationMessage } from '@/service/notification';
+import {
+  createNotification,
+  createNotificationMessage,
+  createNotificationStatuses,
+} from '@/service/notification';
 import { createNotificationLink } from '@/lib/notificationUtils';
 import { getClubs } from '@/service/club';
 import type { User } from '@/model/user';
@@ -68,7 +72,8 @@ export async function POST(req: NextRequest) {
       // 상세한 회원가입 메시지 생성
       const detailedMessage = `새로운 회원이 가입했습니다.\n\n이름: ${name}\n이메일: ${email}\n연락처: ${phone}\n성별: ${gender}\n생년월일: ${birth}\n테니스 점수: ${score}점${clubInfo}`;
 
-      await createNotification({
+      // 알림 생성
+      const notification = await createNotification({
         type: 'CREATE',
         entityType: 'USER',
         entityId: result._id, // 실제 사용자 ID 사용
@@ -77,6 +82,9 @@ export async function POST(req: NextRequest) {
         link: createNotificationLink('USER', result._id),
         requiredLevel: 5, // 레벨 5 (어드민)만 알림 수신
       });
+
+      // 새로운 notificationStatus 구조에 맞게 알림 상태 생성
+      await createNotificationStatuses(notification._id, undefined, 5);
     }
 
     return NextResponse.json({ ok: true, id: result._id });
@@ -201,7 +209,8 @@ export async function PUT(req: NextRequest) {
       if (changes.length > 0) {
         const detailedMessage = `${name}${clubInfo} 회원 정보가 수정되었습니다.\n\n변경된 내용:\n${changes.join('\n')}`;
 
-        await createNotification({
+        // 알림 생성
+        const notification = await createNotification({
           type: 'UPDATE',
           entityType: 'USER',
           entityId: result._id,
@@ -210,6 +219,9 @@ export async function PUT(req: NextRequest) {
           link: createNotificationLink('USER', result._id),
           requiredLevel: 5, // 레벨 5 (어드민)만 알림 수신
         });
+
+        // 새로운 notificationStatus 구조에 맞게 알림 상태 생성
+        await createNotificationStatuses(notification._id, undefined, 5);
       }
     }
 

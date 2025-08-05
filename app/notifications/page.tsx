@@ -17,14 +17,30 @@ export default function NotificationsPage() {
   const admin = isAdmin(user);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
 
-  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } =
-    useNotifications(user?._id, user?.level);
+  const {
+    notifications,
+    unreadCount,
+    isLoading,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    refreshNotifications,
+  } = useNotifications(user?._id, user?.level);
 
-  // 모든 알림 삭제 함수
+  // 새로고침 함수
+  const handleRefresh = async () => {
+    try {
+      await refreshNotifications();
+    } catch (error) {
+      console.error('알림 새로고침 중 오류:', error);
+    }
+  };
+
+  // 모든 알림 삭제 함수 (관리자용)
   const deleteAllNotifications = async () => {
     if (!admin) return;
 
-    if (!confirm('모든 알림을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+    if (!confirm('모든 사용자의 알림을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
       return;
     }
 
@@ -36,9 +52,9 @@ export default function NotificationsPage() {
 
       if (response.ok) {
         const result = await response.json();
-        alert(`${result.deletedCount}개의 알림이 삭제되었습니다.`);
-        // 페이지 새로고침으로 알림 목록 업데이트
-        window.location.reload();
+        alert(result.message || `${result.deletedCount}개의 알림이 삭제되었습니다.`);
+        // 알림 목록 새로고침
+        await refreshNotifications();
       } else {
         const error = await response.json();
         alert(`삭제 실패: ${error.error}`);
@@ -151,6 +167,9 @@ export default function NotificationsPage() {
                 {isDeletingAll ? '삭제 중...' : '모든 알림 삭제'}
               </Button>
             )}
+            <Button onClick={handleRefresh} size="2" variant="soft" disabled={isLoading}>
+              새로고침
+            </Button>
           </Flex>
         </Flex>
 

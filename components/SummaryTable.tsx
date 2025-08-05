@@ -18,6 +18,7 @@ function groupAwardsByCompetitionAndDivision(awards: Award[]) {
 export default function SummaryTable({ awards }: { awards: Award[] }) {
   const grouped = groupAwardsByCompetitionAndDivision(awards);
   const categoryOrder = ['우승', '준우승', '3위', '공동3위'];
+  console.log(grouped);
 
   const getAwardCategoryInfo = (category: string) => {
     switch (category) {

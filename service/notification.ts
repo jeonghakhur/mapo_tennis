@@ -21,101 +21,193 @@ export async function createNotification(data: NotificationInput): Promise<Notif
   return notification as Notification;
 }
 
-// 알림 목록 조회 (사용자 레벨에 따른 필터링)
-export async function getNotifications(
-  userId?: string,
-  userLevel?: number,
-  userCreatedAt?: string,
-): Promise<Notification[]> {
-  // 개인 알림과 레벨별 알림을 분리해서 조회
-  const personalQuery = `*[_type == "notification" && userId == $userId]`;
+// 알림 목록 조회 (새로운 notificationStatus 구조 사용)
+export async function getNotifications(userId?: string): Promise<Notification[]> {
+  if (!userId) {
+    return [];
+  }
 
-  // 사용자 가입 시점 이후의 레벨별 알림만 조회 (또는 최근 7일)
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  const sevenDaysAgoISO = sevenDaysAgo.toISOString();
-
-  const levelQuery = userCreatedAt
-    ? `*[_type == "notification" && requiredLevel <= $userLevel && !defined(userId) && createdAt >= $userCreatedAt]`
-    : `*[_type == "notification" && requiredLevel <= $userLevel && !defined(userId) && createdAt >= $sevenDaysAgoISO]`;
-
-  const params = { userId, userLevel, userCreatedAt, sevenDaysAgoISO };
-
-  // 개인 알림과 레벨별 알림을 각각 조회
-  const [personalNotifications, levelNotifications] = await Promise.all([
-    userId ? client.fetch(personalQuery, params) : Promise.resolve([]),
-    userLevel !== undefined ? client.fetch(levelQuery, params) : Promise.resolve([]),
-  ]);
-
-  // 중복 제거 (ID 기준)
-  const allNotifications = [...personalNotifications, ...levelNotifications];
-  const uniqueNotifications = allNotifications.filter(
-    (notification, index, self) => index === self.findIndex((n) => n._id === notification._id),
-  );
-
-  // 생성일 기준으로 정렬
-  const sortedNotifications = uniqueNotifications.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
-
-  return sortedNotifications;
-}
-
-// 읽지 않은 알림 개수 조회 (사용자 레벨에 따른 필터링)
-export async function getUnreadNotificationCount(
-  userId?: string,
-  userLevel?: number,
-  userCreatedAt?: string,
-): Promise<number> {
-  // 중복 제거를 위해 전체 알림을 조회하고 개수 계산
-  const allNotifications = await getNotifications(userId, userLevel, userCreatedAt);
-  const unreadNotifications = allNotifications.filter((notification) => !notification.readAt);
-
-  return unreadNotifications.length;
-}
-
-// 알림 읽음 처리
-export async function markNotificationAsRead(notificationId: string): Promise<void> {
-  await client.patch(notificationId).set({ readAt: new Date().toISOString() }).commit();
-}
-
-// 모든 알림 읽음 처리
-export async function markAllNotificationsAsRead(userId?: string): Promise<void> {
+  // notificationStatus를 통해 사용자별 알림 상태 조회
   const query = `
-    *[_type == "notification" && !defined(readAt) ${userId ? `&& userId == $userId` : ''}]
+    *[_type == "notificationStatus" && user._ref == $userId && !isDeleted] {
+      _id,
+      isRead,
+      readAt,
+      createdAt,
+      notification->{
+        _id,
+        type,
+        entityType,
+        entityId,
+        title,
+        message,
+        link,
+        changes,
+        targetUsers,
+        requiredLevel,
+        createdAt
+      }
+    } | order(notification.createdAt desc)
   `;
 
-  const params = userId ? { userId } : {};
-  const notifications = await client.fetch(query, params);
+  const notificationStatuses = await client.fetch(query, { userId });
 
-  const patches = notifications.map((notification: Notification) =>
-    client.patch(notification._id).set({ readAt: new Date().toISOString() }),
+  console.log('알림 조회 - userId:', userId);
+  console.log('알림 조회 - notificationStatuses 개수:', notificationStatuses.length);
+
+  // notification 필드가 있는 항목만 필터링하고 알림 데이터 추출
+  const notifications = notificationStatuses
+    .filter((status: { notification: Notification | null }) => status.notification)
+    .map(
+      (status: {
+        _id: string;
+        isRead: boolean;
+        readAt: string | null;
+        createdAt: string;
+        notification: Notification;
+      }) => ({
+        ...status.notification,
+        _id: status._id, // notificationStatus의 ID를 사용 (삭제/읽음 처리용)
+        readAt: status.isRead ? status.readAt : null,
+        createdAt: status.notification.createdAt, // 실제 알림 생성 시간 사용
+      }),
+    );
+
+  console.log('알림 조회 - 최종 notifications 개수:', notifications.length);
+  return notifications;
+}
+
+// 읽지 않은 알림 개수 조회 (새로운 notificationStatus 구조 사용)
+export async function getUnreadNotificationCount(userId?: string): Promise<number> {
+  if (!userId) {
+    return 0;
+  }
+
+  // 읽지 않은 알림 개수 조회
+  const query = `
+    count(*[_type == "notificationStatus" && user._ref == $userId && !isRead && !isDeleted])
+  `;
+
+  const unreadCount = await client.fetch(query, { userId });
+  return unreadCount;
+}
+
+// 알림 읽음 처리 (새로운 notificationStatus 구조 사용)
+export async function markNotificationAsRead(notificationStatusId: string): Promise<void> {
+  await client
+    .patch(notificationStatusId)
+    .set({
+      isRead: true,
+      readAt: new Date().toISOString(),
+    })
+    .commit();
+}
+
+// 모든 알림 읽음 처리 (새로운 notificationStatus 구조 사용)
+export async function markAllNotificationsAsRead(userId?: string): Promise<void> {
+  if (!userId) {
+    return;
+  }
+
+  const query = `
+    *[_type == "notificationStatus" && user._ref == $userId && !isRead && !isDeleted]
+  `;
+
+  const notificationStatuses = await client.fetch(query, { userId });
+
+  const patches = notificationStatuses.map((status: { _id: string }) =>
+    client.patch(status._id).set({
+      isRead: true,
+      readAt: new Date().toISOString(),
+    }),
   );
 
   await Promise.all(patches.map((patch: { commit: () => Promise<void> }) => patch.commit()));
 }
 
-// 알림 삭제
-export async function deleteNotification(notificationId: string): Promise<void> {
-  await client.delete(notificationId);
+// 알림 삭제 (새로운 notificationStatus 구조 사용)
+export async function deleteNotification(notificationStatusId: string): Promise<void> {
+  await client
+    .patch(notificationStatusId)
+    .set({
+      isDeleted: true,
+      deletedAt: new Date().toISOString(),
+    })
+    .commit();
 }
 
 // 모든 알림 삭제 (관리자용)
 export async function deleteAllNotifications(): Promise<{ deletedCount: number }> {
-  const query = `*[_type == "notification"]`;
-  const notifications = await client.fetch(query);
+  // 모든 notificationStatus 삭제 처리
+  const query = `*[_type == "notificationStatus"]`;
+  const notificationStatuses = await client.fetch(query);
 
-  if (notifications.length === 0) {
+  if (notificationStatuses.length === 0) {
     return { deletedCount: 0 };
   }
 
-  const patches = notifications.map((notification: Notification) =>
-    client.delete(notification._id),
+  const patches = notificationStatuses.map((status: { _id: string }) =>
+    client.patch(status._id).set({
+      isDeleted: true,
+      deletedAt: new Date().toISOString(),
+    }),
   );
 
-  await Promise.all(patches);
+  await Promise.all(patches.map((patch: { commit: () => Promise<void> }) => patch.commit()));
 
-  return { deletedCount: notifications.length };
+  return { deletedCount: notificationStatuses.length };
+}
+
+// 사용자별 알림 상태 생성 (새로운 알림이 생성될 때 호출)
+export async function createNotificationStatuses(
+  notificationId: string,
+  targetUserIds?: string[],
+  requiredLevel?: number,
+): Promise<void> {
+  // 대상 사용자들이 지정된 경우
+  if (targetUserIds && targetUserIds.length > 0) {
+    const statuses = targetUserIds.map((userId) => ({
+      _type: 'notificationStatus',
+      user: { _type: 'reference', _ref: userId },
+      notification: { _type: 'reference', _ref: notificationId },
+      isRead: false,
+      isDeleted: false,
+      createdAt: new Date().toISOString(),
+    }));
+
+    await Promise.all(statuses.map((status) => client.create(status)));
+  } else {
+    // 레벨별 알림인 경우, 해당 레벨 이상의 모든 사용자에게 생성
+    const usersQuery = `
+      *[_type == "user" && level >= $requiredLevel] {
+        _id
+      }
+    `;
+
+    const users = await client.fetch(usersQuery, { requiredLevel });
+
+    const statuses = users.map((user: { _id: string }) => ({
+      _type: 'notificationStatus',
+      user: { _type: 'reference', _ref: user._id },
+      notification: { _type: 'reference', _ref: notificationId },
+      isRead: false,
+      isDeleted: false,
+      createdAt: new Date().toISOString(),
+    }));
+
+    await Promise.all(
+      statuses.map(
+        (status: {
+          _type: string;
+          user: { _type: string; _ref: string };
+          notification: { _type: string; _ref: string };
+          isRead: boolean;
+          isDeleted: boolean;
+          createdAt: string;
+        }) => client.create(status),
+      ),
+    );
+  }
 }
 
 // 변경사항 추적 함수

@@ -18,12 +18,12 @@ export async function OPTIONS() {
 
 async function deleteAllNotificationsHandler() {
   try {
-    // 모든 알림 삭제
+    // 모든 알림 삭제 (관리자만 접근 가능)
     const result = await deleteAllNotifications();
 
     const response = NextResponse.json({
       success: true,
-      message: '모든 알림이 삭제되었습니다',
+      message: '모든 사용자의 알림이 삭제되었습니다',
       deletedCount: result.deletedCount,
     });
     return setCorsHeaders(response);

@@ -14,11 +14,6 @@ const fetcher = async (url: string) => {
   return res.json();
 };
 
-const DEFAULT_REFRESH_INTERVAL =
-  typeof window !== 'undefined' && process.env.NEXT_PUBLIC_NOTI_REFRESH_INTERVAL
-    ? Number(process.env.NEXT_PUBLIC_NOTI_REFRESH_INTERVAL)
-    : 10000;
-
 export function useNotifications(
   userId?: string,
   userLevel?: number,
@@ -32,18 +27,27 @@ export function useNotifications(
     shouldFetch ? `/api/notifications${userId ? `?userId=${userId}` : ''}` : null,
     fetcher,
     {
-      refreshInterval: shouldFetch ? DEFAULT_REFRESH_INTERVAL : 0,
+      // 자동 새로고침 제거 - 페이지 이동/새로고침 시에만 알림 확인
+      refreshInterval: 0,
+      // 페이지 포커스 시 새로고침 (사용자가 다른 탭에서 돌아올 때)
       revalidateOnFocus: true,
+      // 페이지가 다시 보일 때 새로고침 (모바일에서 앱으로 돌아올 때)
+      revalidateOnReconnect: true,
     },
   );
 
   const notifications = data?.notifications || [];
   const unreadCount = data?.unreadCount || 0;
 
+  // 수동으로 알림 새로고침하는 함수 추가
+  const refreshNotifications = () => {
+    mutate(`/api/notifications${userId ? `?userId=${userId}` : ''}`);
+  };
+
   // 개별 알림 읽음 처리
-  const markAsRead = async (notificationId: string) => {
+  const markAsRead = async (notificationStatusId: string) => {
     try {
-      await fetch(`/api/notifications/${notificationId}`, {
+      await fetch(`/api/notifications/${notificationStatusId}`, {
         method: 'PATCH',
       });
 
@@ -69,9 +73,9 @@ export function useNotifications(
   };
 
   // 알림 삭제
-  const deleteNotification = async (notificationId: string) => {
+  const deleteNotification = async (notificationStatusId: string) => {
     try {
-      await fetch(`/api/notifications/${notificationId}`, {
+      await fetch(`/api/notifications/${notificationStatusId}`, {
         method: 'DELETE',
       });
 
@@ -90,5 +94,6 @@ export function useNotifications(
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    refreshNotifications, // 수동 새로고침 함수 추가
   };
 }

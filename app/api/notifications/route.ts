@@ -30,14 +30,15 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId') || undefined;
-    const userLevel = session.user.level || 1;
 
-    // 사용자 정보 조회하여 생성일 가져오기
+    // 사용자 정보 조회하여 ID 가져오기
     const user = await getUserByEmail(session.user.email);
-    const userCreatedAt = user?._createdAt;
 
-    const notifications = await getNotifications(userId, userLevel, userCreatedAt);
-    const unreadCount = await getUnreadNotificationCount(userId, userLevel, userCreatedAt);
+    // 새로운 구조에서는 userId가 필요하므로 사용자 ID를 사용
+    const actualUserId = userId || user?._id;
+
+    const notifications = await getNotifications(actualUserId);
+    const unreadCount = await getUnreadNotificationCount(actualUserId);
 
     const response = NextResponse.json({
       notifications,

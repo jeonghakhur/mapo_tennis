@@ -89,7 +89,7 @@ export default function ProfileForm() {
             loading={loading}
             showLogout={true}
             onLogout={() => signOut({ callbackUrl: '/' })}
-            submitText="회원 정보 수정"
+            submitText="회원정보수정"
             showWithdraw={true}
           />
         </>

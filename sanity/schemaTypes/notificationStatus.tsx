@@ -58,7 +58,7 @@ export default defineType({
     select: {
       userName: 'user.name',
       userEmail: 'user.email',
-      notificationTitle: 'notificationId.title',
+      notificationTitle: 'notification.title',
       isRead: 'isRead',
       isDeleted: 'isDeleted',
       createdAt: 'createdAt',
@@ -66,7 +66,7 @@ export default defineType({
     prepare({ userName, userEmail, notificationTitle, isRead, isDeleted, createdAt }) {
       const status = isDeleted ? '삭제됨' : isRead ? '읽음' : '안읽음';
       return {
-        title: `${userName || userEmail} - ${notificationTitle}`,
+        title: `${userName || userEmail} - ${notificationTitle || '알림'}`,
         subtitle: `${status} (${new Date(createdAt).toLocaleDateString()})`,
       };
     },

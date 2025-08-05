@@ -121,7 +121,7 @@ export default function AdminUserEditPage() {
             user={{ ...user, isApprovedUser, level: user?.level }}
             onSubmit={handleSubmit}
             loading={false} // loading state removed
-            submitText="회원 정보 수정"
+            submitText="회원정보수정"
             isAdmin={true}
           />
         </>

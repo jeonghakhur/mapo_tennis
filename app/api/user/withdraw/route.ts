@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { deleteUser, getUserByEmail } from '@/service/user';
-import { createNotification } from '@/service/notification';
+import { createNotification, createNotificationStatuses } from '@/service/notification';
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     // 관리자에게 탈퇴 알림 생성 (관리자 전용)
     try {
-      await createNotification({
+      const notification = await createNotification({
         type: 'DELETE',
         entityType: 'USER',
         entityId: user._id,
@@ -36,6 +36,9 @@ export async function POST(request: NextRequest) {
         requiredLevel: 5, // 최고 관리자 레벨만 알림 (관리자 전용)
         // userId를 설정하지 않음으로써 개인 알림이 아닌 레벨별 알림으로 처리
       });
+
+      // 새로운 notificationStatus 구조에 맞게 알림 상태 생성
+      await createNotificationStatuses(notification._id, undefined, 5);
     } catch (notificationError) {
       console.error('탈퇴 알림 생성 중 오류:', notificationError);
       // 알림 생성 실패는 탈퇴를 막지 않음

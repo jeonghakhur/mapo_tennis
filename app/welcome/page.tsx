@@ -64,7 +64,7 @@ export default function WelcomePage() {
             user={processedUser}
             onSubmit={handleSubmit}
             loading={loading}
-            submitText="회원가입 완료"
+            submitText="회원가입"
             submitButtonProps={{
               style: { marginTop: 16, width: '100%' },
             }}

@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { name, phone, gender, birth, score, email, address, clubs } = body;
 
-    if (!name || !phone || !gender || !birth || !score || !email) {
+    if (!name || !phone || !gender || !birth || !email) {
       return NextResponse.json({ error: '필수 정보 누락' }, { status: 400 });
     }
 
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
       phone,
       gender,
       birth,
-      score: Number(score),
+      score: score ? Number(score) : 0,
       email,
       level: 1,
       address,
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
       const { title } = createNotificationMessage('CREATE', 'USER', `${name}${clubInfo}`);
 
       // 상세한 회원가입 메시지 생성
-      const detailedMessage = `새로운 회원이 가입했습니다.\n\n이름: ${name}\n이메일: ${email}\n연락처: ${phone}\n성별: ${gender}\n생년월일: ${birth}\n테니스 점수: ${score}점${clubInfo}`;
+      const detailedMessage = `새로운 회원이 가입했습니다.\n\n이름: ${name}\n이메일: ${email}\n연락처: ${phone}\n성별: ${gender}\n생년월일: ${birth}${score ? `\n테니스 점수: ${score}점` : ''}${clubInfo}`;
 
       // 알림 생성
       const notification = await createNotification({
@@ -98,7 +98,7 @@ export async function PUT(req: NextRequest) {
   try {
     const { name, phone, gender, birth, score, email, address, clubs, isApprovedUser, level } =
       await req.json();
-    if (!name || !phone || !gender || !birth || !score || !email) {
+    if (!name || !phone || !gender || !birth || !email) {
       return NextResponse.json({ error: '필수 정보 누락' }, { status: 400 });
     }
 
@@ -113,7 +113,7 @@ export async function PUT(req: NextRequest) {
       phone,
       gender,
       birth,
-      score: Number(score),
+      score: score ? Number(score) : 0,
       email,
       level: level !== undefined ? Number(level) : existingUser.level || 1, // level 필드 처리
       address,

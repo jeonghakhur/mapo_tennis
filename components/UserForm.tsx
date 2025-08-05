@@ -51,7 +51,7 @@ export default function UserForm({
   disabled = false,
   showLogout = false,
   onLogout,
-  submitText = '회원 정보 수정',
+  submitText = '회원정보수정',
   submitButtonProps,
   isAdmin = false,
   showAgreements = false,
@@ -118,8 +118,8 @@ export default function UserForm({
 
   // 모든 필수 항목이 완료되었는지 확인하는 함수
   const isFormComplete = () => {
-    // 기본 필수 항목 확인
-    if (!name || !phone || !gender || !birth || !score || selectedClubIds.length === 0) {
+    // 기본 필수 항목 확인 (클럽 선택, 점수 제외)
+    if (!name || !phone || !gender || !birth) {
       return false;
     }
 
@@ -172,13 +172,13 @@ export default function UserForm({
     //   setErrorDialogOpen(true);
     //   return;
     // }
-    // 클럽 필수 유효성 검사 (회원가입 모드에서만)
-    if (selectedClubIds.length === 0) {
-      setError('가입할 클럽을 1개 이상 선택해 주세요.');
-      setFocusMoveFn(null);
-      setErrorDialogOpen(true);
-      return;
-    }
+    // 클럽 선택은 선택사항으로 변경 (필수 검사 제거)
+    // if (selectedClubIds.length === 0) {
+    //   setError('가입할 클럽을 1개 이상 선택해 주세요.');
+    //   setFocusMoveFn(null);
+    //   setErrorDialogOpen(true);
+    //   return;
+    // }
 
     // 동의 체크박스 검증 (회원가입 모드에서만)
     if (showAgreements) {
@@ -339,48 +339,7 @@ export default function UserForm({
                 />
               </td>
             </tr>
-            <tr>
-              <th>점수</th>
-              <td>
-                <Select.Root
-                  size="3"
-                  value={score}
-                  onValueChange={(v) => {
-                    if (v !== '') {
-                      setScore(v);
-                    }
-                  }}
-                >
-                  <Select.Trigger
-                    placeholder="점수를 선택하세요"
-                    ref={scoreRef}
-                    style={{ width: '100%' }}
-                  />
-                  <Select.Content>
-                    {[...Array(10)].map((_, i) => (
-                      <Select.Item key={i + 1} value={String(i + 1)}>
-                        {i + 1}점
-                      </Select.Item>
-                    ))}
-                  </Select.Content>
-                </Select.Root>
-              </td>
-            </tr>
-            <tr>
-              <th>가입 클럽</th>
-              <td>
-                <ClubSelector
-                  userName={nameForClubSelector}
-                  selectedClubIds={selectedClubIds}
-                  onClubsChange={(v) => {
-                    if (!v) return;
-                    setSelectedClubIds(v);
-                  }}
-                  disabled={disabled || loading}
-                  isNameEntered={!!nameForClubSelector}
-                />
-              </td>
-            </tr>
+
             {isAdmin && (
               <tr>
                 <th>회원 승인</th>
@@ -431,6 +390,54 @@ export default function UserForm({
         <h2 className="my-4 text-xl font-bold">회원정보 선택항목</h2>
         <table>
           <tbody>
+            <tr>
+              <th>가입 클럽</th>
+              <td>
+                <ClubSelector
+                  userName={nameForClubSelector}
+                  selectedClubIds={selectedClubIds}
+                  onClubsChange={(v) => {
+                    if (!v) return;
+                    setSelectedClubIds(v);
+                  }}
+                  disabled={disabled || loading}
+                  isNameEntered={!!nameForClubSelector}
+                />
+                <Text size="2" color="gray" mt="2" style={{ display: 'block' }}>
+                  * 클럽 선택은 선택사항입니다. 나중에 언제든지 추가할 수 있습니다.
+                </Text>
+              </td>
+            </tr>
+            <tr>
+              <th>점수</th>
+              <td>
+                <Select.Root
+                  size="3"
+                  value={score}
+                  onValueChange={(v) => {
+                    if (v !== '') {
+                      setScore(v);
+                    }
+                  }}
+                >
+                  <Select.Trigger
+                    placeholder="점수를 선택하세요"
+                    ref={scoreRef}
+                    style={{ width: '100%' }}
+                  />
+                  <Select.Content>
+                    {[...Array(10)].map((_, i) => (
+                      <Select.Item key={i + 1} value={String(i + 1)}>
+                        {i + 1}점
+                      </Select.Item>
+                    ))}
+                  </Select.Content>
+                </Select.Root>
+                <Text size="2" color="gray" mt="2" style={{ display: 'block' }}>
+                  * 점수는 선택사항입니다. 나중에 언제든지 수정할 수 있습니다.
+                </Text>
+              </td>
+            </tr>
             <tr>
               <th>주소</th>
               <td>

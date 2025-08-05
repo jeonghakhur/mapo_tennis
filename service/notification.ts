@@ -158,6 +158,36 @@ export async function deleteAllNotifications(): Promise<{ deletedCount: number }
   return { deletedCount: notificationStatuses.length };
 }
 
+// 모든 알림 완전 삭제 (관리자용)
+export async function permanentlyDeleteAllNotifications(): Promise<{ deletedCount: number }> {
+  // 1. 모든 notification 조회
+  const notificationsQuery = `*[_type == "notification"]`;
+  const notifications = await client.fetch(notificationsQuery);
+
+  if (notifications.length === 0) {
+    return { deletedCount: 0 };
+  }
+
+  // 2. 모든 notificationStatus 삭제
+  const notificationStatusesQuery = `*[_type == "notificationStatus"]`;
+  const notificationStatuses = await client.fetch(notificationStatusesQuery);
+
+  if (notificationStatuses.length > 0) {
+    const statusDeletions = notificationStatuses.map((status: { _id: string }) =>
+      client.delete(status._id),
+    );
+    await Promise.all(statusDeletions);
+  }
+
+  // 3. 모든 notification 삭제
+  const notificationDeletions = notifications.map((notification: { _id: string }) =>
+    client.delete(notification._id),
+  );
+  await Promise.all(notificationDeletions);
+
+  return { deletedCount: notifications.length };
+}
+
 // 사용자별 알림 상태 생성 (새로운 알림이 생성될 때 호출)
 export async function createNotificationStatuses(
   notificationId: string,
@@ -231,42 +261,80 @@ export function trackChanges(
     'leftAt', // 탈퇴 날짜 필드 제외
   ];
 
+  // 필드명을 한글로 변환하는 맵
+  const fieldNameMap: Record<string, string> = {
+    user: '이름',
+    birth: '출생년도',
+    score: '점수',
+    gender: '성별',
+    status: '회원상태',
+    role: '직위',
+    tennisStartYear: '입문년도',
+    // 참가신청 관련 필드
+    division: '참가부서',
+    tournamentType: '대회유형',
+    contact: '연락처',
+    email: '이메일',
+    memo: '메모',
+    isFeePaid: '참가비납부',
+    teamMembers: '참가자목록',
+    // 지출내역 관련 필드
+    title: '제목',
+    amount: '금액',
+    category: '카테고리',
+    date: '날짜',
+    description: '설명',
+  };
+
+  // club 객체의 이름을 추출하는 함수
+  const getClubName = (obj: unknown): string | null => {
+    if (!obj || typeof obj !== 'object') return null;
+
+    // 확장된 객체 형태: { _id: '...', name: '...' }
+    if ('name' in obj) {
+      return (obj as Record<string, unknown>).name?.toString() || null;
+    }
+
+    // 참조 형태: { _ref: '...', _type: 'reference' }
+    if ('_ref' in obj) {
+      // 참조의 경우 ID만 있으므로 null 반환 (실제 이름은 알 수 없음)
+      return null;
+    }
+
+    return null;
+  };
+
+  // 값이 실제로 변경되었는지 확인하는 함수
+  const hasSignificantChange = (oldValue: unknown, newValue: unknown): boolean => {
+    const oldStr = oldValue?.toString();
+    const newStr = newValue?.toString();
+
+    // 빈 값이나 '없음' 값은 null로 처리
+    const cleanOldValue =
+      !oldStr || oldStr === '없음' || oldStr === 'null' || oldStr === 'undefined' ? null : oldStr;
+    const cleanNewValue =
+      !newStr || newStr === '없음' || newStr === 'null' || newStr === 'undefined' ? null : newStr;
+
+    return cleanOldValue !== cleanNewValue;
+  };
+
   for (const key in newData) {
     // 시스템 필드 제외
     if (excludeFields.includes(key)) {
       continue;
     }
 
+    const oldValue = oldData[key];
+    const newValue = newData[key];
+
     // 객체 타입 필드 처리 (club 등)
-    if (typeof newData[key] === 'object' && newData[key] !== null) {
-      const oldObj = oldData[key];
-      const newObj = newData[key];
-
-      // club 객체의 경우 특별 처리
+    if (typeof newValue === 'object' && newValue !== null) {
       if (key === 'club') {
-        // 참조 형태와 확장된 객체 형태 모두 처리
-        const getClubName = (obj: unknown): string | null => {
-          if (!obj || typeof obj !== 'object') return null;
-
-          // 확장된 객체 형태: { _id: '...', name: '...' }
-          if ('name' in obj) {
-            return (obj as Record<string, unknown>).name?.toString() || null;
-          }
-
-          // 참조 형태: { _ref: '...', _type: 'reference' }
-          if ('_ref' in obj) {
-            // 참조의 경우 ID만 있으므로 null 반환 (실제 이름은 알 수 없음)
-            return null;
-          }
-
-          return null;
-        };
-
-        const oldClubName = getClubName(oldObj);
-        const newClubName = getClubName(newObj);
+        const oldClubName = getClubName(oldValue);
+        const newClubName = getClubName(newValue);
 
         // 클럽명이 실제로 변경되었을 때만 추가
-        if (oldClubName !== newClubName) {
+        if (hasSignificantChange(oldClubName, newClubName)) {
           changes.push({
             field: '클럽',
             oldValue: oldClubName,
@@ -275,54 +343,34 @@ export function trackChanges(
         }
       } else {
         // 다른 객체 필드의 경우 JSON 비교
-        const oldObjStr = oldObj ? JSON.stringify(oldObj) : null;
-        const newObjStr = newObj ? JSON.stringify(newObj) : null;
+        const oldObjStr = oldValue ? JSON.stringify(oldValue) : null;
+        const newObjStr = newValue ? JSON.stringify(newValue) : null;
 
-        if (oldObjStr !== newObjStr) {
+        if (hasSignificantChange(oldObjStr, newObjStr)) {
           changes.push({
-            field: key,
+            field: fieldNameMap[key] || key,
             oldValue: oldObjStr,
             newValue: newObjStr,
           });
         }
       }
     } else {
-      // 일반 필드 처리
-      if (oldData[key] !== newData[key]) {
-        // 필드명을 한글로 변환
-        const fieldNameMap: Record<string, string> = {
-          user: '이름',
-          birth: '출생년도',
-          score: '점수',
-          gender: '성별',
-          status: '회원상태',
-          role: '직위',
-          tennisStartYear: '입문년도',
-          // 참가신청 관련 필드
-          division: '참가부서',
-          tournamentType: '대회유형',
-          contact: '연락처',
-          email: '이메일',
-          memo: '메모',
-          isFeePaid: '참가비납부',
-          teamMembers: '참가자목록',
-          //   leftAt: '탈퇴일', // 추가 (만약 표시하고 싶다면)
-        };
-
+      // 일반 필드 처리 - 실제로 변경된 경우만 추가
+      if (hasSignificantChange(oldValue, newValue)) {
         const fieldName = fieldNameMap[key] || key;
 
-        const oldValue = oldData[key]?.toString();
-        const newValue = newData[key]?.toString();
+        const oldStr = oldValue?.toString();
+        const newStr = newValue?.toString();
 
         // 빈 값이나 '없음' 값은 null로 처리
         const cleanOldValue =
-          !oldValue || oldValue === '없음' || oldValue === 'null' || oldValue === 'undefined'
+          !oldStr || oldStr === '없음' || oldStr === 'null' || oldStr === 'undefined'
             ? null
-            : oldValue;
+            : oldStr;
         const cleanNewValue =
-          !newValue || newValue === '없음' || newValue === 'null' || newValue === 'undefined'
+          !newStr || newStr === '없음' || newStr === 'null' || newStr === 'undefined'
             ? null
-            : newValue;
+            : newStr;
 
         changes.push({
           field: fieldName,

@@ -16,25 +16,10 @@ export default function NotificationsPage() {
   const { user } = useUser(session?.user?.email);
   const admin = isAdmin(user);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
+  const [isPermanentlyDeletingAll, setIsPermanentlyDeletingAll] = useState(false);
 
-  const {
-    notifications,
-    unreadCount,
-    isLoading,
-    markAsRead,
-    markAllAsRead,
-    deleteNotification,
-    refreshNotifications,
-  } = useNotifications(user?._id, user?.level);
-
-  // 새로고침 함수
-  const handleRefresh = async () => {
-    try {
-      await refreshNotifications();
-    } catch (error) {
-      console.error('알림 새로고침 중 오류:', error);
-    }
-  };
+  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } =
+    useNotifications(user?._id, user?.level);
 
   // 모든 알림 삭제 함수 (관리자용)
   const deleteAllNotifications = async () => {
@@ -54,7 +39,6 @@ export default function NotificationsPage() {
         const result = await response.json();
         alert(result.message || `${result.deletedCount}개의 알림이 삭제되었습니다.`);
         // 알림 목록 새로고침
-        await refreshNotifications();
       } else {
         const error = await response.json();
         alert(`삭제 실패: ${error.error}`);
@@ -63,6 +47,39 @@ export default function NotificationsPage() {
       alert('삭제 중 오류가 발생했습니다.');
     } finally {
       setIsDeletingAll(false);
+    }
+  };
+
+  // 모든 알림 완전 삭제 함수 (관리자용)
+  const permanentlyDeleteAllNotifications = async () => {
+    if (!admin) return;
+
+    if (
+      !confirm(
+        '모든 알림을 완전히 삭제하시겠습니까?\n\n⚠️ 경고: 이 작업은 되돌릴 수 없으며, 모든 알림 데이터가 영구적으로 삭제됩니다.',
+      )
+    ) {
+      return;
+    }
+
+    setIsPermanentlyDeletingAll(true);
+    try {
+      const response = await fetch('/api/notifications/permanent-delete', {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert(result.message || `${result.deletedCount}개의 알림이 완전히 삭제되었습니다.`);
+        // 알림 목록 새로고침
+      } else {
+        const error = await response.json();
+        alert(`완전 삭제 실패: ${error.error}`);
+      }
+    } catch {
+      alert('완전 삭제 중 오류가 발생했습니다.');
+    } finally {
+      setIsPermanentlyDeletingAll(false);
     }
   };
 
@@ -155,21 +172,30 @@ export default function NotificationsPage() {
                 모두 읽음 처리
               </Button>
             )}
-            {admin && notifications.length > 0 && (
-              <Button
-                onClick={deleteAllNotifications}
-                size="2"
-                variant="soft"
-                color="red"
-                disabled={isDeletingAll}
-              >
-                <Trash size={16} />
-                {isDeletingAll ? '삭제 중...' : '모든 알림 삭제'}
-              </Button>
+            {admin && (
+              <>
+                <Button
+                  onClick={deleteAllNotifications}
+                  size="2"
+                  variant="soft"
+                  color="red"
+                  disabled={isDeletingAll}
+                >
+                  <Trash size={16} />
+                  {isDeletingAll ? '삭제 중...' : '모든 알림 삭제'}
+                </Button>
+                <Button
+                  onClick={permanentlyDeleteAllNotifications}
+                  size="2"
+                  variant="soft"
+                  color="red"
+                  disabled={isPermanentlyDeletingAll}
+                >
+                  <Trash2 size={16} />
+                  {isPermanentlyDeletingAll ? '완전 삭제 중...' : '완전 삭제'}
+                </Button>
+              </>
             )}
-            <Button onClick={handleRefresh} size="2" variant="soft" disabled={isLoading}>
-              새로고침
-            </Button>
           </Flex>
         </Flex>
 

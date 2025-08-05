@@ -39,11 +39,6 @@ export function useNotifications(
   const notifications = data?.notifications || [];
   const unreadCount = data?.unreadCount || 0;
 
-  // 수동으로 알림 새로고침하는 함수 추가
-  const refreshNotifications = () => {
-    mutate(`/api/notifications${userId ? `?userId=${userId}` : ''}`);
-  };
-
   // 개별 알림 읽음 처리
   const markAsRead = async (notificationStatusId: string) => {
     try {
@@ -94,6 +89,5 @@ export function useNotifications(
     markAsRead,
     markAllAsRead,
     deleteNotification,
-    refreshNotifications, // 수동 새로고침 함수 추가
   };
 }

@@ -9,14 +9,17 @@ export function createValidationFunction(
     // 참가자 정보 검증
     for (let i = 0; i < participants.length; i++) {
       const participant = participants[i];
-      if (!participant.name) {
-        return { error: `${i + 1}번째 참가자 이름을 입력해주세요.`, field: `player${i + 1}Name` };
-      }
+
+      // 클럽 검증
       if (!participant.clubId) {
         return {
           error: `${i + 1}번째 참가자의 클럽을 선택해주세요.`,
           field: `player${i + 1}ClubId`,
         };
+      }
+
+      if (!participant.name) {
+        return { error: `${i + 1}번째 참가자 이름을 입력해주세요.`, field: `player${i + 1}Name` };
       }
       if (!participant.birth) {
         return {

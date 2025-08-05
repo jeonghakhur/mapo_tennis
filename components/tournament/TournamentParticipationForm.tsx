@@ -51,10 +51,19 @@ export function TournamentParticipationForm({
             <th>참가비 납부</th>
             <td>
               <Flex align="center" gap="3">
-                <Switch checked={isFeePaid} onCheckedChange={setIsFeePaid} size="3" />
-                <Text size="3" color={isFeePaid ? 'green' : 'gray'}>
-                  {isFeePaid ? '납부 완료' : '미납'}
-                </Text>
+                <Switch
+                  id="fee-paid-switch"
+                  checked={isFeePaid}
+                  onCheckedChange={setIsFeePaid}
+                  size="3"
+                  aria-label="참가비 납부 상태"
+                  tabIndex={0}
+                />
+                <label htmlFor="fee-paid-switch" className="cursor-pointer">
+                  <Text size="3" color={isFeePaid ? 'green' : 'gray'}>
+                    {isFeePaid ? '납부 완료' : '미납'}
+                  </Text>
+                </label>
               </Flex>
             </td>
           </tr>

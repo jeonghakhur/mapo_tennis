@@ -7,7 +7,7 @@ import LoadingOverlay from '@/components/LoadingOverlay';
 import TournamentApplicationForm from '@/components/TournamentApplicationForm';
 import type { TournamentApplication } from '@/model/tournamentApplication';
 import type { Tournament } from '@/model/tournament';
-import { Button, AlertDialog, Flex, Select, Text } from '@radix-ui/themes';
+import { Button, AlertDialog, Flex } from '@radix-ui/themes';
 import { useUser } from '@/hooks/useUser';
 import { isAdmin } from '@/lib/authUtils';
 
@@ -26,7 +26,8 @@ export default function EditTournamentApplicationPage({
   const [error, setError] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // 관리자 권한 확인
   const admin = isAdmin(user);
@@ -75,8 +76,8 @@ export default function EditTournamentApplicationPage({
 
     setIsCancelling(true);
     try {
-      const response = await fetch(`/api/tournament-applications/${id}/status`, {
-        method: 'PUT',
+      const response = await fetch(`/api/tournament-applications/${id}`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -99,31 +100,28 @@ export default function EditTournamentApplicationPage({
     }
   };
 
-  const handleStatusUpdate = async (newStatus: string) => {
+  const handleApplicationDelete = async () => {
     if (!application) return;
 
-    setIsUpdatingStatus(true);
+    setIsDeleting(true);
     try {
-      const response = await fetch(`/api/tournament-applications/${id}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
+      const response = await fetch(`/api/tournament-applications/${id}`, {
+        method: 'DELETE',
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || '상태 변경에 실패했습니다.');
+        throw new Error(errorData.error || '참가신청 삭제에 실패했습니다.');
       }
 
-      // 성공적으로 상태가 변경되면 페이지 새로고침
-      window.location.reload();
+      // 성공적으로 삭제되면 목록 페이지로 이동
+      router.push('/tournament-applications');
     } catch (error) {
-      console.error('상태 변경 오류:', error);
-      setError(error instanceof Error ? error.message : '상태 변경에 실패했습니다.');
+      console.error('참가신청 삭제 오류:', error);
+      setError(error instanceof Error ? error.message : '참가신청 삭제에 실패했습니다.');
     } finally {
-      setIsUpdatingStatus(false);
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
     }
   };
 
@@ -209,32 +207,7 @@ export default function EditTournamentApplicationPage({
       <div className="mb-6">
         <Flex gap="3" justify="between" align="center">
           <Flex gap="3" align="center">
-            {admin && (
-              <Flex gap="3" align="center">
-                <Text size="2" weight="bold">
-                  상태 변경:
-                </Text>
-                <Select.Root
-                  value={application.status}
-                  onValueChange={handleStatusUpdate}
-                  disabled={isUpdatingStatus}
-                >
-                  <Select.Trigger />
-                  <Select.Content>
-                    <Select.Item value="pending">대기중</Select.Item>
-                    <Select.Item value="approved">승인</Select.Item>
-                    <Select.Item value="rejected">거절</Select.Item>
-                    <Select.Item value="cancelled">취소</Select.Item>
-                  </Select.Content>
-                </Select.Root>
-                {isUpdatingStatus && (
-                  <Text size="2" color="gray">
-                    변경 중...
-                  </Text>
-                )}
-              </Flex>
-            )}
-            {!admin && (
+            <Flex gap="3">
               <AlertDialog.Root open={showCancelDialog} onOpenChange={setShowCancelDialog}>
                 <AlertDialog.Trigger>
                   <Button color="red" disabled={isCancelling}>
@@ -260,7 +233,33 @@ export default function EditTournamentApplicationPage({
                   </Flex>
                 </AlertDialog.Content>
               </AlertDialog.Root>
-            )}
+
+              <AlertDialog.Root open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialog.Trigger>
+                  <Button color="red" variant="soft" disabled={isDeleting}>
+                    {isDeleting ? '삭제 중...' : '참가신청 삭제'}
+                  </Button>
+                </AlertDialog.Trigger>
+                <AlertDialog.Content>
+                  <AlertDialog.Title>참가신청 삭제</AlertDialog.Title>
+                  <AlertDialog.Description>
+                    정말로 이 참가신청을 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다.
+                  </AlertDialog.Description>
+                  <Flex gap="3" mt="4" justify="end">
+                    <AlertDialog.Cancel>
+                      <Button variant="soft" color="gray">
+                        취소
+                      </Button>
+                    </AlertDialog.Cancel>
+                    <AlertDialog.Action>
+                      <Button color="red" onClick={handleApplicationDelete}>
+                        삭제
+                      </Button>
+                    </AlertDialog.Action>
+                  </Flex>
+                </AlertDialog.Content>
+              </AlertDialog.Root>
+            </Flex>
           </Flex>
         </Flex>
       </div>

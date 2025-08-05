@@ -10,13 +10,10 @@ import {
   createTournamentApplicationStatusMessage,
   createNotificationMessage,
   trackChanges,
+  createNotificationStatuses,
 } from '@/service/notification';
 import { getTournament } from '@/service/tournament';
-import {
-  authenticateUser,
-  checkTournamentApplicationPermission,
-  getNotificationUserId,
-} from '@/lib/apiUtils';
+import { authenticateUser, checkTournamentApplicationPermission } from '@/lib/apiUtils';
 import { createNotificationLink } from '@/lib/notificationUtils';
 import type { TournamentApplicationInput } from '@/model/tournamentApplication';
 
@@ -94,8 +91,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         continue;
       }
 
+      // 기존 참가신청에서 같은 순서의 참가자 _key 재사용
+      const existingMember = existingApplication.teamMembers[i - 1];
+      const _key =
+        existingMember?._key || `member_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
       teamMembers.push({
-        _key: `member_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        _key,
         name,
         clubId,
         clubName,
@@ -152,7 +154,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         // 상세한 수정 메시지 생성
         const detailedMessage = `${tournament.title} ${division}부 참가신청이 수정되었습니다.\n\n참가자: ${participantNames}\n참가클럽: ${participantClubs}`;
 
-        await createNotification({
+        const notification = await createNotification({
           type: 'UPDATE',
           entityType: 'TOURNAMENT_APPLICATION',
           entityId: id,
@@ -160,12 +162,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
           message: detailedMessage,
           link: createNotificationLink('TOURNAMENT_APPLICATION', id),
           changes,
-          userId: getNotificationUserId(
-            Boolean(permissionResult.isAdmin),
-            existingApplication.createdBy,
-          ),
           requiredLevel: 4, // 레벨 4 (경기관리자) 이상
         });
+
+        // 새로운 notificationStatus 구조에 맞게 알림 상태 생성
+        await createNotificationStatuses(notification._id, undefined, 4);
       }
     }
 
@@ -216,16 +217,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       existingApplication.division,
     );
 
-    await createNotification({
+    const notification = await createNotification({
       type: 'UPDATE',
       entityType: 'TOURNAMENT_APPLICATION',
       entityId: id,
       title,
       message,
       link: createNotificationLink('TOURNAMENT_APPLICATION', id),
-      userId: existingApplication.createdBy, // 신청자에게만 알림
       requiredLevel: 4, // 레벨 4 (경기관리자) 이상
     });
+
+    // 새로운 notificationStatus 구조에 맞게 알림 상태 생성
+    // 신청자에게만 알림을 보내기 위해 targetUserIds 사용
+    await createNotificationStatuses(notification._id, [existingApplication.createdBy], 4);
 
     return NextResponse.json({ ok: true, id: result._id });
   } catch (error) {
@@ -276,18 +280,17 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     // 상세한 삭제 메시지 생성
     const detailedMessage = `${tournament.title} ${existingApplication.division}부 참가신청이 삭제되었습니다.\n\n참가자: ${participantNames}\n참가클럽: ${participantClubs}`;
 
-    await createNotification({
+    const notification = await createNotification({
       type: 'DELETE',
       entityType: 'TOURNAMENT_APPLICATION',
       entityId: id,
       title,
       message: detailedMessage,
-      userId: getNotificationUserId(
-        Boolean(permissionResult.isAdmin),
-        existingApplication.createdBy,
-      ),
       requiredLevel: 4, // 레벨 4 (경기관리자) 이상
     });
+
+    // 새로운 notificationStatus 구조에 맞게 알림 상태 생성
+    await createNotificationStatuses(notification._id, undefined, 4);
 
     // 참가신청 삭제
     await deleteTournamentApplication(id);

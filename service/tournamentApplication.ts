@@ -31,11 +31,13 @@ export async function createTournamentApplication(
 // 대회별 참가 신청 목록 조회
 export async function getTournamentApplications(
   tournamentId: string,
+  division?: string,
 ): Promise<TournamentApplication[]> {
-  return await client.fetch(
-    `*[_type == "tournamentApplication" && tournamentId == $tournamentId] | order(createdAt desc)`,
-    { tournamentId },
-  );
+  const query = division
+    ? `*[_type == "tournamentApplication" && tournamentId == $tournamentId && division == $division] | order(createdAt desc)`
+    : `*[_type == "tournamentApplication" && tournamentId == $tournamentId] | order(createdAt desc)`;
+
+  return await client.fetch(query, { tournamentId, division });
 }
 
 // 전체 참가 신청 목록 조회 (관리자용)

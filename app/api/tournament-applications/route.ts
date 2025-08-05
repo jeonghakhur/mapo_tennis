@@ -6,7 +6,11 @@ import {
   getTournamentApplications,
 } from '@/service/tournamentApplication';
 import { getUserByEmail } from '@/service/user';
-import { createNotification, createNotificationMessage } from '@/service/notification';
+import {
+  createNotification,
+  createNotificationMessage,
+  createNotificationStatuses,
+} from '@/service/notification';
 
 import { createNotificationLink } from '@/lib/notificationUtils';
 import type { TournamentApplicationInput } from '@/model/tournamentApplication';
@@ -15,12 +19,13 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const tournamentId = searchParams.get('tournamentId');
+    const division = searchParams.get('division');
 
     if (!tournamentId) {
       return NextResponse.json({ error: '대회 ID가 필요합니다' }, { status: 400 });
     }
 
-    const applications = await getTournamentApplications(tournamentId);
+    const applications = await getTournamentApplications(tournamentId, division || undefined);
     return NextResponse.json(applications);
   } catch (error) {
     console.error('참가 신청 목록 조회 오류:', error);
@@ -133,7 +138,7 @@ export async function POST(req: NextRequest) {
     // 상세한 생성 메시지 생성
     const detailedMessage = `${tournament.title} ${division}부 참가신청이 등록되었습니다.\n\n참가자: ${participantNames}\n참가클럽: ${participantClubs}`;
 
-    await createNotification({
+    const notification = await createNotification({
       type: 'CREATE',
       entityType: 'TOURNAMENT_APPLICATION',
       entityId: result._id!,
@@ -142,6 +147,9 @@ export async function POST(req: NextRequest) {
       link: createNotificationLink('TOURNAMENT_APPLICATION', result._id!),
       requiredLevel: 4, // 레벨 4 (경기관리자)만 알림 수신
     });
+
+    // 새로운 notificationStatus 구조에 맞게 알림 상태 생성
+    await createNotificationStatuses(notification._id, undefined, 4);
 
     return NextResponse.json({ ok: true, id: result._id });
   } catch (error) {

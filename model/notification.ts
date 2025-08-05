@@ -16,10 +16,9 @@ export interface Notification {
   message: string;
   link?: string; // 바로가기 링크
   changes?: Change[];
-  readAt?: string;
-  userId?: string;
   requiredLevel: number; // 필요 권한 레벨
   createdAt: string;
+  readAt?: string | null; // 읽은 시간 (notificationStatus에서 가져옴)
 }
 
 export interface Change {
@@ -45,6 +44,5 @@ export interface NotificationInput {
   message: string;
   link?: string; // 바로가기 링크
   changes?: Change[];
-  userId?: string;
   requiredLevel: number; // 필요 권한 레벨
 }

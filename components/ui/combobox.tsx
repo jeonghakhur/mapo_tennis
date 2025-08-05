@@ -52,10 +52,13 @@ export function Combobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
+          aria-haspopup="listbox"
+          aria-autocomplete="list"
           className={cn('w-full justify-between text-lg', className)}
           disabled={disabled}
           size="3"
           color="gray"
+          tabIndex={disabled ? -1 : 0}
           style={{
             backgroundColor: 'white',
           }}
@@ -67,7 +70,7 @@ export function Combobox({
       <PopoverContent className="w-full p-0">
         <Command>
           <CommandInput placeholder={searchPlaceholder} className="text-lg" />
-          <CommandList>
+          <CommandList role="listbox" aria-label="클럽 선택 옵션">
             <CommandEmpty>{emptyMessage}</CommandEmpty>
             <CommandGroup>
               {options.map((option) => (
@@ -75,6 +78,8 @@ export function Combobox({
                   key={option.value}
                   value={option.label}
                   className="text-lg"
+                  role="option"
+                  aria-selected={value === option.value}
                   onSelect={(currentValue) => {
                     const selectedOption = options.find((opt) => opt.label === currentValue);
                     onValueChange(selectedOption ? selectedOption.value : '');

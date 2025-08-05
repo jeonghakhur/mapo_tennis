@@ -9,6 +9,7 @@ export interface TournamentApplication {
   // 모든 대회 유형에서 teamMembers 사용
   // 개인전: 2명, 단체전: 6-8명
   teamMembers: Array<{
+    _key?: string; // Sanity 배열 항목의 고유 키
     name: string;
     clubId: string;
     clubName: string;
@@ -54,6 +55,7 @@ export interface TournamentApplicationInput {
   division: string;
   tournamentType: 'individual' | 'team';
   teamMembers: Array<{
+    _key?: string; // Sanity 배열 항목의 고유 키
     name: string;
     clubId: string;
     clubName: string;

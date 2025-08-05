@@ -15,19 +15,6 @@ export function ParticipantForm({
       <table>
         <tbody>
           <tr>
-            <th style={{ width: '100px' }}>이름 *</th>
-            <td>
-              <TextField.Root
-                size="3"
-                value={participant.name}
-                onChange={(e) => participant.setName(e.target.value)}
-                onBlur={participant.handleNameBlur}
-                placeholder="참가자 이름"
-                ref={participant.nameRef}
-              />
-            </td>
-          </tr>
-          <tr>
             <th>클럽 *</th>
             <td>
               <div ref={participant.clubRef}>
@@ -44,8 +31,11 @@ export function ParticipantForm({
                   searchPlaceholder="클럽 검색..."
                   emptyMessage="찾는 클럽이 없습니다."
                   disabled={isSharedClub}
+                  aria-label="클럽 선택"
                 />
               </div>
+
+              {/* 등록 회원 여부 표시 */}
               {participant.isRegistered !== null &&
                 participant.name &&
                 participant.clubId &&
@@ -68,6 +58,19 @@ export function ParticipantForm({
                     </Text>
                   </div>
                 )}
+            </td>
+          </tr>
+          <tr>
+            <th style={{ width: '100px' }}>이름 *</th>
+            <td>
+              <TextField.Root
+                size="3"
+                value={participant.name}
+                onChange={(e) => participant.setName(e.target.value)}
+                onBlur={participant.handleNameBlur}
+                placeholder="참가자 이름"
+                ref={participant.nameRef}
+              />
             </td>
           </tr>
           <tr>

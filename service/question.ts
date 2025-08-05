@@ -2,7 +2,11 @@ import { client } from '@/sanity/lib/client';
 import type { Question, QuestionInput } from '@/model/question';
 import { getUserById } from './user';
 
-import { createNotification, createNotificationMessage } from './notification';
+import {
+  createNotification,
+  createNotificationMessage,
+  createNotificationStatuses,
+} from './notification';
 import { createNotificationLink } from '@/lib/notificationUtils';
 
 // 문의 생성
@@ -131,16 +135,19 @@ export async function notifyUserOnAnswer(question: Question) {
     if (!authorId) return;
     const { title, message } = createNotificationMessage('UPDATE', 'QUESTION', question.title);
     const link = createNotificationLink('QUESTION', question._id);
-    await createNotification({
+    const notification = await createNotification({
       type: 'UPDATE',
       entityType: 'QUESTION',
       entityId: question._id,
       title,
       message,
       link,
-      userId: authorId, // 문의 작성자에게만 알림
       requiredLevel: 1, // 개인 알림이므로 레벨 1 이상
     });
+
+    // 새로운 notificationStatus 구조에 맞게 알림 상태 생성
+    // 문의 작성자에게만 알림을 보내기 위해 targetUserIds 사용
+    await createNotificationStatuses(notification._id, [authorId], 1);
   } catch (e) {
     console.error('문의 답변 알림 생성 오류:', e);
   }

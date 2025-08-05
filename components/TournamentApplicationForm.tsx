@@ -43,10 +43,6 @@ export default function TournamentApplicationForm({
   const { user } = useUser(session?.user?.email);
   const { clubs, isLoading: clubsLoading } = useClubs();
 
-  useEffect(() => {
-    console.log(clubs);
-  }, [clubs]);
-
   // 전체 클럽 회원 데이터 상태
   const [allClubMembers, setAllClubMembers] = useState<ClubMember[]>([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState(true);
@@ -241,20 +237,27 @@ export default function TournamentApplicationForm({
 
   // 대회ID+부서별 전체 신청 목록
   const { applications: divisionApplications } = useTournamentApplications(
-    tournament._id && division ? `${tournament._id}&division=${division}` : undefined,
+    tournament._id,
+    division,
   );
 
   // 중복 체크: 동일 대회/부서에 동일 이름+클럽으로 이미 신청된 경우
   const isDuplicate = useMemo(() => {
     if (!divisionApplications || divisionApplications.length === 0) return false;
+
+    // 수정 모드에서는 현재 수정 중인 참가신청을 제외
+    const otherApplications = isEdit
+      ? divisionApplications.filter((app) => app._id !== applicationId)
+      : divisionApplications;
+
     return activeParticipants.some((participant) =>
-      divisionApplications.some((app) =>
+      otherApplications.some((app) =>
         app.teamMembers.some(
           (member) => member.name === participant.name && member.clubId === participant.clubId,
         ),
       ),
     );
-  }, [divisionApplications, activeParticipants]);
+  }, [divisionApplications, activeParticipants, isEdit, applicationId]);
 
   // 폼 제출
   const handleSubmit = useCallback(
@@ -309,7 +312,46 @@ export default function TournamentApplicationForm({
         return;
       }
       if (isDuplicate) {
-        setAlertMessage('이미 동일 대회/부서에 동일 이름과 클럽으로 참가신청이 존재합니다.');
+        // 중복된 참가자 정보 찾기 (수정 모드에서는 현재 수정 중인 참가신청 제외)
+        const otherApplications = isEdit
+          ? divisionApplications.filter((app) => app._id !== applicationId)
+          : divisionApplications;
+
+        const duplicateParticipants = activeParticipants.filter((participant) =>
+          otherApplications.some((app) =>
+            app.teamMembers.some(
+              (member) => member.name === participant.name && member.clubId === participant.clubId,
+            ),
+          ),
+        );
+
+        if (duplicateParticipants.length > 0) {
+          const duplicateInfo = duplicateParticipants
+            .map((participant) => {
+              const clubName =
+                clubs.find((c) => c._id === participant.clubId)?.name || '알 수 없는 클럽';
+              return `(${clubName}) 클럽의 ${participant.name} 참가자가 존재합니다.`;
+            })
+            .join(', ');
+
+          // 부서명 가져오기
+          const getDivisionLabel = (division: string) => {
+            const divisionLabels: Record<string, string> = {
+              master: '마스터부',
+              challenger: '챌린저부',
+              futures: '퓨처스부',
+              chrysanthemum: '국화부',
+              forsythia: '개나리부',
+            };
+            return divisionLabels[division] || division;
+          };
+
+          setAlertMessage(
+            `대회: ${tournament.title}\r 부서: ${getDivisionLabel(division)}\n  ${duplicateInfo}`,
+          );
+        } else {
+          setAlertMessage('해당 대회명, 부서명, 참석자명과 실 클럽명으로 참가신청이 존재합니다.');
+        }
         setShowAlert(true);
         return;
       }

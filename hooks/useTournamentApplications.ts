@@ -4,9 +4,11 @@ import { mutate } from 'swr';
 import type { TournamentApplication } from '@/model/tournamentApplication';
 
 // 참가 신청 목록 조회
-export function useTournamentApplications(tournamentId?: string) {
+export function useTournamentApplications(tournamentId?: string, division?: string) {
   const { data, error, isLoading, mutate } = useSWR<TournamentApplication[]>(
-    tournamentId ? `/api/tournament-applications?tournamentId=${tournamentId}` : null,
+    tournamentId && division
+      ? `/api/tournament-applications?tournamentId=${tournamentId}&division=${division}`
+      : null,
     null,
   );
 

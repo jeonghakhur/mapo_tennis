@@ -3,46 +3,22 @@ import { Box, Text, Button, Flex, Badge, Card, Select } from '@radix-ui/themes';
 import Container from '@/components/Container';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useSession } from 'next-auth/react';
-import { useUser } from '@/hooks/useUser';
+// import { useSession } from 'next-auth/react';
+// import { useUser } from '@/hooks/useUser';
 import { useUserTournamentApplications } from '@/hooks/useTournamentApplications';
-import { hasPermissionLevel } from '@/lib/authUtils';
-import { getAllTournamentApplications } from '@/service/tournamentApplication';
-import { useEffect } from 'react';
 
 import SkeletonCard from '@/components/SkeletonCard';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import type { TournamentApplication } from '@/model/tournamentApplication';
 
 export default function TournamentApplicationsPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const router = useRouter();
-  const { data: session } = useSession();
-  const { user } = useUser(session?.user?.email);
   const { applications, isLoading } = useUserTournamentApplications();
-  const [allApplications, setAllApplications] = useState<TournamentApplication[]>([]);
 
-  useEffect(() => {
-    (async () => {
-      const all = await getAllTournamentApplications();
-      setAllApplications(all);
-    })();
-  }, []);
-
-  if (!hasPermissionLevel(user, 1)) {
-    return (
-      <Container>
-        <Box>
-          <Text color="red">권한이 없습니다.</Text>
-        </Box>
-      </Container>
-    );
-  }
-
-  // 대회ID+부서별 전체 참가팀 수 계산
+  // 대회ID+부서별 전체 참가팀 수 계산 (현재 사용자의 신청만 고려)
   const getDivisionTeamCount = (tournamentId: string, division: string) =>
-    allApplications.filter((app) => app.tournamentId === tournamentId && app.division === division)
+    applications.filter((app) => app.tournamentId === tournamentId && app.division === division)
       .length;
 
   const getStatusColor = (status: string) => {

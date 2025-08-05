@@ -8,7 +8,6 @@ import { isAdmin } from '@/lib/authUtils';
 import {
   useAdminTournamentApplications,
   useUpdateApplicationStatus,
-  useDeleteApplication,
 } from '@/hooks/useTournamentApplications';
 import { useRouter } from 'next/navigation';
 import type { TournamentApplication } from '@/model/tournamentApplication';
@@ -33,13 +32,11 @@ export default function TournamentApplicationsAdminPage() {
   const { applications, isLoading } = useAdminTournamentApplications();
   const { tournaments } = useTournaments();
   const { trigger: updateStatus, isMutating: isUpdating } = useUpdateApplicationStatus();
-  const { trigger: deleteApplication, isMutating: isDeleting } = useDeleteApplication();
 
   const [selectedApplication, setSelectedApplication] = useState<TournamentApplication | null>(
     null,
   );
   const [selectedStatus, setSelectedStatus] = useState<string>('');
-  const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   // 관리자 권한 확인
@@ -117,31 +114,14 @@ export default function TournamentApplicationsAdminPage() {
         id: applicationId,
         status: newStatus as 'pending' | 'approved' | 'rejected' | 'cancelled',
       });
-      alert('상태가 업데이트되었습니다.');
     } catch {
       alert('상태 업데이트에 실패했습니다.');
-    }
-  };
-
-  const handleDelete = async (applicationId: string) => {
-    try {
-      await deleteApplication({ id: applicationId });
-      alert('참가신청이 삭제되었습니다.');
-    } catch {
-      alert('삭제에 실패했습니다.');
     }
   };
 
   const openStatusDialog = (application: TournamentApplication, status: string) => {
     setSelectedApplication(application);
     setSelectedStatus(status);
-    setIsDeleteMode(false);
-    setShowConfirmDialog(true);
-  };
-
-  const openDeleteDialog = (application: TournamentApplication) => {
-    setSelectedApplication(application);
-    setIsDeleteMode(true);
     setShowConfirmDialog(true);
   };
 
@@ -368,28 +348,6 @@ export default function TournamentApplicationsAdminPage() {
                         size="2"
                         onClick={(e) => {
                           e.stopPropagation();
-                          openDeleteDialog(application);
-                        }}
-                        disabled={isDeleting}
-                      >
-                        삭제
-                      </Button>
-                      <Button
-                        variant="soft"
-                        size="2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(`/tournament-applications/${application._id}/edit`);
-                        }}
-                      >
-                        수정
-                      </Button>
-                      <Button
-                        variant="soft"
-                        color="red"
-                        size="2"
-                        onClick={(e) => {
-                          e.stopPropagation();
                           openStatusDialog(application, 'rejected');
                         }}
                         disabled={isUpdating}
@@ -417,26 +375,18 @@ export default function TournamentApplicationsAdminPage() {
         </Box>
       )}
 
-      {/* 상태 변경/삭제 확인 다이얼로그 */}
+      {/* 상태 변경 확인 다이얼로그 */}
       <ConfirmDialog
-        title={isDeleteMode ? '참가신청 삭제' : '상태 변경'}
-        description={
-          isDeleteMode
-            ? '이 참가신청을 삭제하시겠습니까?'
-            : `이 신청을 ${getStatusLabel(selectedStatus)}로 변경하시겠습니까?`
-        }
-        confirmText={isDeleteMode ? '삭제' : '변경'}
+        title="상태 변경"
+        description={`이 신청을 ${getStatusLabel(selectedStatus)}로 변경하시겠습니까?`}
+        confirmText="변경"
         cancelText="취소"
-        confirmColor={isDeleteMode ? 'red' : selectedStatus === 'approved' ? 'green' : 'red'}
+        confirmColor={selectedStatus === 'approved' ? 'green' : 'red'}
         open={showConfirmDialog}
         onOpenChange={setShowConfirmDialog}
         onConfirm={() => {
-          if (selectedApplication && selectedApplication._id) {
-            if (isDeleteMode) {
-              handleDelete(selectedApplication._id);
-            } else if (selectedStatus) {
-              handleStatusUpdate(selectedApplication._id, selectedStatus);
-            }
+          if (selectedApplication && selectedApplication._id && selectedStatus) {
+            handleStatusUpdate(selectedApplication._id, selectedStatus);
           }
           setShowConfirmDialog(false);
         }}

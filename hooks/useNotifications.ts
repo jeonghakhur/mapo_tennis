@@ -28,7 +28,7 @@ export function useNotifications(
     fetcher,
     {
       // 자동 새로고침 제거 - 페이지 이동/새로고침 시에만 알림 확인
-      refreshInterval: 0,
+      refreshInterval: 10000,
       // 페이지 포커스 시 새로고침 (사용자가 다른 탭에서 돌아올 때)
       revalidateOnFocus: true,
       // 페이지가 다시 보일 때 새로고침 (모바일에서 앱으로 돌아올 때)

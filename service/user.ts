@@ -267,3 +267,33 @@ export async function deleteUser(email: string, reason?: string): Promise<void> 
     throw error;
   }
 }
+
+// 카카오 액세스 토큰 업데이트
+export async function updateUserKakaoToken(email: string, kakaoAccessToken: string): Promise<void> {
+  try {
+    const user = await getUserByEmail(email);
+    if (!user) {
+      console.warn(`카카오 토큰 업데이트 실패: 사용자를 찾을 수 없음 (${email})`);
+      return;
+    }
+
+    await client
+      .patch(user._id!)
+      .set({
+        kakaoAccessToken,
+      })
+      .commit();
+  } catch (error) {
+    console.error('updateUserKakaoToken 오류:', error);
+  }
+}
+
+// 만료된 카카오 액세스 토큰 제거
+export async function removeExpiredKakaoToken(userId: string): Promise<void> {
+  try {
+    await client.patch(userId).unset(['kakaoAccessToken']).commit();
+    console.log(`만료된 카카오 토큰 제거: ${userId}`);
+  } catch (error) {
+    console.error('removeExpiredKakaoToken 오류:', error);
+  }
+}

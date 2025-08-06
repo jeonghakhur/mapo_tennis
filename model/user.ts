@@ -14,5 +14,6 @@ export interface User {
   isActive?: boolean; // 활동 상태
   deactivatedAt?: string; // 탈퇴 시각
   deactivatedReason?: string; // 탈퇴 사유
+  kakaoAccessToken?: string; // 카카오 액세스 토큰
   _createdAt?: string;
 }

@@ -92,6 +92,12 @@ export default defineType({
       title: '마지막 로그인',
       type: 'datetime',
     }),
+    defineField({
+      name: 'kakaoAccessToken',
+      title: '카카오 액세스 토큰',
+      type: 'string',
+      description: '카카오톡 메시지 전송을 위한 액세스 토큰',
+    }),
   ],
   preview: {
     select: {

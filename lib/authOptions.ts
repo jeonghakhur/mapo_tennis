@@ -1,7 +1,7 @@
 import GoogleProvider from 'next-auth/providers/google';
 import NaverProvider from 'next-auth/providers/naver';
 import KakaoProvider from 'next-auth/providers/kakao';
-import { getUserByEmail } from '@/service/user';
+import { getUserByEmail, updateUserKakaoToken } from '@/service/user';
 import type { JWT } from 'next-auth/jwt';
 import type { Session, User, Account } from 'next-auth';
 
@@ -27,6 +27,11 @@ export const authOptions = {
     KakaoProvider({
       clientId: process.env.KAKAO_CLIENT_ID || '',
       clientSecret: process.env.KAKAO_CLIENT_SECRET || '',
+      authorization: {
+        params: {
+          scope: 'profile_nickname profile_image account_email',
+        },
+      },
     }),
     NaverProvider({
       clientId: process.env.NAVER_CLIENT_ID || '',
@@ -107,6 +112,11 @@ export const authOptions = {
           token.phone = kakaoAccount.phone_number;
           token.birth = kakaoAccount.birthyear;
           token.gender = kakaoAccount.gender;
+
+          // 카카오 액세스 토큰 저장
+          if (account.access_token) {
+            await updateUserKakaoToken(kakaoAccount.email, account.access_token);
+          }
         } catch (error) {
           console.error('카카오 API 호출 중 오류 발생:', error);
         }

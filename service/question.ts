@@ -56,7 +56,7 @@ export async function notifyAdminsOnQuestionCreate(question: Question) {
   }
 }
 
-// 레벨 4 이상 관리자들에게 카카오톡 메시지 전송
+// 레벨 5 이상 관리자들에게 카카오톡 메시지 전송
 async function sendKakaoMessageToAdmins(question: Question) {
   try {
     // 레벨 4 이상 사용자 조회

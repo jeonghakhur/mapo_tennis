@@ -9,6 +9,7 @@ import Image from 'next/image';
 import { useQuestionDetail, useAnswerQuestion, useDeleteQuestion } from '@/hooks/useQuestions';
 import Container from '@/components/Container';
 import { useUserById } from '@/hooks/useUser';
+import SkeletonCard from '@/components/SkeletonCard';
 
 export default function AdminQuestionDetailPage() {
   const router = useRouter();
@@ -40,11 +41,14 @@ export default function AdminQuestionDetailPage() {
     router.replace('/');
     return null;
   }
-  if (isLoading) return <Text>로딩 중...</Text>;
-  if (isError || !question) return <Text>문의 정보를 불러올 수 없습니다.</Text>;
 
-  // 삭제 권한: 레벨 4 이상만
-  // const canDelete = data?.user && data.user.level >= 4;
+  if (isLoading)
+    return (
+      <Container>
+        <SkeletonCard />
+      </Container>
+    );
+  if (isError || !question) return <Text>문의 정보를 불러올 수 없습니다.</Text>;
 
   const handleSubmit = async () => {
     if (!answer) {

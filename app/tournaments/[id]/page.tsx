@@ -119,6 +119,19 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
     return format(date, 'yy.MM.dd(eee)', { locale: ko });
   };
 
+  // 참가 신청 기간 확인
+  const isRegistrationPeriod = () => {
+    if (!tournament.registrationStartDate || !tournament.registrationDeadline) {
+      return false;
+    }
+
+    const now = new Date();
+    const startDate = new Date(tournament.registrationStartDate);
+    const endDate = new Date(tournament.registrationDeadline);
+
+    return now >= startDate && now <= endDate;
+  };
+
   return (
     <Container>
       {isLoading || !contentLoaded ? (
@@ -490,31 +503,23 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
           </div>
 
           {/* 플로팅 참가 신청 버튼 */}
-          {tournament.status === 'upcoming' && hasPermissionLevel(user, 1) && (
-            <div
-              style={{
-                position: 'fixed',
-                bottom: '20px',
-                right: '20px',
-                zIndex: 1000,
-              }}
-            >
-              <Button
+          {tournament.status === 'upcoming' &&
+            hasPermissionLevel(user, 1) &&
+            // !tournament.isDraft &&
+            isRegistrationPeriod() && (
+              <div
                 style={{
-                  width: '60px',
-                  height: '60px',
-                  borderRadius: '50%',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  position: 'fixed',
+                  top: '75px',
+                  right: '20px',
+                  zIndex: 1000,
                 }}
-                onClick={() => router.push(`/tournaments/${id}/apply`)}
               >
-                <NotebookPen size={24} />
-              </Button>
-            </div>
-          )}
+                <Button size="3" onClick={() => router.push(`/tournaments/${id}/apply`)}>
+                  <NotebookPen size={16} /> 참가신청
+                </Button>
+              </div>
+            )}
         </Box>
       )}
     </Container>

@@ -156,14 +156,8 @@ export default function TournamentCard({ tournament, user }: TournamentCardProps
         </div>
       </div>
       <div className="btn-wrap">
-        {hasPermissionLevel(user, 1) && (
-          <Button
-            variant="solid"
-            color="blue"
-            size="3"
-            // disabled={isApplyButtonDisabled()}
-            onClick={handleApplyClick}
-          >
+        {hasPermissionLevel(user, 1) && tournament.status === 'upcoming' && !tournament.isDraft && (
+          <Button variant="solid" color="blue" size="3" onClick={handleApplyClick}>
             {getApplyButtonText()}
           </Button>
         )}

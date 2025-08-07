@@ -47,30 +47,30 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   // 일반 사용자(로그인 필요 없음 또는 authRequired만)
   { path: '/club', label: '클럽', icon: Users },
+  { path: '/club-member', label: '클럽멤버', icon: UserCheck, requiredLevel: 4 },
   { path: '/tournaments', label: '대회일정', icon: Calendar },
   { path: '/awards', label: '대회결과', icon: Trophy },
-  // 레벨 1 이상 사용자만
-  { path: '/questions', label: '1:1 문의', icon: FileText, requiredLevel: 1 },
   {
     path: '/tournament-applications',
-    label: '내참가신청',
+    label: '참가신청목록',
     icon: ClipboardList,
     requiredLevel: 1,
-    adminOnly: false,
+    // adminOnly: false,
   },
-  // 권한 레벨이 필요한 메뉴(예: 클럽, 클럽멤버, 지출내역)
-
-  { path: '/club-member', label: '클럽멤버', icon: UserCheck, requiredLevel: 4 },
-  { path: '/expenses', label: '지출내역', icon: Receipt, requiredLevel: 4 },
-  // 관리자만 볼 수 있는 메뉴
   {
     path: '/tournament-applications/admin',
     label: '전체참가신청목록',
     icon: ClipboardList,
     adminOnly: true,
   },
-  { path: '/admin/users', label: '회원관리', icon: UserCog, adminOnly: true },
+  // 레벨 1 이상 사용자만
+  { path: '/questions', label: '1:1 문의', icon: FileText, requiredLevel: 1 },
   { path: '/admin/questions', label: '1:1 문의(전체)', icon: FileText, adminOnly: true },
+  // 권한 레벨이 필요한 메뉴(예: 클럽, 클럽멤버, 지출내역)
+
+  { path: '/expenses', label: '지출내역', icon: Receipt, requiredLevel: 4 },
+  // 관리자만 볼 수 있는 메뉴
+  { path: '/admin/users', label: '회원관리', icon: UserCog, adminOnly: true },
   { path: '/admin/dashboard', label: '대시보드', icon: UserCog, adminOnly: true },
 ];
 

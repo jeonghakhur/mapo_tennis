@@ -33,18 +33,118 @@ export async function getTournamentApplications(
   tournamentId: string,
   division?: string,
 ): Promise<TournamentApplication[]> {
-  const query = division
-    ? `*[_type == "tournamentApplication" && tournamentId == $tournamentId && division == $division] | order(createdAt desc)`
-    : `*[_type == "tournamentApplication" && tournamentId == $tournamentId] | order(createdAt desc)`;
+  // 특정 부서만 조회하는 경우
+  if (division) {
+    const query = `*[_type == "tournamentApplication" && tournamentId == $tournamentId && division == $division] | order(createdAt asc) {
+        _id,
+        _type,
+        tournamentId,
+        division,
+        tournamentType,
+        teamMembers,
+        status,
+        memo,
+        isFeePaid,
+        createdAt,
+        updatedAt,
+        createdBy,
+        contact,
+        email,
+        // 대회 정보를 직접 조인
+        "tournament": *[_type == "tournament" && _id == ^.tournamentId][0] {
+          _id,
+          title,
+          location,
+          startDate,
+          endDate
+        },
+        // 신청자 정보를 직접 조인
+        "applicant": *[_type == "user" && _id == ^.createdBy][0] {
+          _id,
+          name,
+          email
+        }
+      }`;
 
-  return await client.fetch(query, { tournamentId, division });
+    const applications = await client.fetch(query, { tournamentId, division });
+
+    // 해당 부서 내에서 순서 계산 (가장 먼저 신청한 사람이 1번째)
+    return applications.map((app: TournamentApplication, index: number) => ({
+      ...app,
+      applicationOrder: index + 1,
+    }));
+  }
+
+  // 모든 부서의 신청을 가져와서 부서별로 순서 계산
+  const query = `*[_type == "tournamentApplication" && tournamentId == $tournamentId] | order(createdAt asc) {
+      _id,
+      _type,
+      tournamentId,
+      division,
+      tournamentType,
+      teamMembers,
+      status,
+      memo,
+      isFeePaid,
+      createdAt,
+      updatedAt,
+      createdBy,
+      contact,
+      email,
+      // 대회 정보를 직접 조인
+      "tournament": *[_type == "tournament" && _id == ^.tournamentId][0] {
+        _id,
+        title,
+        location,
+        startDate,
+        endDate
+      },
+      // 신청자 정보를 직접 조인
+      "applicant": *[_type == "user" && _id == ^.createdBy][0] {
+        _id,
+        name,
+        email
+      }
+    }`;
+
+  const allApplications = await client.fetch(query, { tournamentId });
+
+  // 부서별로 그룹화하여 각 부서에서 순서 계산
+  const applicationsByDivision: Record<string, TournamentApplication[]> = {};
+
+  allApplications.forEach((app: TournamentApplication) => {
+    if (!applicationsByDivision[app.division]) {
+      applicationsByDivision[app.division] = [];
+    }
+    applicationsByDivision[app.division].push(app);
+  });
+
+  // 각 부서별로 순서 계산하고 하나의 배열로 합치기
+  const applicationsWithOrder: TournamentApplication[] = [];
+
+  Object.entries(applicationsByDivision).forEach(([division, divisionApps]) => {
+    // 각 부서 내에서 가장 먼저 신청한 사람이 1번째가 되도록 정렬 (createdAt asc)
+    const sortedDivisionApps = divisionApps.sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+
+    // 해당 부서에서 순서 계산 (가장 먼저 신청한 사람이 1번째)
+    sortedDivisionApps.forEach((app, index) => {
+      applicationsWithOrder.push({
+        ...app,
+        applicationOrder: index + 1,
+      });
+    });
+  });
+
+  return applicationsWithOrder;
 }
 
 // 전체 참가 신청 목록 조회 (관리자용) - 최적화된 버전
 export async function getAllTournamentApplications(): Promise<TournamentApplication[]> {
   // 한 번의 쿼리로 모든 데이터를 가져오기
   const applications = await client.fetch(`
-    *[_type == "tournamentApplication"] | order(createdAt desc) {
+    *[_type == "tournamentApplication"] | order(createdAt asc) {
       _id,
       _type,
       tournamentId,
@@ -76,11 +176,35 @@ export async function getAllTournamentApplications(): Promise<TournamentApplicat
     }
   `);
 
-  // applicationOrder는 클라이언트에서 계산하거나 필요시 별도 쿼리로 처리
-  return applications.map((application: TournamentApplication) => ({
-    ...application,
-    applicationOrder: 0, // 필요시 별도 계산
-  }));
+  // 부서별로 그룹화하여 각 부서에서 순서 계산
+  const applicationsByDivision: Record<string, TournamentApplication[]> = {};
+
+  applications.forEach((app: TournamentApplication) => {
+    if (!applicationsByDivision[app.division]) {
+      applicationsByDivision[app.division] = [];
+    }
+    applicationsByDivision[app.division].push(app);
+  });
+
+  // 각 부서별로 순서 계산하고 하나의 배열로 합치기
+  const applicationsWithOrder: TournamentApplication[] = [];
+
+  Object.entries(applicationsByDivision).forEach(([division, divisionApps]) => {
+    // 각 부서 내에서 가장 먼저 신청한 사람이 1번째가 되도록 정렬 (createdAt asc)
+    const sortedDivisionApps = divisionApps.sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+
+    // 해당 부서에서 순서 계산 (가장 먼저 신청한 사람이 1번째)
+    sortedDivisionApps.forEach((app, index) => {
+      applicationsWithOrder.push({
+        ...app,
+        applicationOrder: index + 1,
+      });
+    });
+  });
+
+  return applicationsWithOrder;
 }
 
 // 참가 신청 개별 조회
@@ -138,55 +262,44 @@ export async function getUserTournamentApplications(
   userId: string,
 ): Promise<TournamentApplication[]> {
   const applications = await client.fetch(
-    `*[_type == "tournamentApplication" && createdBy == $userId] | order(createdAt desc)`,
+    `*[_type == "tournamentApplication" && createdBy == $userId] | order(createdAt desc) {
+      _id,
+      _type,
+      tournamentId,
+      division,
+      tournamentType,
+      teamMembers,
+      status,
+      memo,
+      isFeePaid,
+      createdAt,
+      updatedAt,
+      createdBy,
+      contact,
+      email,
+      // 대회 정보를 직접 조인
+      "tournament": *[_type == "tournament" && _id == ^.tournamentId][0] {
+        _id,
+        title,
+        location,
+        startDate,
+        endDate
+      },
+      // 신청자 정보를 직접 조인
+      "applicant": *[_type == "user" && _id == ^.createdBy][0] {
+        _id,
+        name,
+        email
+      }
+    }`,
     { userId },
   );
 
-  // 각 참가신청에 대회 정보와 순서 추가
-  const applicationsWithTournaments = await Promise.all(
-    applications.map(async (application: TournamentApplication) => {
-      if (application.tournamentId) {
-        try {
-          const tournament = await client.fetch(
-            `*[_type == "tournament" && _id == $tournamentId][0] {
-              _id,
-              title,
-              location,
-              startDate,
-              endDate
-            }`,
-            { tournamentId: application.tournamentId },
-          );
-
-          // 해당 대회의 해당 부서에서 몇 번째 신청인지 계산
-          const applicationOrder = await client.fetch(
-            `count(*[_type == "tournamentApplication" && tournamentId == $tournamentId && division == $division && createdAt <= $createdAt])`,
-            {
-              tournamentId: application.tournamentId,
-              division: application.division,
-              createdAt: application.createdAt,
-            },
-          );
-
-          return {
-            ...application,
-            tournament: tournament || null,
-            applicationOrder: applicationOrder || 0,
-          };
-        } catch (error) {
-          console.error(`대회 정보 조회 실패 (tournamentId: ${application.tournamentId}):`, error);
-          return {
-            ...application,
-            tournament: null,
-            applicationOrder: 0,
-          };
-        }
-      }
-      return application;
-    }),
-  );
-
-  return applicationsWithTournaments;
+  // applicationOrder는 클라이언트에서 계산하거나 필요시 별도 쿼리로 처리
+  return applications.map((application: TournamentApplication) => ({
+    ...application,
+    applicationOrder: 0, // 필요시 별도 계산
+  }));
 }
 
 // 클럽 회원 검색 (이름으로)

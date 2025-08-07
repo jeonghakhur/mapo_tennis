@@ -3,7 +3,7 @@ import type { Tournament, TournamentFormData } from '@/model/tournament';
 
 // 대회 목록 조회
 export async function getTournaments(): Promise<Tournament[]> {
-  const query = `*[_type == "tournament"] | order(startDate desc) {
+  const query = `*[_type == "tournament"] | order(_createdAt desc) {
     _id,
     _type,
     title,
@@ -38,8 +38,8 @@ export async function getTournaments(): Promise<Tournament[]> {
 }
 
 // 대회 개별 조회
-export async function getTournament(id: string): Promise<Tournament | null> {
-  const query = `*[_type == "tournament" && _id == $id][0] {
+export async function getTournament(id?: string): Promise<Tournament | null> {
+  const fields = `
     _id,
     _type,
     title,
@@ -68,8 +68,16 @@ export async function getTournament(id: string): Promise<Tournament | null> {
     createdAt,
     updatedAt,
     createdBy
-  }`;
+  `;
 
+  // ID가 없거나 빈 문자열인 경우 최근 등록된 대회 조회
+  if (!id || id.trim() === '') {
+    const query = `*[_type == "tournament"] | order(createdAt desc)[0] { ${fields} }`;
+    return client.fetch(query);
+  }
+
+  // 특정 ID로 대회 조회
+  const query = `*[_type == "tournament" && _id == $id][0] { ${fields} }`;
   return client.fetch(query, { id });
 }
 

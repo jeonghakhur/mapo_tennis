@@ -4,7 +4,6 @@ import { authOptions } from '@/lib/authOptions';
 import {
   createTournamentApplication,
   getTournamentApplications,
-  getAllTournamentApplications,
 } from '@/service/tournamentApplication';
 import { getUserByEmail } from '@/service/user';
 import {
@@ -22,19 +21,24 @@ export async function GET(req: NextRequest) {
     const tournamentId = searchParams.get('tournamentId');
     const division = searchParams.get('division');
 
-    // 관리자용 전체 목록 조회 (tournamentId가 없을 때)
+    // 최근 대회의 참가 신청 목록 조회 (tournamentId가 없을 때)
     if (!tournamentId) {
       const session = await getServerSession(authOptions);
       if (!session?.user?.name) {
         return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
       }
 
-      // 관리자 권한 확인 (레벨 5 이상)
-      if (session?.user?.level && session.user.level < 5) {
-        return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 });
+      // 최근 등록된 대회의 신청만 가져오기
+      const { getTournament } = await import('@/service/tournament');
+      const recentTournaments = await getTournament();
+
+      if (!recentTournaments) {
+        return NextResponse.json({ applications: [] });
       }
 
-      const applications = await getAllTournamentApplications();
+      // 가장 최근 대회의 신청만 가져오기
+      const mostRecentTournament = recentTournaments;
+      const applications = await getTournamentApplications(mostRecentTournament._id);
       return NextResponse.json({ applications });
     }
 

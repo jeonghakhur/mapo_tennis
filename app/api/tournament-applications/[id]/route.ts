@@ -189,6 +189,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ error: '참가신청을 찾을 수 없습니다' }, { status: 404 });
     }
 
+    // 관리자 권한 확인 (레벨 4 이상만 상태 변경 가능)
+    if (!authResult.user.level || authResult.user.level < 4) {
+      return NextResponse.json({ error: '관리자 권한이 필요합니다' }, { status: 403 });
+    }
+
     const { status } = await req.json();
 
     if (!status || !['pending', 'approved', 'rejected', 'cancelled'].includes(status)) {
@@ -209,32 +214,44 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // 참가신청 상태 업데이트
     const result = await updateTournamentApplicationStatus(id, status);
 
-    // 알림 생성
-    const { title, message } = createTournamentApplicationStatusMessage(
-      existingApplication.status,
-      status,
-      tournament.title,
-      existingApplication.division,
-    );
+    // 알림 생성 (오류가 발생해도 상태 업데이트는 성공)
+    try {
+      const { title, message } = createTournamentApplicationStatusMessage(
+        existingApplication.status,
+        status,
+        tournament.title,
+        existingApplication.division,
+      );
 
-    const notification = await createNotification({
-      type: 'UPDATE',
-      entityType: 'TOURNAMENT_APPLICATION',
-      entityId: id,
-      title,
-      message,
-      link: createNotificationLink('TOURNAMENT_APPLICATION', id),
-      requiredLevel: 4, // 레벨 4 (경기관리자) 이상
-    });
+      const notification = await createNotification({
+        type: 'UPDATE',
+        entityType: 'TOURNAMENT_APPLICATION',
+        entityId: id,
+        title,
+        message,
+        link: createNotificationLink('TOURNAMENT_APPLICATION', id),
+        requiredLevel: 4, // 레벨 4 (경기관리자) 이상
+      });
 
-    // 새로운 notificationStatus 구조에 맞게 알림 상태 생성
-    // 신청자에게만 알림을 보내기 위해 targetUserIds 사용
-    await createNotificationStatuses(notification._id, [existingApplication.createdBy], 4);
+      // 새로운 notificationStatus 구조에 맞게 알림 상태 생성
+      // 신청자에게만 알림을 보내기 위해 targetUserIds 사용
+      await createNotificationStatuses(notification._id, [existingApplication.createdBy], 4);
+    } catch (notificationError) {
+      console.error('알림 생성 중 오류 발생:', notificationError);
+      // 알림 생성 실패는 상태 업데이트 성공을 방해하지 않음
+    }
 
     return NextResponse.json({ ok: true, id: result._id });
   } catch (error) {
     console.error('참가신청 상태 변경 오류:', error);
-    return NextResponse.json({ error: '서버 오류' }, { status: 500 });
+    console.error('에러 스택:', error instanceof Error ? error.stack : '스택 없음');
+    return NextResponse.json(
+      {
+        error: '서버 오류',
+        details: error instanceof Error ? error.message : '알 수 없는 오류',
+      },
+      { status: 500 },
+    );
   }
 }
 

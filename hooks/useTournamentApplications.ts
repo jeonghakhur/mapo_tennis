@@ -3,12 +3,30 @@ import useSWRMutation from 'swr/mutation';
 import { mutate } from 'swr';
 import type { TournamentApplication } from '@/model/tournamentApplication';
 
-export function useTournamentApplications() {
+export function useTournamentApplications(tournamentId?: string) {
+  const url = tournamentId
+    ? `/api/tournament-applications?tournamentId=${tournamentId}`
+    : '/api/tournament-applications';
+
+  console.log('useTournamentApplications called with tournamentId:', tournamentId);
+
   const { data, error, isLoading, mutate } = useSWR<{ applications: TournamentApplication[] }>(
-    '/api/tournament-applications',
-    null,
+    tournamentId ? `tournament-applications-${tournamentId}` : 'tournament-applications-recent',
+    async () => {
+      console.log('Fetching from URL:', url);
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch tournament applications');
+      }
+      const result = await response.json();
+      console.log('Fetched data:', result);
+      return result;
+    },
     {
       refreshInterval: 30000, // 30초마다 새로고침
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 0, // 중복 요청 방지 시간을 0으로 설정
     },
   );
 
@@ -34,21 +52,6 @@ export function useTournamentApplication(id: string) {
   };
 }
 
-// 사용자별 참가 신청 목록 조회
-export function useUserTournamentApplications() {
-  const { data, error, isLoading, mutate } = useSWR<TournamentApplication[]>(
-    '/api/tournament-applications/user',
-    null,
-  );
-
-  return {
-    applications: data || [],
-    isLoading,
-    error,
-    mutate,
-  };
-}
-
 // 참가 신청 상태 업데이트
 export function useUpdateApplicationStatus() {
   return useSWRMutation(
@@ -66,17 +69,20 @@ export function useUpdateApplicationStatus() {
       });
 
       if (!response.ok) {
-        throw new Error('상태 업데이트에 실패했습니다.');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.details || errorData.error || response.statusText;
+        throw new Error(`상태 업데이트에 실패했습니다. (${response.status}): ${errorMessage}`);
       }
 
       return response.json();
     },
     {
       onSuccess: () => {
-        // 캐시 무효화
+        // 캐시 무효화 - 모든 관련 API 키 무효화
         mutate('/api/tournament-applications');
-        mutate('/api/tournament-applications/user');
         mutate('/api/tournament-applications/admin');
+        // 특정 대회의 신청 목록도 무효화
+        mutate((key) => typeof key === 'string' && key.startsWith('/api/tournament-applications'));
       },
     },
   );
@@ -114,10 +120,11 @@ export function useDeleteApplication() {
     },
     {
       onSuccess: () => {
-        // 캐시 무효화
+        // 캐시 무효화 - 모든 관련 API 키 무효화
         mutate('/api/tournament-applications');
-        mutate('/api/tournament-applications/user');
         mutate('/api/tournament-applications/admin');
+        // 특정 대회의 신청 목록도 무효화
+        mutate((key) => typeof key === 'string' && key.startsWith('/api/tournament-applications'));
       },
     },
   );

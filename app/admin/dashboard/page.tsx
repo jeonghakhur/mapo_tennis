@@ -1,29 +1,16 @@
 'use client';
 import Container from '@/components/Container';
 import '@radix-ui/themes/styles.css';
-import { getTournaments } from '@/service/tournament';
-import { getAllTournamentApplications } from '@/service/tournamentApplication';
 import { Text, Card, Table, Box } from '@radix-ui/themes';
-import { useEffect, useState } from 'react';
+import { useTournaments } from '@/hooks/useTournaments';
+import { useTournamentApplications } from '@/hooks/useTournamentApplications';
 import type { Tournament } from '@/model/tournament';
 import type { TournamentApplication } from '@/model/tournamentApplication';
 
 export default function AdminDashboardPage() {
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [applications, setApplications] = useState<TournamentApplication[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      const [tournamentList, applicationList] = await Promise.all([
-        getTournaments(),
-        getAllTournamentApplications(),
-      ]);
-      setTournaments(tournamentList);
-      setApplications(applicationList);
-      setLoading(false);
-    })();
-  }, []);
+  const { tournaments, isLoading: tournamentsLoading } = useTournaments();
+  const { applications, isLoading: applicationsLoading } = useTournamentApplications();
+  const loading = tournamentsLoading || applicationsLoading;
 
   // 대회별, 부서별 참가팀 수 집계
   const getDivisionApplicationCount = (tournamentId: string, division: string) =>

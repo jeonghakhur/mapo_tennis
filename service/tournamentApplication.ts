@@ -40,69 +40,47 @@ export async function getTournamentApplications(
   return await client.fetch(query, { tournamentId, division });
 }
 
-// 전체 참가 신청 목록 조회 (관리자용)
+// 전체 참가 신청 목록 조회 (관리자용) - 최적화된 버전
 export async function getAllTournamentApplications(): Promise<TournamentApplication[]> {
-  const applications = await client.fetch(
-    `*[_type == "tournamentApplication"] | order(createdAt desc)`,
-  );
-
-  // 각 참가신청에 대회 정보, 순서, 신청자 정보 추가
-  const applicationsWithTournaments = await Promise.all(
-    applications.map(async (application: TournamentApplication) => {
-      if (application.tournamentId) {
-        try {
-          const tournament = await client.fetch(
-            `*[_type == "tournament" && _id == $tournamentId][0] {
-              _id,
-              title,
-              location,
-              startDate,
-              endDate
-            }`,
-            { tournamentId: application.tournamentId },
-          );
-
-          // 해당 대회의 해당 부서에서 몇 번째 신청인지 계산
-          const applicationOrder = await client.fetch(
-            `count(*[_type == "tournamentApplication" && tournamentId == $tournamentId && division == $division && createdAt <= $createdAt])`,
-            {
-              tournamentId: application.tournamentId,
-              division: application.division,
-              createdAt: application.createdAt,
-            },
-          );
-
-          // 신청자 정보 가져오기
-          const applicant = await client.fetch(
-            `*[_type == "user" && _id == $createdBy][0] {
-              _id,
-              name,
-              email
-            }`,
-            { createdBy: application.createdBy },
-          );
-
-          return {
-            ...application,
-            tournament: tournament || null,
-            applicationOrder: applicationOrder || 0,
-            applicant: applicant || null,
-          };
-        } catch (error) {
-          console.error(`대회 정보 조회 실패 (tournamentId: ${application.tournamentId}):`, error);
-          return {
-            ...application,
-            tournament: null,
-            applicationOrder: 0,
-            applicant: null,
-          };
-        }
+  // 한 번의 쿼리로 모든 데이터를 가져오기
+  const applications = await client.fetch(`
+    *[_type == "tournamentApplication"] | order(createdAt desc) {
+      _id,
+      _type,
+      tournamentId,
+      division,
+      tournamentType,
+      teamMembers,
+      status,
+      memo,
+      isFeePaid,
+      createdAt,
+      updatedAt,
+      createdBy,
+      contact,
+      email,
+      // 대회 정보를 직접 조인
+      "tournament": *[_type == "tournament" && _id == ^.tournamentId][0] {
+        _id,
+        title,
+        location,
+        startDate,
+        endDate
+      },
+      // 신청자 정보를 직접 조인
+      "applicant": *[_type == "user" && _id == ^.createdBy][0] {
+        _id,
+        name,
+        email
       }
-      return application;
-    }),
-  );
+    }
+  `);
 
-  return applicationsWithTournaments;
+  // applicationOrder는 클라이언트에서 계산하거나 필요시 별도 쿼리로 처리
+  return applications.map((application: TournamentApplication) => ({
+    ...application,
+    applicationOrder: 0, // 필요시 별도 계산
+  }));
 }
 
 // 참가 신청 개별 조회

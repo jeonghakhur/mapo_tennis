@@ -40,10 +40,7 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
   const { trigger: deleteTournament, isMutating: isDeleting } = useDeleteTournament(id);
   const { loading, withLoading } = useLoading();
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-  // 포스트 데이터 가져오기
-  const { post: descriptionPost, isLoading: isLoadingDescription } = usePost(
-    tournament?.descriptionPostId || '',
-  );
+
   const { post: rulesPost, isLoading: isLoadingRules } = usePost(tournament?.rulesPostId || '');
 
   // 관리자 권한 확인
@@ -53,15 +50,12 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
   const isAllContentLoaded = useCallback(() => {
     if (isLoading) return false;
     if (!tournament) return false;
-
-    // 설명 포스트가 있는 경우 로딩 완료 확인
-    if (tournament.descriptionPostId && isLoadingDescription) return false;
-
+    console.log('tournament', tournament);
     // 규칙 포스트가 있는 경우 로딩 완료 확인
     if (tournament.rulesPostId && isLoadingRules) return false;
 
     return true;
-  }, [isLoading, tournament, isLoadingDescription, isLoadingRules]);
+  }, [isLoading, tournament, isLoadingRules]);
 
   // 콘텐츠 로딩 상태 업데이트
   useEffect(() => {
@@ -379,22 +373,6 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
                 </Flex>
               )}
             </Flex>
-
-            {/* 대회 설명 포스트 내용 */}
-            {tournament.descriptionPostId && (
-              <div className="pt-4 border-t">
-                <Text size="4" weight="bold" className="block mb-3">
-                  대회 정보
-                </Text>
-                {descriptionPost ? (
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <MarkdownRenderer content={descriptionPost.content} />
-                  </div>
-                ) : (
-                  <Text>대회 설명을 찾을 수 없습니다.</Text>
-                )}
-              </div>
-            )}
 
             {/* 대회 규칙 포스트 내용 */}
             {tournament.rulesPostId && (

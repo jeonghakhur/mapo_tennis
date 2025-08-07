@@ -3,17 +3,31 @@ import useSWRMutation from 'swr/mutation';
 import { mutate } from 'swr';
 import type { TournamentApplication } from '@/model/tournamentApplication';
 
-// 참가 신청 목록 조회
-export function useTournamentApplications(tournamentId?: string, division?: string) {
-  const { data, error, isLoading, mutate } = useSWR<TournamentApplication[]>(
-    tournamentId && division
-      ? `/api/tournament-applications?tournamentId=${tournamentId}&division=${division}`
-      : null,
+export function useTournamentApplications() {
+  const { data, error, isLoading, mutate } = useSWR<{ applications: TournamentApplication[] }>(
+    '/api/tournament-applications',
+    null,
+    {
+      refreshInterval: 30000, // 30초마다 새로고침
+    },
+  );
+
+  return {
+    applications: data?.applications || [],
+    isLoading,
+    error,
+    mutate,
+  };
+}
+
+export function useTournamentApplication(id: string) {
+  const { data, error, isLoading, mutate } = useSWR<TournamentApplication>(
+    id ? `/api/tournament-applications/${id}` : null,
     null,
   );
 
   return {
-    applications: data || [],
+    application: data || null,
     isLoading,
     error,
     mutate,

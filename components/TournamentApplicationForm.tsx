@@ -236,19 +236,21 @@ export default function TournamentApplicationForm({
   );
 
   // 대회ID+부서별 전체 신청 목록
-  const { applications: divisionApplications } = useTournamentApplications(
-    tournament._id,
-    division,
-  );
+  const { applications: divisionApplications } = useTournamentApplications();
 
   // 중복 체크: 동일 대회/부서에 동일 이름+클럽으로 이미 신청된 경우
   const isDuplicate = useMemo(() => {
     if (!divisionApplications || divisionApplications.length === 0) return false;
 
+    // 해당 대회와 부서의 신청만 필터링
+    const relevantApplications = divisionApplications.filter(
+      (app) => app.tournamentId === tournament._id && app.division === division,
+    );
+
     // 수정 모드에서는 현재 수정 중인 참가신청을 제외
     const otherApplications = isEdit
-      ? divisionApplications.filter((app) => app._id !== applicationId)
-      : divisionApplications;
+      ? relevantApplications.filter((app) => app._id !== applicationId)
+      : relevantApplications;
 
     return activeParticipants.some((participant) =>
       otherApplications.some((app) =>
@@ -257,7 +259,7 @@ export default function TournamentApplicationForm({
         ),
       ),
     );
-  }, [divisionApplications, activeParticipants, isEdit, applicationId]);
+  }, [divisionApplications, tournament._id, division, activeParticipants, isEdit, applicationId]);
 
   // 폼 제출
   const handleSubmit = useCallback(
@@ -313,9 +315,12 @@ export default function TournamentApplicationForm({
       }
       if (isDuplicate) {
         // 중복된 참가자 정보 찾기 (수정 모드에서는 현재 수정 중인 참가신청 제외)
+        const relevantApplications = divisionApplications.filter(
+          (app) => app.tournamentId === tournament._id && app.division === division,
+        );
         const otherApplications = isEdit
-          ? divisionApplications.filter((app) => app._id !== applicationId)
-          : divisionApplications;
+          ? relevantApplications.filter((app) => app._id !== applicationId)
+          : relevantApplications;
 
         const duplicateParticipants = activeParticipants.filter((participant) =>
           otherApplications.some((app) =>

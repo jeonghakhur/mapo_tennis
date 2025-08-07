@@ -4,7 +4,6 @@ import { getToken } from 'next-auth/jwt';
 
 // 권한이 필요한 경로들
 const PROTECTED_ROUTES = {
-  '/tournament-applications/admin': 5, // 관리자만
   '/admin': 5, // 관리자만
   '/tournaments/[id]/edit': 5, // 대회 수정은 관리자만
   '/tournaments/create': 5, // 대회 생성은 관리자만
@@ -104,7 +103,7 @@ function getRequiredLevel(pathname: string): number | null {
   if (pathname.startsWith('/profile')) {
     return 1; // 프로필 관리
   }
-  if (pathname.startsWith('/tournament-applications') && !pathname.includes('/admin')) {
+  if (pathname.startsWith('/tournament-applications')) {
     return 1; // 내 신청 목록
   }
   if (pathname.startsWith('/notifications')) {
@@ -123,7 +122,6 @@ function getRequiredLevel(pathname: string): number | null {
 export const config = {
   matcher: [
     '/admin/:path*',
-    '/tournament-applications/admin',
     '/tournaments/:path*',
     '/awards/:path*',
     '/club/:path*',

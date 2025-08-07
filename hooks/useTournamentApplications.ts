@@ -80,27 +80,11 @@ export function useUpdateApplicationStatus() {
       onSuccess: () => {
         // 캐시 무효화 - 모든 관련 API 키 무효화
         mutate('/api/tournament-applications');
-        mutate('/api/tournament-applications/admin');
         // 특정 대회의 신청 목록도 무효화
         mutate((key) => typeof key === 'string' && key.startsWith('/api/tournament-applications'));
       },
     },
   );
-}
-
-// 관리자용 전체 참가 신청 목록 조회
-export function useAdminTournamentApplications() {
-  const { data, error, isLoading, mutate } = useSWR<TournamentApplication[]>(
-    '/api/tournament-applications/admin',
-    null,
-  );
-
-  return {
-    applications: data || [],
-    isLoading,
-    error,
-    mutate,
-  };
 }
 
 // 참가 신청 삭제
@@ -122,7 +106,6 @@ export function useDeleteApplication() {
       onSuccess: () => {
         // 캐시 무효화 - 모든 관련 API 키 무효화
         mutate('/api/tournament-applications');
-        mutate('/api/tournament-applications/admin');
         // 특정 대회의 신청 목록도 무효화
         mutate((key) => typeof key === 'string' && key.startsWith('/api/tournament-applications'));
       },

@@ -540,15 +540,7 @@ export default function TournamentApplicationForm({
                 size="3"
                 onClick={() => {
                   // 수정 후 이동 경로 결정
-                  if (isEdit) {
-                    // 어드민(레벨 4 이상)은 어드민 목록으로, 일반 사용자는 일반 목록으로
-                    const moderator = isModerator(user);
-                    router.push(
-                      moderator ? '/tournament-applications/admin' : '/tournament-applications',
-                    );
-                  } else {
-                    router.push('/tournament-applications');
-                  }
+                  router.push('/tournament-applications');
                 }}
               >
                 목록으로 이동

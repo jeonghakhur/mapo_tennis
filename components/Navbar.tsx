@@ -57,12 +57,7 @@ const NAV_ITEMS: NavItem[] = [
     requiredLevel: 1,
     // adminOnly: false,
   },
-  {
-    path: '/tournament-applications/admin',
-    label: '전체참가신청목록',
-    icon: ClipboardList,
-    adminOnly: true,
-  },
+
   // 레벨 1 이상 사용자만
   { path: '/questions', label: '1:1 문의', icon: FileText, requiredLevel: 1 },
   { path: '/admin/questions', label: '1:1 문의(전체)', icon: FileText, adminOnly: true },
@@ -84,7 +79,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/notifications': '알림',
   '/profile': '프로필',
   '/tournament-applications': '참가신청목록',
-  '/tournament-applications/admin': '전체참가신청목록',
+
   '/admin/users': '회원관리',
   '/welcome': '회원가입',
   '/awards': '대회결과',

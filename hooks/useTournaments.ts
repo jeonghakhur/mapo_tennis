@@ -102,10 +102,15 @@ function removeTournamentFromCache(id: string) {
   mutate(`/api/tournaments/${id}`, null, false);
 }
 
-export function useTournaments() {
-  const { data, error, isLoading, mutate } = useSWR<Tournament[]>('/api/tournaments', null, {
-    refreshInterval: 10000, // 10초마다 새로고침
-  });
+// 사용자 권한에 따라 다른 대회 목록을 가져오는 훅
+export function useTournamentsByUserLevel(userLevel?: number) {
+  const { data, error, isLoading, mutate } = useSWR<Tournament[]>(
+    userLevel !== undefined ? `/api/tournaments?userLevel=${userLevel}` : null,
+    null,
+    {
+      refreshInterval: 10000, // 10초마다 새로고침
+    },
+  );
 
   return {
     tournaments: data || [],

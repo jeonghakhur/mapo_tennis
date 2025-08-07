@@ -7,9 +7,19 @@ import { parseTournamentFormData } from '@/lib/tournamentUtils';
 import type { TournamentFormData } from '@/model/tournament';
 
 // 대회 목록 조회
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const tournaments = await getTournaments();
+    const { searchParams } = new URL(req.url);
+    const userLevel = searchParams.get('userLevel');
+
+    // 세션에서 사용자 정보 가져오기
+    const session = await getServerSession(authOptions);
+    const currentUserLevel = session?.user?.level || 0;
+
+    // userLevel 파라미터가 있으면 그것을 사용, 없으면 세션의 레벨 사용
+    const effectiveUserLevel = userLevel ? parseInt(userLevel) : currentUserLevel;
+
+    const tournaments = await getTournaments(effectiveUserLevel);
     return NextResponse.json(tournaments);
   } catch (error) {
     console.error('대회 목록 조회 실패:', error);

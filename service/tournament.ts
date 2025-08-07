@@ -2,8 +2,16 @@ import { client } from '@/sanity/lib/client';
 import type { Tournament, TournamentFormData } from '@/model/tournament';
 
 // 대회 목록 조회
-export async function getTournaments(): Promise<Tournament[]> {
-  const query = `*[_type == "tournament"] | order(_createdAt desc) {
+export async function getTournaments(userLevel?: number): Promise<Tournament[]> {
+  // 관리자(레벨 4 이상)는 전체 대회를 볼 수 있음
+  // 일반 사용자는 완료되거나 진행중인 대회만 볼 수 있음
+  const isAdmin = userLevel && userLevel >= 5;
+
+  const baseQuery = `*[_type == "tournament"`;
+  const statusFilter = isAdmin ? `]` : ` && (status == "completed" || status == "ongoing")]`;
+  const orderClause = ` | order(_createdAt desc)`;
+
+  const query = `${baseQuery}${statusFilter}${orderClause} {
     _id,
     _type,
     title,

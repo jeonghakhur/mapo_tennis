@@ -2,13 +2,13 @@
 import Container from '@/components/Container';
 import '@radix-ui/themes/styles.css';
 import { Text, Card, Table, Box } from '@radix-ui/themes';
-import { useTournaments } from '@/hooks/useTournaments';
+import { useTournamentsByUserLevel } from '@/hooks/useTournaments';
 import { useTournamentApplications } from '@/hooks/useTournamentApplications';
 import type { Tournament } from '@/model/tournament';
 import type { TournamentApplication } from '@/model/tournamentApplication';
 
 export default function AdminDashboardPage() {
-  const { tournaments, isLoading: tournamentsLoading } = useTournaments();
+  const { tournaments, isLoading: tournamentsLoading } = useTournamentsByUserLevel(5); // 관리자 레벨
   const { applications, isLoading: applicationsLoading } = useTournamentApplications();
   const loading = tournamentsLoading || applicationsLoading;
 

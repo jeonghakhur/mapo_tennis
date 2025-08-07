@@ -3,7 +3,7 @@ import { Box, Text, Button, Badge, Card } from '@radix-ui/themes';
 import Container from '@/components/Container';
 import { Calendar, CalendarCheck, MapPin, NotebookPen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useTournaments } from '@/hooks/useTournaments';
+import { useTournamentsByUserLevel } from '@/hooks/useTournaments';
 import SkeletonCard from '@/components/SkeletonCard';
 import { hasPermissionLevel } from '@/lib/authUtils';
 import { useSession } from 'next-auth/react';
@@ -13,9 +13,9 @@ import type { Tournament } from '@/model/tournament';
 
 export default function TournamentsPage() {
   const router = useRouter();
-  const { tournaments, isLoading, error } = useTournaments();
   const { data: session } = useSession();
   const user = session?.user;
+  const { tournaments, isLoading, error } = useTournamentsByUserLevel(user?.level);
   const [showPeriodDialog, setShowPeriodDialog] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
 

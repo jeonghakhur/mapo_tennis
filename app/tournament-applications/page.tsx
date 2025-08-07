@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useUser } from '@/hooks/useUser';
 import { hasPermissionLevel } from '@/lib/authUtils';
-import { useTournaments } from '@/hooks/useTournaments';
+import { useTournamentsByUserLevel } from '@/hooks/useTournaments';
 import { useUpdateApplicationStatus } from '@/hooks/useTournamentApplications';
 import type { TournamentApplication } from '@/model/tournamentApplication';
 
@@ -22,8 +22,8 @@ export default function TournamentApplicationsPage() {
   const { data: session } = useSession();
   const { user } = useUser(session?.user?.email);
 
-  // 대회 정보 먼저 가져오기
-  const { tournaments, isLoading: tournamentsLoading } = useTournaments();
+  // 대회 정보 먼저 가져오기 (사용자 권한에 따라 다른 대회 목록)
+  const { tournaments, isLoading: tournamentsLoading } = useTournamentsByUserLevel(user?.level);
   const { trigger: updateStatus, isMutating: isUpdating } = useUpdateApplicationStatus();
 
   const [selectedApplication, setSelectedApplication] = useState<TournamentApplication | null>(

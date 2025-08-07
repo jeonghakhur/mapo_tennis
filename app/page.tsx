@@ -437,6 +437,8 @@ function HomePageContent() {
               display: 'flex',
               flexDirection: 'column',
               gap: '12px',
+              width: '60px',
+              alignItems: 'center',
             }}
           >
             {/* 카카오 공유하기 버튼 */}

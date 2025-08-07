@@ -437,13 +437,13 @@ export default function TournamentApplicationForm({
       clubs,
       tournament,
       division,
-
       memo,
       isFeePaid,
       isEdit,
       applicationId,
       withLoading,
       isDuplicate,
+      divisionApplications,
     ],
   );
 

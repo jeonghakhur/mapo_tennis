@@ -125,6 +125,11 @@ export default function TournamentCard({ tournament, user }: TournamentCardProps
         <Badge color={getStatusColor(tournament.status)} size="2">
           {getStatusLabel(tournament.status)}
         </Badge>
+        {tournament.isDraft && (
+          <Badge color="orange" size="2">
+            임시저장
+          </Badge>
+        )}
         <Text size="5" weight="bold" className="block mb-2">
           {tournament.title} - {getTournamentTypeLabel(tournament.tournamentType)}
         </Text>

@@ -1,7 +1,7 @@
 'use client';
 import Container from '@/components/Container';
 import '@radix-ui/themes/styles.css';
-import { getUpcomingTournaments } from '@/service/tournament';
+import { getUpcomingTournaments, getUpcomingTournamentsForAdmin } from '@/service/tournament';
 import { useEffect, useState, Suspense } from 'react';
 import { Box, Text, Flex, Badge, Button } from '@radix-ui/themes';
 import type { Post } from '@/model/post';
@@ -49,11 +49,15 @@ function HomePageContent() {
 
   useEffect(() => {
     (async () => {
-      const tournamentResult = await getUpcomingTournaments();
+      // 관리자(레벨 4 이상)는 임시저장 대회도 볼 수 있음
+      const isAdmin = hasPermissionLevel(session?.user, 5);
+      const tournamentResult = isAdmin
+        ? await getUpcomingTournamentsForAdmin()
+        : await getUpcomingTournaments();
       setTournaments(tournamentResult);
       setLoading(false);
     })();
-  }, []);
+  }, [session?.user]);
 
   // URL 파라미터에서 검색어 가져오기
   useEffect(() => {

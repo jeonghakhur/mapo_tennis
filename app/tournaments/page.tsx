@@ -19,6 +19,16 @@ export default function TournamentsPage() {
   const [showPeriodDialog, setShowPeriodDialog] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
 
+  // 관리자 권한에 따라 대회 필터링
+  const filteredTournaments = tournaments.filter((tournament) => {
+    // 관리자(레벨 4 이상)는 모든 대회를 볼 수 있음
+    if (hasPermissionLevel(user, 4)) {
+      return true;
+    }
+    // 일반 사용자는 개시된 대회만 볼 수 있음
+    return !tournament.isDraft;
+  });
+
   if (error) {
     return (
       <Container>
@@ -139,7 +149,7 @@ export default function TournamentsPage() {
         <SkeletonCard />
       ) : (
         <Box>
-          {tournaments.length === 0 ? (
+          {filteredTournaments.length === 0 ? (
             <Card className="p-6 text-center">
               <Text size="3" color="gray">
                 등록된 대회가 없습니다.
@@ -147,7 +157,7 @@ export default function TournamentsPage() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {tournaments.map((tournament) => (
+              {filteredTournaments.map((tournament) => (
                 <Card key={tournament._id} className="p-6 hover:bg-gray-50 transition-colors">
                   <div className="space-y-4">
                     {/* 제목과 상태 */}

@@ -272,29 +272,6 @@ function HomePageContent() {
         <SkeletonCard />
       ) : (
         <>
-          {/* 카카오 공유하기 버튼 */}
-          <Box className="mb-6">
-            <Flex justify="between" align="center">
-              <Text size="5" weight="bold">
-                마포구 테니스 협회
-              </Text>
-              <Button
-                size="3"
-                variant="ghost"
-                onClick={handleKakaoShare}
-                style={{ position: 'fixed', right: 25, bottom: 100, zIndex: 1000 }}
-              >
-                <Image
-                  src="/images/icon_kakao_talk.png"
-                  alt="카카오톡 공유하기"
-                  width={60}
-                  height={24}
-                  className="rounded-full"
-                />
-              </Button>
-            </Flex>
-          </Box>
-
           {/* 대회 섹션 - 검색어가 없을 때만 예정 대회 표시 */}
           {!searchKeyword && filteredTournaments.length > 0 && (
             <div className="space-y-4" style={{ marginBottom: 32 }}>
@@ -450,16 +427,44 @@ function HomePageContent() {
             />
           )}
 
-          {/* 플로팅 새 포스트 작성 버튼 */}
-          {canManagePosts && (
-            <div
+          {/* 플로팅 버튼들 - 동적 위치 */}
+          <div
+            style={{
+              position: 'fixed',
+              bottom: '24px',
+              right: '24px',
+              zIndex: 1000,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+            }}
+          >
+            {/* 카카오 공유하기 버튼 */}
+            <Button
+              onClick={handleKakaoShare}
+              variant="ghost"
               style={{
-                position: 'fixed',
-                bottom: '24px',
-                right: '24px',
-                zIndex: 1000,
+                borderRadius: '50%',
+                width: '60px',
+                height: '60px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0',
+                backgroundColor: '#000',
               }}
             >
+              <Image
+                src="/images/icon_kakao_talk.png"
+                alt="카카오톡 공유하기"
+                width={40}
+                height={1}
+                className="rounded-full"
+              />
+            </Button>
+            {/* 플로팅 새 포스트 작성 버튼 */}
+            {canManagePosts && (
               <Button
                 style={{
                   width: '60px',
@@ -476,8 +481,8 @@ function HomePageContent() {
               >
                 <NotebookPen size={24} />
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </>
       )}
     </Container>

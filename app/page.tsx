@@ -20,7 +20,21 @@ import PostLikeButton from '@/components/PostLikeButton';
 import CommentButton from '@/components/CommentButton';
 import CommentDialog from '@/components/CommentDialog';
 import TournamentCard from '@/components/TournamentCard';
+import Image from 'next/image';
 import 'yet-another-react-lightbox/styles.css';
+
+// 카카오 SDK 타입 정의
+declare global {
+  interface Window {
+    Kakao: {
+      init: (key: string) => void;
+      isInitialized: () => boolean;
+      Share: {
+        sendDefault: (data: Record<string, unknown>) => void;
+      };
+    };
+  }
+}
 
 function HomePageContent() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -46,6 +60,112 @@ function HomePageContent() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+
+  // 카카오 SDK 초기화
+  useEffect(() => {
+    const initializeKakao = async () => {
+      try {
+        console.log('카카오 SDK 초기화 시작...');
+
+        // API를 통해 카카오 앱 키 가져오기
+        const response = await fetch('/api/kakao-config');
+        const data = await response.json();
+        const kakaoKey = data.kakaoAppKey;
+
+        console.log('카카오 앱 키:', kakaoKey ? '설정됨' : '설정되지 않음');
+
+        if (!kakaoKey) {
+          console.warn('카카오 앱 키가 설정되지 않았습니다.');
+          return;
+        }
+
+        // 카카오 SDK가 이미 로드되어 있는지 확인
+        if (window.Kakao) {
+          console.log('카카오 SDK 이미 로드됨');
+          if (!window.Kakao.isInitialized()) {
+            console.log('카카오 SDK 초기화 중...');
+            window.Kakao.init(kakaoKey);
+            console.log('카카오 SDK 초기화 완료');
+          } else {
+            console.log('카카오 SDK 이미 초기화됨');
+          }
+        } else {
+          console.log('카카오 SDK 로드 시작...');
+          // 카카오 SDK 로드
+          const script = document.createElement('script');
+          script.src = 'https://developers.kakao.com/sdk/js/kakao.js';
+          script.onload = () => {
+            console.log('카카오 SDK 스크립트 로드 완료');
+            if (window.Kakao && !window.Kakao.isInitialized()) {
+              console.log('카카오 SDK 초기화 중...');
+              window.Kakao.init(kakaoKey);
+              console.log('카카오 SDK 초기화 완료');
+            }
+          };
+          script.onerror = () => {
+            console.error('카카오 SDK 스크립트 로드 실패');
+          };
+          document.head.appendChild(script);
+        }
+      } catch (error) {
+        console.error('카카오 설정 로드 실패:', error);
+      }
+    };
+
+    initializeKakao();
+  }, []);
+
+  // 카카오 공유하기 함수
+  const handleKakaoShare = () => {
+    console.log('카카오 공유하기 버튼 클릭됨');
+    console.log('window.Kakao 존재 여부:', !!window.Kakao);
+
+    if (!window.Kakao) {
+      console.error('카카오 SDK가 로드되지 않았습니다.');
+      alert('카카오 SDK가 로드되지 않았습니다. 페이지를 새로고침해주세요.');
+      return;
+    }
+
+    console.log('카카오 SDK 초기화 상태:', window.Kakao.isInitialized());
+
+    const shareData = {
+      objectType: 'feed',
+      content: {
+        title: '마포구 테니스 협회',
+        description:
+          '마포구 테니스 협회 공식 웹사이트입니다. 대회 정보, 클럽 관리, 소식 등을 확인하세요.',
+        imageUrl: 'https://mapo-tennis.vercel.app/icon_512x512.png', // 800x400 사이즈 권장
+        link: {
+          mobileWebUrl: window.location.href,
+          webUrl: window.location.href,
+        },
+      },
+      social: {
+        likeCount: 0,
+        commentCount: 0,
+        sharedCount: 0,
+      },
+      buttons: [
+        {
+          title: '웹사이트 보기',
+          link: {
+            mobileWebUrl: window.location.href,
+            webUrl: window.location.href,
+          },
+        },
+      ],
+    };
+
+    console.log('공유 데이터:', shareData);
+
+    try {
+      window.Kakao.Share.sendDefault(shareData);
+      console.log('카카오 공유 요청 완료');
+    } catch (error) {
+      console.error('카카오 공유 실패:', error);
+      alert('카카오 공유에 실패했습니다. 다시 시도해주세요.');
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -152,6 +272,29 @@ function HomePageContent() {
         <SkeletonCard />
       ) : (
         <>
+          {/* 카카오 공유하기 버튼 */}
+          <Box className="mb-6">
+            <Flex justify="between" align="center">
+              <Text size="5" weight="bold">
+                마포구 테니스 협회
+              </Text>
+              <Button
+                size="3"
+                variant="ghost"
+                onClick={handleKakaoShare}
+                style={{ position: 'fixed', right: 25, bottom: 100, zIndex: 1000 }}
+              >
+                <Image
+                  src="/images/icon_kakao_talk.png"
+                  alt="카카오톡 공유하기"
+                  width={60}
+                  height={24}
+                  className="rounded-full"
+                />
+              </Button>
+            </Flex>
+          </Box>
+
           {/* 대회 섹션 - 검색어가 없을 때만 예정 대회 표시 */}
           {!searchKeyword && filteredTournaments.length > 0 && (
             <div className="space-y-4" style={{ marginBottom: 32 }}>

@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import { Box, Text, Button, Flex, Card, Heading, Select, Badge } from '@radix-ui/themes';
 import { useLoading } from '@/hooks/useLoading';
 import { useTournamentsByUserLevel } from '@/hooks/useTournaments';
@@ -12,8 +10,6 @@ import Container from '@/components/Container';
 import ManualGrouping from '@/components/ManualGrouping';
 
 export default function NewTournamentGroupingPage() {
-  const { data: session } = useSession();
-  const router = useRouter();
   const { loading, withLoading } = useLoading();
 
   const [selectedTournament, setSelectedTournament] = useState<string>('');
@@ -30,7 +26,7 @@ export default function NewTournamentGroupingPage() {
   >([]);
   const [showGroupingInterface, setShowGroupingInterface] = useState(false);
 
-  const { tournaments } = useTournamentsByUserLevel(session?.user?.level);
+  const { tournaments } = useTournamentsByUserLevel(undefined);
 
   // 기존 조편성 목록 조회
   const fetchExistingGroupings = async () => {
@@ -76,7 +72,7 @@ export default function NewTournamentGroupingPage() {
         setSelectedDivision(''); // 이미 조편성이 있으면 부서 선택 초기화
       }
     }
-  }, [selectedTournament, existingGroupings]);
+  }, [selectedTournament, selectedDivision, existingGroupings]);
 
   // 부서 옵션
   const divisionOptions = [
@@ -227,8 +223,6 @@ export default function NewTournamentGroupingPage() {
       setShowSuccessDialog(true);
     });
   };
-
-
 
   return (
     <Container>

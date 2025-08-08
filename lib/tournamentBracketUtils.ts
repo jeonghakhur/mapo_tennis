@@ -134,7 +134,22 @@ export async function updateBracketMatch(
 }
 
 // 조별 순위 조회 (진출팀 선정용)
-export async function getGroupStandings(tournamentId: string, division: string): Promise<any[]> {
+export async function getGroupStandings(
+  tournamentId: string,
+  division: string,
+): Promise<
+  Array<{
+    _id: string;
+    groupId: string;
+    teams: Array<{
+      teamId: string;
+      name: string;
+      position: number;
+      points: number;
+      goalDifference: number;
+    }>;
+  }>
+> {
   try {
     const standings = await client.fetch(
       `
@@ -161,9 +176,46 @@ export async function getGroupStandings(tournamentId: string, division: string):
 }
 
 // 진출팀 선정
-export function selectQualifiedTeams(standings: any[]): any[] {
-  const qualifiedTeams: any[] = [];
-  const standingsByGroup = new Map<string, any[]>();
+export function selectQualifiedTeams(
+  standings: Array<{
+    _id: string;
+    groupId: string;
+    teams: Array<{
+      teamId: string;
+      name: string;
+      position: number;
+      points: number;
+      goalDifference: number;
+    }>;
+  }>,
+): Array<{
+  teamId: string;
+  teamName: string;
+  name: string;
+  groupId: string;
+  position: number;
+  points: number;
+  goalDifference: number;
+}> {
+  const qualifiedTeams: Array<{
+    teamId: string;
+    teamName: string;
+    name: string;
+    groupId: string;
+    position: number;
+    points: number;
+    goalDifference: number;
+  }> = [];
+  const standingsByGroup = new Map<
+    string,
+    Array<{
+      teamId: string;
+      name: string;
+      position: number;
+      points: number;
+      goalDifference: number;
+    }>
+  >();
 
   standings.forEach((group) => {
     const groupId = group.groupId;
@@ -194,7 +246,17 @@ export function selectQualifiedTeams(standings: any[]): any[] {
 }
 
 // 본선 대진표 자동 생성
-export function generateBracketMatches(qualifiedTeams: any[]): BracketMatch[] {
+export function generateBracketMatches(
+  qualifiedTeams: Array<{
+    teamId: string;
+    teamName: string;
+    name: string;
+    groupId: string;
+    position: number;
+    points: number;
+    goalDifference: number;
+  }>,
+): BracketMatch[] {
   const matches: BracketMatch[] = [];
   let matchNumber = 1;
 

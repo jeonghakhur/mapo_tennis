@@ -1,19 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import {
-  Box,
-  Text,
-  Button,
-  Flex,
-  Card,
-  Heading,
-  Badge,
-  Separator,
-} from '@radix-ui/themes';
+import { Box, Text, Button, Flex, Card, Heading, Badge, Separator } from '@radix-ui/themes';
 import { useLoading } from '@/hooks/useLoading';
-import { useTournamentsByUserLevel } from '@/hooks/useTournaments';
+
 import type { Group, Match } from '@/types/tournament';
 import Container from '@/components/Container';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -30,14 +20,12 @@ interface GroupingResult {
 }
 
 export default function TournamentGroupingResultsPage() {
-  const { data: session } = useSession();
   const { loading, withLoading } = useLoading();
 
   const [selectedTournament, setSelectedTournament] = useState<string>('');
   const [selectedDivision, setSelectedDivision] = useState<string>('');
   const [groupingResult, setGroupingResult] = useState<GroupingResult | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState<string | null>(null);
   const [showCreateMatchesDialog, setShowCreateMatchesDialog] = useState(false);
@@ -78,8 +66,6 @@ export default function TournamentGroupingResultsPage() {
       }
     });
   };
-
-
 
   // 조 삭제 실행
   const handleDeleteGroup = async () => {

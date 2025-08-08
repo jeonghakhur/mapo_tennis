@@ -16,7 +16,6 @@ interface GroupingItem {
 }
 
 export default function TournamentGroupingListPage() {
-  const { data: session } = useSession();
   const router = useRouter();
   const { loading, withLoading } = useLoading();
 

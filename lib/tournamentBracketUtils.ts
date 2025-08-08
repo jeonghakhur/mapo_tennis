@@ -50,7 +50,7 @@ export async function getTournamentBracket(
       { tournamentId, division },
     );
 
-    return bracket;
+    return bracket as TournamentBracket;
   } catch (error) {
     console.error('본선 대진표 조회 오류:', error);
     return null;
@@ -77,7 +77,7 @@ export async function createTournamentBracket(
       updatedAt: new Date().toISOString(),
     });
 
-    return bracket;
+    return bracket as TournamentBracket;
   } catch (error) {
     console.error('본선 대진표 생성 오류:', error);
     return null;
@@ -211,6 +211,8 @@ export function selectQualifiedTeams(
     Array<{
       teamId: string;
       name: string;
+      teamName: string;
+      groupId: string;
       position: number;
       points: number;
       goalDifference: number;
@@ -224,13 +226,21 @@ export function selectQualifiedTeams(
     }
 
     // 각 팀의 순위 정보를 추가
-    group.teams.forEach((team: any) => {
-      standingsByGroup.get(groupId)!.push({
-        ...team,
-        teamName: team.name, // name을 teamName으로 매핑
-        groupId,
-      });
-    });
+    group.teams.forEach(
+      (team: {
+        teamId: string;
+        name: string;
+        position: number;
+        points: number;
+        goalDifference: number;
+      }) => {
+        standingsByGroup.get(groupId)!.push({
+          ...team,
+          teamName: team.name, // name을 teamName으로 매핑
+          groupId,
+        });
+      },
+    );
   });
 
   // 각 조별로 1,2위 팀 선정

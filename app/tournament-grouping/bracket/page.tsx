@@ -6,12 +6,22 @@ import { Box, Text, Button, Flex, Card, Heading, Select, Badge, TextField } from
 
 import { useLoading } from '@/hooks/useLoading';
 import { useTournamentsByUserLevel } from '@/hooks/useTournaments';
-import type { Match, GroupStanding } from '@/types/tournament';
+import type { Match } from '@/types/tournament';
+
+interface GroupStanding {
+  teamId: string;
+  teamName: string;
+  groupId: string;
+  position: number;
+  points: number;
+  goalDifference: number;
+}
 import ConfirmDialog from '@/components/ConfirmDialog';
 import Container from '@/components/Container';
 
 interface BracketMatch {
   _key: string;
+  _id: string;
   round: 'round32' | 'round16' | 'quarterfinal' | 'semifinal' | 'final';
   matchNumber: number;
   team1: {
@@ -118,7 +128,7 @@ export default function TournamentBracketPage() {
 
   // 본선 대진표 생성
   const createBracket = async () => {
-    return withLoading(async () => {
+    await withLoading(async () => {
       const response = await fetch('/api/tournament-grouping/bracket', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -171,7 +181,15 @@ export default function TournamentBracketPage() {
   const qualifiedTeams = getQualifiedTeams();
 
   // 본선 대진표 경기 결과 업데이트
-  const handleUpdateBracketMatch = async (matchId: string, matchData: any) => {
+  const handleUpdateBracketMatch = async (
+    matchId: string,
+    matchData: {
+      team1Score?: number;
+      team2Score?: number;
+      status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+      court?: string;
+    },
+  ) => {
     return withLoading(async () => {
       const response = await fetch(`/api/tournament-grouping/bracket/${matchId}`, {
         method: 'PUT',
@@ -207,7 +225,7 @@ export default function TournamentBracketPage() {
   };
 
   return (
-    <Container size="4">
+    <Container>
       <Box mb="6">
         <Heading size="5" weight="bold" mb="2">
           본선 대진표 관리
@@ -490,7 +508,7 @@ export default function TournamentBracketPage() {
                     .filter((m) => m.round === 'quarterfinal')
                     .sort((a, b) => a.matchNumber - b.matchNumber)
                     .map((match) => (
-                      <Card key={match._id} p="3">
+                      <Card key={match._id}>
                         <Text size="2" weight="bold" mb="2">
                           {match.matchNumber}경기
                         </Text>
@@ -559,7 +577,7 @@ export default function TournamentBracketPage() {
                     .filter((m) => m.round === 'semifinal')
                     .sort((a, b) => a.matchNumber - b.matchNumber)
                     .map((match) => (
-                      <Card key={match._id} p="3">
+                      <Card key={match._id}>
                         <Text size="2" weight="bold" mb="2">
                           {match.matchNumber}경기
                         </Text>
@@ -628,7 +646,7 @@ export default function TournamentBracketPage() {
                     .filter((m) => m.round === 'final')
                     .sort((a, b) => a.matchNumber - b.matchNumber)
                     .map((match) => (
-                      <Card key={match._id} p="3">
+                      <Card key={match._id}>
                         <Text size="2" weight="bold" mb="2">
                           {match.matchNumber}경기
                         </Text>

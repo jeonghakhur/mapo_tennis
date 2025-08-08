@@ -134,7 +134,7 @@ export default function TournamentMatchesPage() {
   };
 
   return (
-    <Container size="4">
+    <Container>
       <Box mb="6">
         <Heading size="5" weight="bold" mb="2">
           경기 결과 관리

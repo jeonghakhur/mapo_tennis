@@ -15,6 +15,125 @@ export interface ClubMember {
   };
 }
 
+// 조편성 관련 타입들
+export interface Team {
+  _id: string;
+  name: string;
+  division: string;
+  members: Array<{
+    _key: string;
+    name: string;
+    clubId: string;
+    clubName: string;
+    birth?: string;
+    score?: number;
+    isRegisteredMember: boolean;
+  }>;
+  seed?: number; // 시드 번호 (선택사항)
+  createdAt: string;
+}
+
+export interface Group {
+  groupId: string;
+  name: string; // 예: "A조", "B조"
+  teams: Team[];
+  division: string;
+}
+
+export interface Match {
+  _id: string;
+  tournamentId: string;
+  division: string;
+  groupId?: string; // 예선 경기인 경우
+  round?: number; // 본선 라운드 (16강=1, 8강=2, 4강=3, 결승=4)
+  matchNumber: number; // 경기 번호
+  team1: {
+    teamId: string;
+    teamName: string;
+    score?: number;
+  };
+  team2: {
+    teamId: string;
+    teamName: string;
+    score?: number;
+  };
+  winner?: string; // 승자 팀 ID
+  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+  scheduledTime?: string;
+  court?: string; // 코트 번호
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface TournamentBracket {
+  tournamentId: string;
+  division: string;
+  groups: Group[]; // 예선 조
+  matches: Match[]; // 모든 경기 (예선 + 본선)
+  bracketType: 'single_elimination' | 'double_elimination';
+  totalTeams: number;
+  totalGroups: number;
+  teamsPerGroup: number; // 조당 팀 수 (2 또는 3)
+  advancingTeams: number; // 조별 진출 팀 수 (보통 2)
+}
+
+export interface GroupStanding {
+  teamId: string;
+  teamName: string;
+  played: number; // 경기 수
+  won: number; // 승리 수
+  drawn: number; // 무승부 수
+  lost: number; // 패배 수
+  goalsFor: number; // 득점
+  goalsAgainst: number; // 실점
+  goalDifference: number; // 득실차
+  points: number; // 승점
+  position: number; // 순위
+}
+
+// 조편성 옵션
+export interface GroupingOptions {
+  method: 'random' | 'seeded' | 'manual';
+  teamsPerGroup: 2 | 3; // 조당 팀 수
+  seedCriteria?: 'registration_order' | 'previous_performance' | 'manual';
+  avoidSameClub?: boolean; // 같은 클럽 팀 분리 여부
+}
+
+// 조편성 결과
+export interface GroupingResult {
+  groups: Group[];
+  totalGroups: number;
+  teamsPerGroup: number;
+  remainingTeams: number; // 균등 분배 후 남은 팀 수
+  distribution: {
+    groupsWith3Teams: number;
+    groupsWith2Teams: number;
+  };
+}
+
+// 경기 결과
+export interface MatchResult {
+  matchId: string;
+  team1Score: number;
+  team2Score: number;
+  winner: string; // 승자 팀 ID
+  completedAt: string;
+}
+
+// 예선 결과
+export interface GroupResult {
+  groupId: string;
+  standings: GroupStanding[];
+  advancingTeams: string[]; // 진출 팀 ID 목록
+}
+
+// 본선 대진표 생성 옵션
+export interface BracketOptions {
+  method: 'random' | 'seeded';
+  avoidSameGroup?: boolean; // 같은 조 1,2위 분리 여부
+  seedByGroupPosition?: boolean; // 조 순위로 시드 배정
+}
+
 export interface ParticipantFormProps {
   label: string;
   participant: ParticipantHookReturn;

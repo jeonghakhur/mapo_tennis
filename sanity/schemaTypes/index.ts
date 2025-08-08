@@ -10,6 +10,9 @@ import tournamentApplication from './tournamentApplication';
 import award from './award';
 import user from './user';
 import question from './question';
+import tournamentGroup from './tournamentGroup';
+import tournamentMatch from './tournamentMatch';
+import tournamentBracket from './tournamentBracket';
 
 export const schemaTypes = [
   club,
@@ -24,4 +27,7 @@ export const schemaTypes = [
   award,
   user,
   question,
+  tournamentGroup,
+  tournamentMatch,
+  tournamentBracket,
 ];

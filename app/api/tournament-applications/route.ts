@@ -14,41 +14,45 @@ import {
 
 import { createNotificationLink } from '@/lib/notificationUtils';
 import type { TournamentApplicationInput } from '@/model/tournamentApplication';
+import { withPermission } from '@/lib/apiUtils';
 
-export async function GET(req: NextRequest) {
+// 토너먼트 신청 목록 조회 핸들러
+async function getApplicationsHandler(req: NextRequest, user: any) {
   try {
     const { searchParams } = new URL(req.url);
     const tournamentId = searchParams.get('tournamentId');
     const division = searchParams.get('division');
+    const status = searchParams.get('status'); // 조편성 페이지에서 사용
 
-    // 최근 대회의 참가 신청 목록 조회 (tournamentId가 없을 때)
     if (!tournamentId) {
-      const session = await getServerSession(authOptions);
-      if (!session?.user?.name) {
-        return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
-      }
-
-      // 최근 등록된 대회의 신청만 가져오기
-      const { getTournament } = await import('@/service/tournament');
-      const recentTournaments = await getTournament();
-
-      if (!recentTournaments) {
-        return NextResponse.json({ applications: [] });
-      }
-
-      // 가장 최근 대회의 신청만 가져오기
-      const mostRecentTournament = recentTournaments;
-      const applications = await getTournamentApplications(mostRecentTournament._id);
-      return NextResponse.json({ applications });
+      return NextResponse.json({ error: '대회 ID는 필수입니다.' }, { status: 400 });
     }
 
-    // 특정 대회의 참가 신청 목록 조회
-    const applications = await getTournamentApplications(tournamentId, division || undefined);
+    let applications;
+    if (division) {
+      applications = await getTournamentApplications(tournamentId, division);
+    } else {
+      applications = await getTournamentApplications(tournamentId);
+    }
+
+    // status 파라미터가 있으면 필터링
+    if (status) {
+      applications = applications.filter((app) => app.status === status);
+    }
+
     return NextResponse.json(applications);
   } catch (error) {
-    console.error('참가 신청 목록 조회 오류:', error);
-    return NextResponse.json({ error: '서버 오류' }, { status: 500 });
+    console.error('토너먼트 신청 목록 조회 오류:', error);
+    return NextResponse.json(
+      { error: '토너먼트 신청 목록 조회 중 오류가 발생했습니다.' },
+      { status: 500 },
+    );
   }
+}
+
+// GET: 토너먼트 신청 목록 조회
+export async function GET(req: NextRequest) {
+  return withPermission(req, 1, getApplicationsHandler);
 }
 
 export async function POST(req: NextRequest) {

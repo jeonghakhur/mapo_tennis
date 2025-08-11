@@ -1,15 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Box, Text, Button, Flex, Card, Heading, Select, Badge } from '@radix-ui/themes';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { useLoading } from '@/hooks/useLoading';
 import { useTournamentsByUserLevel } from '@/hooks/useTournaments';
+import { useUser } from '@/hooks/useUser';
+import { isAdmin } from '@/lib/authUtils';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import type { GroupingResult, Group, Team } from '@/types/tournament';
 import Container from '@/components/Container';
 import ManualGrouping from '@/components/ManualGrouping';
 
 export default function NewTournamentGroupingPage() {
+  const router = useRouter();
+  const { status, data: session } = useSession();
+  const { user } = useUser(session?.user?.email);
   const { loading, withLoading } = useLoading();
 
   const [selectedTournament, setSelectedTournament] = useState<string>('');
@@ -26,10 +33,27 @@ export default function NewTournamentGroupingPage() {
   >([]);
   const [showGroupingInterface, setShowGroupingInterface] = useState(false);
 
-  const { tournaments } = useTournamentsByUserLevel(undefined);
+  // 권한 확인 후에만 대회 목록 조회
+  const isUserAdmin = status === 'authenticated' && user && isAdmin(user);
+  const { tournaments } = useTournamentsByUserLevel(isUserAdmin ? 5 : undefined);
 
-  // 기존 조편성 목록 조회
-  const fetchExistingGroupings = async () => {
+  // 권한 확인: 관리자가 아니면 접근 거부
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.replace('/auth/signin');
+      return;
+    }
+
+    if (status === 'authenticated' && user && !isAdmin(user)) {
+      router.replace('/access-denied');
+      return;
+    }
+  }, [status, user, router]);
+
+  // 기존 조편성 목록 조회 (관리자만)
+  const fetchExistingGroupings = useCallback(async () => {
+    if (!isUserAdmin) return; // 관리자가 아니면 조회하지 않음
+
     try {
       const response = await fetch('/api/tournament-grouping/index');
       if (response.ok) {
@@ -45,7 +69,7 @@ export default function NewTournamentGroupingPage() {
     } catch (error) {
       console.error('기존 조편성 목록 조회 오류:', error);
     }
-  };
+  }, [isUserAdmin]);
 
   // URL 파라미터에서 초기값 설정
   useEffect(() => {
@@ -57,10 +81,10 @@ export default function NewTournamentGroupingPage() {
     if (division) setSelectedDivision(division);
   }, []);
 
-  // 컴포넌트 마운트 시 기존 조편성 목록 조회
+  // 컴포넌트 마운트 시 기존 조편성 목록 조회 (관리자만)
   useEffect(() => {
     fetchExistingGroupings();
-  }, []);
+  }, [fetchExistingGroupings]);
 
   // 대회가 변경될 때 선택된 부서가 이미 조편성이 있는지 확인하고 초기화
   useEffect(() => {
@@ -83,9 +107,9 @@ export default function NewTournamentGroupingPage() {
     { value: 'chrysanthemum', label: '국화부' },
   ];
 
-  // 승인된 신청서 수 조회
-  const fetchApprovedApplications = async () => {
-    if (!selectedTournament || !selectedDivision) return;
+  // 승인된 신청서 수 조회 (관리자만)
+  const fetchApprovedApplications = useCallback(async () => {
+    if (!isUserAdmin || !selectedTournament || !selectedDivision) return;
 
     try {
       const response = await fetch(
@@ -145,7 +169,7 @@ export default function NewTournamentGroupingPage() {
     } catch (error) {
       console.error('승인된 신청서 수 조회 오류:', error);
     }
-  };
+  }, [isUserAdmin, selectedTournament, selectedDivision, tournaments]);
 
   // 대회 또는 부서 변경 시 승인된 신청서 수 조회
   useEffect(() => {
@@ -154,7 +178,7 @@ export default function NewTournamentGroupingPage() {
       // 조편성 인터페이스 숨기기
       setShowGroupingInterface(false);
     }
-  }, [selectedTournament, selectedDivision]);
+  }, [selectedTournament, selectedDivision, fetchApprovedApplications]);
 
   // 조편성 생성
   const handleCreateGrouping = async () => {
@@ -223,6 +247,24 @@ export default function NewTournamentGroupingPage() {
       setShowSuccessDialog(true);
     });
   };
+
+  // 로딩 중이거나 권한 확인 중인 경우
+  if (status === 'loading' || (status === 'authenticated' && !user)) {
+    return (
+      <Container>
+        <Box p="6" style={{ textAlign: 'center' }}>
+          <Text size="3" color="gray">
+            로딩 중...
+          </Text>
+        </Box>
+      </Container>
+    );
+  }
+
+  // 권한이 없는 경우 렌더링 중단
+  if (status === 'authenticated' && user && !isAdmin(user)) {
+    return null;
+  }
 
   return (
     <Container>

@@ -29,6 +29,7 @@ export default function ClubMemberListPage() {
   const { data: session } = useSession();
   const { user } = useUser(session?.user?.email);
   const { members, isLoading, error } = useClubMembers();
+
   const [selectedClub, setSelectedClub] = useState<string>('ALL');
   // const [deletingAll, setDeletingAll] = useState(false);
   const [searchUser, setSearchUser] = useState('');
@@ -116,6 +117,26 @@ export default function ClubMemberListPage() {
       age--;
     }
     return age;
+  }
+
+  function formatPhoneNumber(phone?: string) {
+    if (!phone) return '-';
+
+    // 특수 제어 문자와 숫자가 아닌 문자 제거
+    const numbers = phone.replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069\D]/g, '');
+
+    // 11자리 휴대폰 번호인 경우
+    if (numbers.length === 11 && numbers.startsWith('010')) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`;
+    }
+
+    // 10자리 휴대폰 번호인 경우 (010으로 시작)
+    if (numbers.length === 10 && numbers.startsWith('010')) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 6)}-${numbers.slice(6)}`;
+    }
+
+    // 다른 형식의 번호는 원본 반환
+    return phone;
   }
 
   // 권한 체크 (레벨 4 이상)
@@ -309,6 +330,7 @@ export default function ClubMemberListPage() {
                   <th>점수</th>
                   <th>성별</th>
                   <th>회원상태</th>
+                  {hasPermissionLevel(user, 5) && <th>전화번호</th>}
                 </tr>
               </thead>
               <tbody>
@@ -334,6 +356,7 @@ export default function ClubMemberListPage() {
                         <td>{m.score || '-'}</td>
                         <td>{m.gender || '-'}</td>
                         <td>{m.status || '-'}</td>
+                        {hasPermissionLevel(user, 5) && <td>{formatPhoneNumber(m.contact)}</td>}
                       </tr>
                     );
                   })}

@@ -12,6 +12,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!tournament) {
       return NextResponse.json({ error: '대회를 찾을 수 없습니다.' }, { status: 404 });
     }
+    console.log('tournament', tournament);
     return NextResponse.json(tournament);
   } catch (error) {
     console.error('대회 조회 실패:', error);

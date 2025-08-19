@@ -105,11 +105,9 @@ function removeTournamentFromCache(id: string) {
 // 사용자 권한에 따라 다른 대회 목록을 가져오는 훅
 export function useTournamentsByUserLevel(userLevel?: number) {
   const { data, error, isLoading, mutate } = useSWR<Tournament[]>(
-    userLevel !== undefined ? `/api/tournaments?userLevel=${userLevel}` : null,
+    // userLevel이 undefined여도 기본 대회 목록을 가져올 수 있도록 수정
+    `/api/tournaments?userLevel=${userLevel ?? 0}`,
     null,
-    {
-      refreshInterval: 10000, // 10초마다 새로고침
-    },
   );
 
   return {

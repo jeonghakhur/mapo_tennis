@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withPermission } from '@/lib/apiUtils';
+import { withPermission, type UserWithLevel } from '@/lib/apiUtils';
 import { client } from '@/sanity/lib/client';
 
 // 조편성 결과 조회 핸들러
-async function getGroupsHandler(req: NextRequest, user: any) {
+async function getGroupsHandler(req: NextRequest, _user: UserWithLevel) {
   try {
     const { searchParams } = new URL(req.url);
     const tournamentId = searchParams.get('tournamentId');
@@ -34,28 +34,35 @@ async function getGroupsHandler(req: NextRequest, user: any) {
     const groups = await client.fetch(query, { tournamentId, division });
 
     // 팀 이름을 대회 타입에 따라 처리
-    const processedGroups = groups.map((group: any) => ({
-      ...group,
-      teams: group.teams.map((team: any) => {
-        if (isIndividual) {
-          // 개인전: 이름 뒤에 클럽명
-          const memberNames =
-            team.members
-              ?.map((member: any) => `${member.name} (${member.clubName || '클럽명 없음'})`)
-              .join(', ') || '팀원 없음';
-          return { ...team, name: memberNames };
-        } else {
-          // 단체전: 클럽명을 앞에 한 번만
-          if (team.members && team.members.length > 0) {
-            const clubName = team.members[0].clubName || '클럽명 없음';
-            const memberNames = team.members.map((member: any) => member.name).join(', ');
-            return { ...team, name: `${clubName} - ${memberNames}` };
+    const processedGroups = groups.map(
+      (group: { teams: Array<{ members?: Array<{ name: string; clubName?: string }> }> }) => ({
+        ...group,
+        teams: group.teams.map((team: { members?: Array<{ name: string; clubName?: string }> }) => {
+          if (isIndividual) {
+            // 개인전: 이름 뒤에 클럽명
+            const memberNames =
+              team.members
+                ?.map(
+                  (member: { name: string; clubName?: string }) =>
+                    `${member.name} (${member.clubName || '클럽명 없음'})`,
+                )
+                .join(', ') || '팀원 없음';
+            return { ...team, name: memberNames };
           } else {
-            return { ...team, name: '팀원 없음' };
+            // 단체전: 클럽명을 앞에 한 번만
+            if (team.members && team.members.length > 0) {
+              const clubName = team.members[0].clubName || '클럽명 없음';
+              const memberNames = team.members
+                .map((member: { name: string }) => member.name)
+                .join(', ');
+              return { ...team, name: `${clubName} - ${memberNames}` };
+            } else {
+              return { ...team, name: '팀원 없음' };
+            }
           }
-        }
+        }),
       }),
-    }));
+    );
 
     if (processedGroups.length === 0) {
       return NextResponse.json({ error: '조편성 결과가 없습니다.' }, { status: 404 });
@@ -63,9 +70,15 @@ async function getGroupsHandler(req: NextRequest, user: any) {
 
     // 조편성 결과 형태로 변환
     const totalGroups = processedGroups.length;
-    const teamsPerGroup = Math.max(...processedGroups.map((g: any) => g.teams.length));
-    const groupsWith3Teams = processedGroups.filter((g: any) => g.teams.length === 3).length;
-    const groupsWith2Teams = processedGroups.filter((g: any) => g.teams.length === 2).length;
+    const teamsPerGroup = Math.max(
+      ...processedGroups.map((g: { teams: Array<unknown> }) => g.teams.length),
+    );
+    const groupsWith3Teams = processedGroups.filter(
+      (g: { teams: Array<unknown> }) => g.teams.length === 3,
+    ).length;
+    const groupsWith2Teams = processedGroups.filter(
+      (g: { teams: Array<unknown> }) => g.teams.length === 2,
+    ).length;
 
     const result = {
       groups: processedGroups,

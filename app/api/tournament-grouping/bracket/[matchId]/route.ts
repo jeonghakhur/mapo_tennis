@@ -9,9 +9,10 @@ interface MatchUpdateData {
 }
 
 // 본선 대진표 경기 결과 업데이트
-export async function PUT(request: NextRequest, { params }: { params: { matchId: string } }) {
+export async function PUT(request: NextRequest, context: { params: Promise<{ matchId: string }> }) {
+  const { matchId } = await context.params;
   try {
-    const matchKey = params.matchId; // 실제로는 matchKey를 받음
+    const matchKey = matchId; // 실제로는 matchKey를 받음
     const matchData: MatchUpdateData = await request.json();
 
     // URL에서 tournamentId와 division 추출 (실제 구현에서는 다른 방식 필요)
@@ -30,7 +31,7 @@ export async function PUT(request: NextRequest, { params }: { params: { matchId:
     }
 
     // 업데이트할 데이터 준비
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
 
     if (matchData.team1Score !== undefined) {
       updateData['team1.score'] = matchData.team1Score;

@@ -24,7 +24,7 @@ export default function TournamentApplicationsPage() {
 
   // 대회 정보 먼저 가져오기 (사용자 권한에 따라 다른 대회 목록)
   const { tournaments, isLoading: tournamentsLoading } = useTournamentsByUserLevel(user?.level);
-  const { trigger: updateStatus, isMutating: isUpdating } = useUpdateApplicationStatus();
+  const { trigger: updateStatus } = useUpdateApplicationStatus();
 
   const [selectedApplication, setSelectedApplication] = useState<TournamentApplication | null>(
     null,
@@ -35,6 +35,9 @@ export default function TournamentApplicationsPage() {
   // 로컬 상태로 applications 관리
   const [applications, setApplications] = useState<TournamentApplication[]>([]);
   const [applicationsLoading, setApplicationsLoading] = useState(false);
+
+  // 각 신청별 개별 로딩 상태 관리
+  const [updatingApplications, setUpdatingApplications] = useState<Set<string>>(new Set());
 
   // 선택된 대회 ID가 변경될 때 데이터 가져오기
   useEffect(() => {
@@ -115,24 +118,53 @@ export default function TournamentApplicationsPage() {
       console.log('상태 업데이트 시작:', { applicationId, newStatus });
       console.log('현재 사용자 정보:', { user: user?._id, level: user?.level });
 
-      // Optimistic update: 즉시 UI 업데이트
+      // 개별 로딩 상태 시작
+      setUpdatingApplications((prev) => new Set(prev).add(applicationId));
+
+      // Optimistic update: 즉시 UI 업데이트 (더 정확한 상태로)
       setApplications((prevApplications) =>
         prevApplications.map((app) =>
           app._id === applicationId
-            ? { ...app, status: newStatus as 'pending' | 'approved' | 'rejected' | 'cancelled' }
+            ? {
+                ...app,
+                status: newStatus as 'pending' | 'approved' | 'rejected' | 'cancelled',
+                updatedAt: new Date().toISOString(), // 업데이트 시간도 즉시 반영
+              }
             : app,
         ),
       );
 
-      const result = await updateStatus({
-        id: applicationId,
-        status: newStatus as 'pending' | 'approved' | 'rejected' | 'cancelled',
+      // API 호출
+      const response = await fetch(`/api/tournament-applications/${applicationId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.details || errorData.error || response.statusText;
+        throw new Error(`상태 업데이트에 실패했습니다. (${response.status}): ${errorMessage}`);
+      }
+
+      const result = await response.json();
       console.log('상태 업데이트 성공:', result);
       setShowConfirmDialog(false);
 
-      // 성공 시에는 추가 데이터 갱신 불필요 (optimistic update로 이미 반영됨)
+      // 성공 시 서버 응답으로 최종 상태 동기화
+      setApplications((prevApplications) =>
+        prevApplications.map((app) =>
+          app._id === applicationId
+            ? {
+                ...app,
+                ...result,
+                status: newStatus as 'pending' | 'approved' | 'rejected' | 'cancelled',
+              }
+            : app,
+        ),
+      );
     } catch (error) {
       console.error('상태 업데이트 실패:', error);
 
@@ -148,6 +180,13 @@ export default function TournamentApplicationsPage() {
       alert(
         `상태 업데이트에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`,
       );
+    } finally {
+      // 개별 로딩 상태 종료
+      setUpdatingApplications((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(applicationId);
+        return newSet;
+      });
     }
   };
 
@@ -536,9 +575,14 @@ export default function TournamentApplicationsPage() {
                                         e.stopPropagation();
                                         openStatusDialog(application, 'rejected');
                                       }}
-                                      disabled={isUpdating || application.status === 'rejected'}
+                                      disabled={
+                                        updatingApplications.has(application._id || '') ||
+                                        application.status === 'rejected'
+                                      }
                                     >
-                                      거절
+                                      {updatingApplications.has(application._id || '')
+                                        ? '처리중...'
+                                        : '거절'}
                                     </Button>
                                     <Button
                                       variant="soft"
@@ -548,9 +592,14 @@ export default function TournamentApplicationsPage() {
                                         e.stopPropagation();
                                         openStatusDialog(application, 'approved');
                                       }}
-                                      disabled={isUpdating || application.status === 'approved'}
+                                      disabled={
+                                        updatingApplications.has(application._id || '') ||
+                                        application.status === 'approved'
+                                      }
                                     >
-                                      승인
+                                      {updatingApplications.has(application._id || '')
+                                        ? '처리중...'
+                                        : '승인'}
                                     </Button>
                                   </div>
                                 )}

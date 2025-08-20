@@ -4,7 +4,7 @@ import { withPermission } from '@/lib/apiUtils';
 
 async function approveHandler(req: NextRequest) {
   try {
-    const { user, clubId, email, phone, gender, birth, score } = await req.json();
+    const { user, clubId, email, phone, gender, birth } = await req.json();
     if (!user || !clubId) {
       return NextResponse.json({ error: 'user, clubId는 필수입니다.' }, { status: 400 });
     }
@@ -15,7 +15,6 @@ async function approveHandler(req: NextRequest) {
       phone,
       gender,
       birth,
-      score,
     });
     return NextResponse.json({ clubMember: result });
   } catch (error) {

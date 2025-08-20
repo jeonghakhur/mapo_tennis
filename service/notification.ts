@@ -138,54 +138,41 @@ export async function deleteNotification(notificationStatusId: string): Promise<
 
 // 모든 알림 삭제 (관리자용)
 export async function deleteAllNotifications(): Promise<{ deletedCount: number }> {
-  // 모든 notificationStatus 삭제 처리
-  const query = `*[_type == "notificationStatus"]`;
-  const notificationStatuses = await client.fetch(query);
+  const docs = await client.fetch(`*[_type == "notificationStatus"]{_id}`);
+  if (!docs.length) return { deletedCount: 0 };
 
-  if (notificationStatuses.length === 0) {
-    return { deletedCount: 0 };
+  let i = 0;
+  const BATCH = 300; // 필요 시 100~500 사이로 조정
+  while (i < docs.length) {
+    const tx = client.transaction();
+    for (const d of docs.slice(i, i + BATCH)) {
+      tx.patch(d._id, {
+        set: { isDeleted: true, deletedAt: new Date().toISOString() },
+      });
+    }
+    await tx.commit({ visibility: 'async' }); // 타임아웃 완화
+    i += BATCH;
   }
-
-  const patches = notificationStatuses.map((status: { _id: string }) =>
-    client.patch(status._id).set({
-      isDeleted: true,
-      deletedAt: new Date().toISOString(),
-    }),
-  );
-
-  await Promise.all(patches.map((patch: { commit: () => Promise<void> }) => patch.commit()));
-
-  return { deletedCount: notificationStatuses.length };
+  return { deletedCount: docs.length };
 }
 
 // 모든 알림 완전 삭제 (관리자용)
-export async function permanentlyDeleteAllNotifications(): Promise<{ deletedCount: number }> {
-  // 1. 모든 notification 조회
-  const notificationsQuery = `*[_type == "notification"]`;
-  const notifications = await client.fetch(notificationsQuery);
+export async function permanentlyDeleteAllNotifications() {
+  const ids1 = await client.fetch<string[]>('*[_type=="notificationStatus"][]._id');
+  const ids2 = await client.fetch<string[]>('*[_type=="notification"][]._id');
 
-  if (notifications.length === 0) {
-    return { deletedCount: 0 };
+  const BATCH = 300; // 100~500 권장
+  for (let i = 0; i < ids1.length; i += BATCH) {
+    const tx = client.transaction();
+    ids1.slice(i, i + BATCH).forEach((id) => tx.delete(id));
+    await tx.commit({ visibility: 'async' });
   }
-
-  // 2. 모든 notificationStatus 삭제
-  const notificationStatusesQuery = `*[_type == "notificationStatus"]`;
-  const notificationStatuses = await client.fetch(notificationStatusesQuery);
-
-  if (notificationStatuses.length > 0) {
-    const statusDeletions = notificationStatuses.map((status: { _id: string }) =>
-      client.delete(status._id),
-    );
-    await Promise.all(statusDeletions);
+  for (let i = 0; i < ids2.length; i += BATCH) {
+    const tx = client.transaction();
+    ids2.slice(i, i + BATCH).forEach((id) => tx.delete(id));
+    await tx.commit({ visibility: 'async' });
   }
-
-  // 3. 모든 notification 삭제
-  const notificationDeletions = notifications.map((notification: { _id: string }) =>
-    client.delete(notification._id),
-  );
-  await Promise.all(notificationDeletions);
-
-  return { deletedCount: notifications.length };
+  return { deletedCount: ids2.length };
 }
 
 // 사용자별 알림 상태 생성 (새로운 알림이 생성될 때 호출)

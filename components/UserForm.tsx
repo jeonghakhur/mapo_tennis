@@ -313,13 +313,13 @@ export default function UserForm({
               <td>
                 <RadioGroup.Root value={gender} onValueChange={setGender}>
                   <Flex gap="4" align="center">
-                    <RadioGroup.Item value="남성" id="male" ref={genderRef} />
+                    <RadioGroup.Item value="남" id="male" ref={genderRef} />
                     <Text as="label" htmlFor="male">
-                      남성
+                      남
                     </Text>
-                    <RadioGroup.Item value="여성" id="female" />
+                    <RadioGroup.Item value="여" id="female" />
                     <Text as="label" htmlFor="female">
-                      여성
+                      여
                     </Text>
                   </Flex>
                 </RadioGroup.Root>
@@ -347,7 +347,9 @@ export default function UserForm({
                   <Flex align="center" gap="2">
                     <Switch
                       checked={isApprovedUser}
-                      onCheckedChange={setIsApprovedUser}
+                      onCheckedChange={() => {
+                        setIsApprovedUser(!isApprovedUser);
+                      }}
                       disabled={disabled || loading}
                     />
                     <Text size="2" color="gray">

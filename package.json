@@ -9,7 +9,8 @@
     "lint": "next lint",
     "prepare": "husky install",
     "update-comment-count": "node scripts/update-posts-commentCount.js",
-    "migrate-likedby": "node scripts/migrate-likedBy-to-reference.js"
+    "migrate-likedby": "node scripts/migrate-likedBy-to-reference.js",
+    "update-gender-values": "node scripts/update-gender-values.js"
   },
   "engines": {
     "node": "22.x"
@@ -41,6 +42,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "dotenv": "^17.2.1",
     "lucide-react": "^0.525.0",
     "next": "15.3.5",
     "next-auth": "^4.24.11",

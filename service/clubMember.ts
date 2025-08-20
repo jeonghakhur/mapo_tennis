@@ -62,7 +62,6 @@ export async function approveClubMemberByAdmin({
   phone,
   gender,
   birth,
-  score,
 }: {
   user: string;
   clubId: string;
@@ -84,30 +83,12 @@ export async function approveClubMemberByAdmin({
     contact: phone,
     gender,
     birth,
-    score,
     user,
   };
   let clubMemberResult;
   if (existing && existing._id) {
     // 있으면 모든 필드 업데이트
     clubMemberResult = await updateClubMember(existing._id, updateFields);
-  } else {
-    // 없으면 새로 생성
-    clubMemberResult = await createClubMember({
-      user,
-      club: { _ref: clubId, _type: 'reference' },
-      status: '정회원',
-      approvedByAdmin: true,
-      email,
-      contact: phone,
-      gender,
-      birth,
-      score,
-    });
   }
-  // userId가 있으면 user 문서도 승인 처리 - 제거됨
-  // if (userId) {
-  //   await setUserApproved(userId);
-  // }
   return clubMemberResult;
 }

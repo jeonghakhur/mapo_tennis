@@ -220,6 +220,7 @@ export default function ClubDetailPage({ params }: { params: Promise<{ id: strin
                   <table className="text-center">
                     <thead>
                       <tr>
+                        <th>번호</th>
                         <th>회원명</th>
                         <th>회원롤</th>
                         <th>나이</th>
@@ -240,7 +241,7 @@ export default function ClubDetailPage({ params }: { params: Promise<{ id: strin
                           // 나머지는 한글 가나다순
                           return (a.user || '').localeCompare(b.user || '', 'ko');
                         })
-                        .map((member) => {
+                        .map((member, index) => {
                           // 나이 계산 (출생년도 4자리)
                           let age = '';
                           if (member.birth && /^\d{4}/.test(member.birth)) {
@@ -265,6 +266,7 @@ export default function ClubDetailPage({ params }: { params: Promise<{ id: strin
                               : {};
                           return (
                             <tr key={rowKey} {...rowProps}>
+                              <td>{index + 1}</td>
                               <td>{member.user}</td>
                               <td>{member.role || '-'}</td>
                               <td>{age}</td>

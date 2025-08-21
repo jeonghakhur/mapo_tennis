@@ -193,73 +193,72 @@ export default function TournamentMatchesPage() {
 
       {/* 조별 순위 */}
       {standings.length > 0 && (
-        <Card mb="6">
-          <Box p="4">
-            <Heading size="4" weight="bold" mb="4">
-              조별 순위
-            </Heading>
+        <Box>
+          <Heading size="4" weight="bold" mb="4">
+            조별 순위
+          </Heading>
 
-            {/* 조별로 그룹화하여 표시 */}
-            {(() => {
-              const standingsByGroup = new Map<string, GroupStanding[]>();
+          {/* 조별로 그룹화하여 표시 */}
+          {(() => {
+            const standingsByGroup = new Map<string, GroupStanding[]>();
 
-              standings.forEach((standing) => {
-                // 조 정보를 가져오기 위해 경기 정보에서 조 찾기
-                const match = matches.find(
-                  (m) => m.team1.teamId === standing.teamId || m.team2.teamId === standing.teamId,
-                );
-                const groupId = match?.groupId || 'unknown';
+            standings.forEach((standing) => {
+              // 조 정보를 가져오기 위해 경기 정보에서 조 찾기
+              const match = matches.find(
+                (m) => m.team1.teamId === standing.teamId || m.team2.teamId === standing.teamId,
+              );
+              const groupId = match?.groupId || 'unknown';
 
-                if (!standingsByGroup.has(groupId)) {
-                  standingsByGroup.set(groupId, []);
-                }
-                standingsByGroup.get(groupId)!.push(standing);
-              });
+              if (!standingsByGroup.has(groupId)) {
+                standingsByGroup.set(groupId, []);
+              }
+              standingsByGroup.get(groupId)!.push(standing);
+            });
+            console.log(standingsByGroup);
 
-              return Array.from(standingsByGroup.entries()).map(([groupId, groupStandings]) => (
-                <Box key={groupId} mb="4">
-                  <Text size="3" weight="bold" mb="2">
-                    {groupId}
-                  </Text>
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="p-3 text-left border-b">순위</th>
-                          <th className="p-3 text-left border-b">팀명</th>
-                          <th className="p-3 text-left border-b">경기</th>
-                          <th className="p-3 text-left border-b">승</th>
-                          <th className="p-3 text-left border-b">무</th>
-                          <th className="p-3 text-left border-b">패</th>
-                          <th className="p-3 text-left border-b">득점</th>
-                          <th className="p-3 text-left border-b">실점</th>
-                          <th className="p-3 text-left border-b">득실차</th>
-                          <th className="p-3 text-left border-b">승점</th>
+            return Array.from(standingsByGroup.entries()).map(([groupId, groupStandings]) => (
+              <Box key={groupId} mb="4">
+                <Text size="3" weight="bold" mb="2">
+                  {groupId}
+                </Text>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="p-3 text-left border-b">순위</th>
+                        <th className="p-3 text-left border-b">팀명</th>
+                        <th className="p-3 text-left border-b">경기</th>
+                        <th className="p-3 text-left border-b">승</th>
+                        <th className="p-3 text-left border-b">무</th>
+                        <th className="p-3 text-left border-b">패</th>
+                        <th className="p-3 text-left border-b">득점</th>
+                        <th className="p-3 text-left border-b">실점</th>
+                        <th className="p-3 text-left border-b">득실차</th>
+                        <th className="p-3 text-left border-b">승점</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {groupStandings.map((standing) => (
+                        <tr key={standing.teamId} className="border-b hover:bg-gray-50">
+                          <td className="p-3">{standing.position}</td>
+                          <td className="p-3">{standing.teamName}</td>
+                          <td className="p-3">{standing.played}</td>
+                          <td className="p-3">{standing.won}</td>
+                          <td className="p-3">{standing.drawn}</td>
+                          <td className="p-3">{standing.lost}</td>
+                          <td className="p-3">{standing.goalsFor}</td>
+                          <td className="p-3">{standing.goalsAgainst}</td>
+                          <td className="p-3">{standing.goalDifference}</td>
+                          <td className="p-3">{standing.points}</td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {groupStandings.map((standing) => (
-                          <tr key={standing.teamId} className="border-b hover:bg-gray-50">
-                            <td className="p-3">{standing.position}</td>
-                            <td className="p-3">{standing.teamName}</td>
-                            <td className="p-3">{standing.played}</td>
-                            <td className="p-3">{standing.won}</td>
-                            <td className="p-3">{standing.drawn}</td>
-                            <td className="p-3">{standing.lost}</td>
-                            <td className="p-3">{standing.goalsFor}</td>
-                            <td className="p-3">{standing.goalsAgainst}</td>
-                            <td className="p-3">{standing.goalDifference}</td>
-                            <td className="p-3">{standing.points}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </Box>
-              ));
-            })()}
-          </Box>
-        </Card>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Box>
+            ));
+          })()}
+        </Box>
       )}
 
       {/* 경기 목록 */}

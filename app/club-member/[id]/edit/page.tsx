@@ -41,11 +41,19 @@ export default function ClubMemberEditPage({ params }: { params: Promise<{ id: s
 
   useEffect(() => {
     if (member) {
+      // 성별 값 정규화: '남'/'남성' → '남', '여'/'여성' → '여'
+      let normalizedGender = member.gender || '';
+      if (normalizedGender === '남성') {
+        normalizedGender = '남';
+      } else if (normalizedGender === '여성') {
+        normalizedGender = '여';
+      }
+
       setForm({
         user: member.user || '',
         club: member.club?._id || '', // name → _ref로 변경
         role: member.role || '',
-        gender: member.gender || '',
+        gender: normalizedGender,
         contact: member.contact || '',
         birth: member.birth || '',
         tennisStartYear: member.tennisStartYear || '',

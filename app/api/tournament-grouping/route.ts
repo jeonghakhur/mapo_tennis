@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withPermission } from '@/lib/apiUtils';
+import { withPermission, type UserWithLevel } from '@/lib/apiUtils';
 import {
   createTournamentGroups,
   createGroupMatches,
   calculateGroupStandings,
 } from '@/service/tournamentGrouping';
-import type { GroupingOptions, BracketOptions } from '@/types/tournament';
+import type { GroupingOptions } from '@/types/tournament';
 
 // 조편성 생성 핸들러
-async function createGroupingHandler(req: NextRequest, user: any) {
+async function createGroupingHandler(req: NextRequest, _user: UserWithLevel) {
   try {
     const body = await req.json();
     const { tournamentId, division, options } = body;
@@ -37,7 +37,7 @@ async function createGroupingHandler(req: NextRequest, user: any) {
 }
 
 // 예선 경기 생성 핸들러
-async function createMatchesHandler(req: NextRequest, user: any) {
+async function createMatchesHandler(req: NextRequest, _user: UserWithLevel) {
   try {
     const body = await req.json();
     const { tournamentId, division } = body;
@@ -59,7 +59,7 @@ async function createMatchesHandler(req: NextRequest, user: any) {
 }
 
 // 조별 순위 계산 핸들러
-async function calculateStandingsHandler(req: NextRequest, user: any) {
+async function calculateStandingsHandler(req: NextRequest, _user: UserWithLevel) {
   try {
     const { searchParams } = new URL(req.url);
     const tournamentId = searchParams.get('tournamentId');

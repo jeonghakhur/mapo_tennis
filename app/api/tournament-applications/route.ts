@@ -14,10 +14,10 @@ import {
 
 import { createNotificationLink } from '@/lib/notificationUtils';
 import type { TournamentApplicationInput } from '@/model/tournamentApplication';
-import { withPermission } from '@/lib/apiUtils';
+import { withPermission, type UserWithLevel } from '@/lib/apiUtils';
 
 // 토너먼트 신청 목록 조회 핸들러
-async function getApplicationsHandler(req: NextRequest, user: any) {
+async function getApplicationsHandler(req: NextRequest, _user: UserWithLevel) {
   try {
     const { searchParams } = new URL(req.url);
     const tournamentId = searchParams.get('tournamentId');

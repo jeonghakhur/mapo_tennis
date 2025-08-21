@@ -5,7 +5,6 @@ import {
   getGroupStandings,
   selectQualifiedTeams,
   generateBracketMatches,
-  type BracketMatch,
 } from '@/lib/tournamentBracketUtils';
 
 // 본선 대진표 조회

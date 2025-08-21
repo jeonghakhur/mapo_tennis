@@ -3,15 +3,14 @@ import { checkPermission, createPermissionError } from '@/lib/apiUtils';
 import { client } from '@/sanity/lib/client';
 
 // GET: 경기 정보 조회
-export async function GET(req: NextRequest, context: Promise<{ params: { id: string } }>) {
+export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const permissionResult = await checkPermission(1);
   if (!permissionResult.hasPermission) {
     return createPermissionError(permissionResult);
   }
 
   try {
-    const { params } = await context;
-    const { id } = params;
+    const { id } = await context.params;
 
     const query = `*[_type == "tournamentMatch" && _id == $id][0] {
       _id,
@@ -44,15 +43,14 @@ export async function GET(req: NextRequest, context: Promise<{ params: { id: str
 }
 
 // PUT: 경기 결과 업데이트
-export async function PUT(req: NextRequest, context: Promise<{ params: { id: string } }>) {
+export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const permissionResult = await checkPermission(4);
   if (!permissionResult.hasPermission) {
     return createPermissionError(permissionResult);
   }
 
   try {
-    const { params } = await context;
-    const { id } = params;
+    const { id } = await context.params;
     const body = await req.json();
     const { team1Score, team2Score, status, court, scheduledTime } = body;
 

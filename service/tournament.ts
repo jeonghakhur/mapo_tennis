@@ -3,12 +3,16 @@ import type { Tournament, TournamentFormData } from '@/model/tournament';
 
 // 대회 목록 조회
 export async function getTournaments(userLevel?: number): Promise<Tournament[]> {
-  // 관리자(레벨 4 이상)는 전체 대회를 볼 수 있음
-  // 일반 사용자는 완료되거나 진행중인 대회만 볼 수 있음
+  // 관리자(레벨 5 이상)는 전체 대회를 볼 수 있음
+  // 일반 사용자(레벨 1-4)는 공개된 대회만 볼 수 있음
+  // 비로그인 사용자(레벨 0)는 공개된 대회만 볼 수 있음
   const isAdmin = userLevel && userLevel >= 5;
 
   const baseQuery = `*[_type == "tournament"`;
-  const statusFilter = isAdmin ? `]` : ` && (status == "completed" || status == "ongoing")]`;
+
+  // 관리자가 아닌 경우 공개된 대회만 필터링 (isDraft가 false인 대회)
+  const statusFilter = isAdmin ? `]` : ` && isDraft == false]`;
+
   const orderClause = ` | order(_createdAt desc)`;
 
   const query = `${baseQuery}${statusFilter}${orderClause} {

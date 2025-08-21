@@ -17,8 +17,8 @@ export async function GET(req: NextRequest) {
     const currentUserLevel = session?.user?.level || 0;
 
     // userLevel 파라미터가 있으면 그것을 사용, 없으면 세션의 레벨 사용
+    // 로그인하지 않은 사용자는 레벨 0으로 처리
     const effectiveUserLevel = userLevel ? parseInt(userLevel) : currentUserLevel;
-
     const tournaments = await getTournaments(effectiveUserLevel);
     return NextResponse.json(tournaments);
   } catch (error) {

@@ -4,8 +4,6 @@ import '@radix-ui/themes/styles.css';
 import { Text, Card, Table, Box } from '@radix-ui/themes';
 import { useTournamentsByUserLevel } from '@/hooks/useTournaments';
 import { useTournamentApplications } from '@/hooks/useTournamentApplications';
-import type { Tournament } from '@/model/tournament';
-import type { TournamentApplication } from '@/model/tournamentApplication';
 
 export default function AdminDashboardPage() {
   const { tournaments, isLoading: tournamentsLoading } = useTournamentsByUserLevel(5); // 관리자 레벨

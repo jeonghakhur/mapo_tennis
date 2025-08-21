@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Box, Text, Button, Flex, Card, Heading, Select, Badge } from '@radix-ui/themes';
+import { Box, Text, Button, Flex, Card, Heading, Select, Badge, TextField } from '@radix-ui/themes';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useLoading } from '@/hooks/useLoading';
@@ -22,16 +22,20 @@ export default function NewTournamentGroupingPage() {
   const [selectedTournament, setSelectedTournament] = useState<string>('');
   const [selectedDivision, setSelectedDivision] = useState<string>('');
   const [teamsPerGroup, setTeamsPerGroup] = useState<2 | 3>(3);
+  const [maxTeams, setMaxTeams] = useState<string>(''); // 최대 팀 수 입력
   const [groupingResult, setGroupingResult] = useState<GroupingResult | null>(null);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [approvedApplications, setApprovedApplications] = useState<number>(0);
-  const [teams, setTeams] = useState<Team[]>([]);
+  const [allTeams, setAllTeams] = useState<Team[]>([]); // 모든 팀 목록
+  const [teams, setTeams] = useState<Team[]>([]); // 필터링된 팀 목록
   const [manualGroups, setManualGroups] = useState<Group[]>([]);
   const [existingGroupings, setExistingGroupings] = useState<
     Array<{ tournamentId: string; division: string }>
   >([]);
   const [showGroupingInterface, setShowGroupingInterface] = useState(false);
+  const [showWarningDialog, setShowWarningDialog] = useState(false);
+  const [warningMessage, setWarningMessage] = useState('');
 
   // 권한 확인 후에만 대회 목록 조회
   const isUserAdmin = status === 'authenticated' && user && isAdmin(user);
@@ -164,7 +168,8 @@ export default function NewTournamentGroupingPage() {
             };
           },
         );
-        setTeams(teamList);
+        setAllTeams(teamList); // 모든 팀 목록 저장
+        setTeams(teamList); // 초기에는 모든 팀을 사용
       }
     } catch (error) {
       console.error('승인된 신청서 수 조회 오류:', error);
@@ -180,6 +185,18 @@ export default function NewTournamentGroupingPage() {
     }
   }, [selectedTournament, selectedDivision, fetchApprovedApplications]);
 
+  // 최대 팀 수가 변경될 때 팀 목록 필터링 (자동 적용 제거)
+  // useEffect(() => {
+  //   if (maxTeams && !isNaN(Number(maxTeams))) {
+  //     const maxTeamCount = parseInt(maxTeams);
+  //     const filteredTeams = allTeams.slice(0, maxTeamCount);
+  //     setTeams(filteredTeams);
+  //   } else {
+  //     // 최대 팀 수가 입력되지 않았으면 모든 팀 사용
+  //     setTeams(allTeams);
+  //   }
+  // }, [maxTeams, allTeams]);
+
   // 조편성 생성
   const handleCreateGrouping = async () => {
     if (!selectedTournament || !selectedDivision) {
@@ -187,8 +204,8 @@ export default function NewTournamentGroupingPage() {
       return;
     }
 
-    if (approvedApplications === 0) {
-      alert('승인된 신청서가 없습니다. 조편성을 생성할 수 없습니다.');
+    if (teams.length === 0) {
+      alert('조편성할 팀이 없습니다.');
       return;
     }
 
@@ -219,6 +236,39 @@ export default function NewTournamentGroupingPage() {
       setSuccessMessage('조편성이 성공적으로 저장되었습니다.');
       setShowSuccessDialog(true);
     });
+  };
+
+  // 조편성 시작
+  const handleStartGrouping = () => {
+    if (maxTeams && !isNaN(Number(maxTeams))) {
+      const maxTeamCount = parseInt(maxTeams);
+      if (maxTeamCount > approvedApplications) {
+        setWarningMessage(
+          `입력한 팀 수(${maxTeamCount}개)가 승인된 신청서 수(${approvedApplications}개)보다 많습니다. 모든 팀(${approvedApplications}개)으로 조편성을 진행하시겠습니까?`,
+        );
+        setShowWarningDialog(true);
+        return;
+      }
+      // 최대 팀 수에 따라 팀 목록 필터링
+      const filteredTeams = allTeams.slice(0, maxTeamCount);
+      setTeams(filteredTeams);
+    } else {
+      // 최대 팀 수가 입력되지 않았으면 모든 팀 사용
+      setTeams(allTeams);
+    }
+
+    // 조편성 인터페이스 표시 및 기존 조편성 결과 초기화
+    setShowGroupingInterface(true);
+    setGroupingResult(null);
+    setManualGroups([]);
+  };
+
+  // 경고 다이얼로그 확인 시 조편성 시작
+  const handleWarningConfirm = () => {
+    setShowWarningDialog(false);
+    // 모든 팀으로 조편성 진행
+    setTeams(allTeams);
+    setShowGroupingInterface(true);
   };
 
   // 예선 경기 생성
@@ -377,29 +427,46 @@ export default function NewTournamentGroupingPage() {
                 </Select.Content>
               </Select.Root>
             </Box>
+
+            <Box>
+              <Text size="3" weight="bold" mb="2">
+                최대 팀 수 (선택사항)
+              </Text>
+              <TextField.Root
+                size="3"
+                placeholder="예: 30 (비워두면 모든 팀 사용)"
+                value={maxTeams}
+                onChange={(e) => setMaxTeams(e.target.value)}
+              />
+              <Text size="2" color="gray" mt="1">
+                시드 순서대로 상위 팀들만 조편성에 사용합니다.
+              </Text>
+            </Box>
+
+            {/* 조편성 시작 버튼 */}
+            {selectedTournament && selectedDivision && approvedApplications > 0 && (
+              <Box mt="4">
+                <Text size="3" weight="bold" mb="2">
+                  {showGroupingInterface ? '조편성 재시작' : '조편성 시작'}
+                </Text>
+                <Text size="3" color="gray" mb="3">
+                  {maxTeams && !isNaN(Number(maxTeams))
+                    ? `상위 ${Math.min(parseInt(maxTeams), approvedApplications)}개 팀으로 조편성을 시작합니다.`
+                    : '모든 팀으로 조편성을 시작합니다.'}
+                </Text>
+                {maxTeams && !isNaN(Number(maxTeams)) && (
+                  <Text size="2" color="blue" mb="3">
+                    설정된 팀 수: {Math.min(parseInt(maxTeams), approvedApplications)}개
+                  </Text>
+                )}
+                <Button size="3" onClick={handleStartGrouping} disabled={loading}>
+                  {showGroupingInterface ? '조편성 다시 시작하기' : '조편성 시작하기'}
+                </Button>
+              </Box>
+            )}
           </Flex>
         </Box>
       </Card>
-
-      {/* 조편성 생성 버튼 */}
-      {selectedTournament &&
-        selectedDivision &&
-        approvedApplications > 0 &&
-        !showGroupingInterface && (
-          <Card mb="6">
-            <Box p="4">
-              <Heading size="4" weight="bold" mb="4">
-                조편성 시작
-              </Heading>
-              <Text size="3" color="gray" mb="4">
-                조당 팀 수를 선택하고 조편성을 시작하세요.
-              </Text>
-              <Button size="3" onClick={() => setShowGroupingInterface(true)} disabled={loading}>
-                조편성 시작하기
-              </Button>
-            </Box>
-          </Card>
-        )}
 
       {/* 조편성 인터페이스 */}
       {showGroupingInterface && teams.length > 0 && (
@@ -471,9 +538,7 @@ export default function NewTournamentGroupingPage() {
           <Button
             size="3"
             onClick={handleCreateGrouping}
-            disabled={
-              loading || !selectedTournament || !selectedDivision || approvedApplications === 0
-            }
+            disabled={loading || !selectedTournament || !selectedDivision || teams.length === 0}
           >
             조편성 저장
           </Button>
@@ -497,6 +562,19 @@ export default function NewTournamentGroupingPage() {
         open={showSuccessDialog}
         onOpenChange={setShowSuccessDialog}
         onConfirm={() => setShowSuccessDialog(false)}
+      />
+
+      {/* 경고 다이얼로그 */}
+      <ConfirmDialog
+        title="팀 수 경고"
+        description={warningMessage}
+        confirmText="계속 진행"
+        cancelText="취소"
+        confirmColor="red"
+        open={showWarningDialog}
+        onOpenChange={setShowWarningDialog}
+        onConfirm={handleWarningConfirm}
+        onCancel={() => setShowWarningDialog(false)}
       />
     </Container>
   );

@@ -2,7 +2,7 @@
 import { Box, Text, Button, Flex, Badge, Card, Select, Heading } from '@radix-ui/themes';
 import Container from '@/components/Container';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useUser } from '@/hooks/useUser';
 import { hasPermissionLevel } from '@/lib/authUtils';
@@ -14,248 +14,221 @@ import SkeletonCard from '@/components/SkeletonCard';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import useSWR from 'swr';
+
+// ------------------------------
+// helpers (stable references)
+// ------------------------------
+const STATUS_COLOR: Record<string, 'red' | 'blue' | 'green' | 'gray'> = {
+  pending: 'blue',
+  approved: 'green',
+  rejected: 'red',
+  cancelled: 'gray',
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  pending: '대기중',
+  approved: '승인',
+  rejected: '거절',
+  cancelled: '취소',
+};
+
+const DIVISION_LABEL: Record<string, string> = {
+  master: '마스터부',
+  challenger: '챌린저부',
+  futures: '퓨처스부',
+  chrysanthemum: '국화부',
+  forsythia: '개나리부',
+};
+
+const fmt = (d?: string) => (d ? format(new Date(d), 'yy.MM.dd HH:mm', { locale: ko }) : '');
+
+const fetcher = (url: string) =>
+  fetch(url).then((r) => {
+    if (!r.ok) throw new Error('Failed to fetch');
+    return r.json();
+  });
 
 export default function TournamentApplicationsPage() {
-  const [selectedTournamentId, setSelectedTournamentId] = useState<string>('');
-  const [divisionFilter, setDivisionFilter] = useState<string>('all');
   const router = useRouter();
   const { data: session } = useSession();
   const { user } = useUser(session?.user?.email);
 
-  // 대회 정보 먼저 가져오기 (사용자 권한에 따라 다른 대회 목록)
+  // tournaments by user level
   const { tournaments, isLoading: tournamentsLoading } = useTournamentsByUserLevel(user?.level);
-  const { trigger: updateStatus, isMutating: isUpdating } = useUpdateApplicationStatus();
 
-  const [selectedApplication, setSelectedApplication] = useState<TournamentApplication | null>(
-    null,
-  );
-  const [selectedStatus, setSelectedStatus] = useState<string>('');
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  // selection state
+  const [selectedTournamentId, setSelectedTournamentId] = useState<string>('');
+  const [divisionFilter, setDivisionFilter] = useState<string>('all');
 
-  // 로컬 상태로 applications 관리
-  const [applications, setApplications] = useState<TournamentApplication[]>([]);
-  const [applicationsLoading, setApplicationsLoading] = useState(false);
-
-  // 관리자용 상세 목록 표시 상태
-  const [showApprovedList, setShowApprovedList] = useState(false);
-  const [showRejectedList, setShowRejectedList] = useState(false);
-  const [showUnpaidList, setShowUnpaidList] = useState(false);
-
-  // 선택된 대회 ID가 변경될 때 데이터 가져오기
+  // choose first tournament automatically
   useEffect(() => {
-    if (selectedTournamentId) {
-      setApplicationsLoading(true);
-      fetch(`/api/tournament-applications?tournamentId=${selectedTournamentId}`)
-        .then((response) => response.json())
-        .then((data) => {
-          setApplications(data);
-          setApplicationsLoading(false);
-        })
-        .catch((error) => {
-          console.error('Failed to fetch applications:', error);
-          setApplicationsLoading(false);
-        });
-    }
-  }, [selectedTournamentId]);
-  // applications에서 나의 신청 내역 필터링
-  const myApplications = applications.filter((app) => app.createdBy === user?._id);
-
-  // 페이지 진입 시 첫 번째 대회를 자동으로 선택
-  useEffect(() => {
-    if (tournaments.length > 0 && !selectedTournamentId) {
-      const firstTournament = tournaments[0]; // 첫 번째 대회 (최근 등록된 대회)
-      setSelectedTournamentId(firstTournament._id);
+    if (tournaments?.length && !selectedTournamentId) {
+      setSelectedTournamentId(tournaments[0]._id);
     }
   }, [tournaments, selectedTournamentId]);
 
-  // 선택된 대회 이름 가져오기
-  const getSelectedTournamentName = () => {
-    const selectedTournament = tournaments.find((t) => t._id === selectedTournamentId);
-    return selectedTournament?.title || '대회를 선택하세요';
-  };
+  // applications via SWR (dependent on selectedTournamentId)
+  const {
+    data: applications = [],
+    isLoading: applicationsLoading,
+    mutate: mutateApplications,
+  } = useSWR<TournamentApplication[]>(
+    selectedTournamentId
+      ? `/api/tournament-applications?tournamentId=${selectedTournamentId}`
+      : null,
+    fetcher,
+    { keepPreviousData: true },
+  );
 
-  // 선택된 대회 정보 가져오기
-  const getSelectedTournament = () => {
-    return tournaments.find((t) => t._id === selectedTournamentId);
-  };
+  // my applications (memoized)
+  const myApplications = useMemo(
+    () => applications.filter((app) => app.createdBy === user?._id),
+    [applications, user?._id],
+  );
 
-  // 부서별 팀 제한 수 가져오기
-  const getDivisionTeamLimit = (division: string) => {
-    const tournament = getSelectedTournament();
-    const divisionInfo = tournament?.divisions?.find((d) => d.division === division);
-    return divisionInfo?.teamCount || null;
-  };
-
-  // 대회ID+부서별 전체 참가팀 수 계산
-  const getDivisionTeamCount = (tournamentId: string, division: string) =>
-    applications.filter((app) => app.tournamentId === tournamentId && app.division === division)
-      .length;
-
-  // 관리자용 통계 계산 함수들
-  const getDivisionStats = (tournamentId: string, division: string) => {
-    const divisionApps = applications.filter(
-      (app) => app.tournamentId === tournamentId && app.division === division,
+  // derive division options for the current tournament
+  const divisionOptions = useMemo(() => {
+    const set = new Set(
+      applications.filter((a) => a.tournamentId === selectedTournamentId).map((a) => a.division),
     );
+    return Array.from(set);
+  }, [applications, selectedTournamentId]);
 
-    const total = divisionApps.length;
-    const approved = divisionApps.filter((app) => app.status === 'approved').length;
-    const rejected = divisionApps.filter((app) => app.status === 'rejected').length;
-    const pending = divisionApps.filter((app) => app.status === 'pending').length;
-    const unpaid = divisionApps.filter((app) => !app.isFeePaid).length;
+  // team count per division (memoized map)
+  const divisionCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const a of applications) {
+      if (a.tournamentId !== selectedTournamentId) continue;
+      counts[a.division] = (counts[a.division] ?? 0) + 1;
+    }
+    return counts;
+  }, [applications, selectedTournamentId]);
 
-    return { total, approved, rejected, pending, unpaid };
-  };
-
-  // 관리자용 상세 목록 필터링 함수들
-  const getApprovedApplications = (division: string) =>
-    applications.filter(
-      (app) =>
-        app.tournamentId === selectedTournamentId &&
-        app.division === division &&
-        app.status === 'approved',
+  // filter & sort
+  const filteredApplications = useMemo(() => {
+    const list = applications.filter(
+      (a) => divisionFilter === 'all' || a.division === divisionFilter,
     );
-
-  const getRejectedApplications = (division: string) =>
-    applications.filter(
-      (app) =>
-        app.tournamentId === selectedTournamentId &&
-        app.division === division &&
-        app.status === 'rejected',
+    // 1) division asc, 2) applicationOrder desc
+    return list.sort((a, b) =>
+      a.division === b.division
+        ? (b.applicationOrder || 0) - (a.applicationOrder || 0)
+        : a.division.localeCompare(b.division),
     );
+  }, [applications, divisionFilter]);
 
-  const getUnpaidApplications = (division: string) =>
-    applications.filter(
-      (app) =>
-        app.tournamentId === selectedTournamentId && app.division === division && !app.isFeePaid,
-    );
+  // group by division for rendering
+  const groupedByDivision = useMemo(() => {
+    const g: Record<string, TournamentApplication[]> = {};
+    for (const a of filteredApplications) {
+      (g[a.division] ||= []).push(a);
+    }
+    return Object.entries(g).sort(([a], [b]) => a.localeCompare(b));
+  }, [filteredApplications]);
 
-  const getStatusColor = (status: string) => {
-    const colorMap: Record<string, 'red' | 'blue' | 'green' | 'gray'> = {
-      pending: 'blue',
-      approved: 'green',
-      rejected: 'red',
-      cancelled: 'gray',
-    };
-    return colorMap[status] || 'gray';
+  // per-row mutation state (ids)
+  const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
+
+  // mutation hook
+  const { trigger: updateStatus } = useUpdateApplicationStatus();
+
+  const [confirmApp, setConfirmApp] = useState<TournamentApplication | null>(null);
+  const [confirmStatus, setConfirmStatus] = useState<
+    'approved' | 'rejected' | 'pending' | 'cancelled' | ''
+  >('');
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const openStatusDialog = (
+    app: TournamentApplication,
+    status: 'approved' | 'rejected' | 'pending' | 'cancelled',
+  ) => {
+    setConfirmApp(app);
+    setConfirmStatus(status);
+    setShowConfirm(true);
   };
 
-  const getStatusLabel = (status: string) => {
-    const labelMap: Record<string, string> = {
-      pending: '대기중',
-      approved: '승인',
-      rejected: '거절',
-      cancelled: '취소',
-    };
-    return labelMap[status] || status;
-  };
+  const toggleBusy = (id: string, on: boolean) =>
+    setBusyIds((prev) => {
+      const next = new Set(prev);
+      if (on) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
+      return next;
+    });
 
-  const getDivisionLabel = (division: string) => {
-    const divisionLabels: Record<string, string> = {
-      master: '마스터부',
-      challenger: '챌린저부',
-      futures: '퓨처스부',
-      chrysanthemum: '국화부',
-      forsythia: '개나리부',
-    };
-    return divisionLabels[division] || division;
-  };
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return '';
-    return format(new Date(dateString), 'yy.MM.dd HH:mm', { locale: ko });
-  };
-
-  const handleStatusUpdate = async (applicationId: string, newStatus: string) => {
+  const handleStatusUpdate = async (
+    applicationId: string,
+    newStatus: 'pending' | 'approved' | 'rejected' | 'cancelled',
+  ) => {
     try {
-      console.log('상태 업데이트 시작:', { applicationId, newStatus });
-      console.log('현재 사용자 정보:', { user: user?._id, level: user?.level });
+      toggleBusy(applicationId, true);
 
-      // Optimistic update: 즉시 UI 업데이트
-      setApplications((prevApplications) =>
-        prevApplications.map((app) =>
-          app._id === applicationId
-            ? { ...app, status: newStatus as 'pending' | 'approved' | 'rejected' | 'cancelled' }
-            : app,
-        ),
+      // optimistic update of the list cache
+      await mutateApplications(
+        (prev) =>
+          (prev ?? []).map((app) =>
+            app._id === applicationId
+              ? { ...app, status: newStatus, updatedAt: new Date().toISOString() }
+              : app,
+          ),
+        { revalidate: false, rollbackOnError: true },
       );
 
-      const result = await updateStatus({
-        id: applicationId,
-        status: newStatus as 'pending' | 'approved' | 'rejected' | 'cancelled',
-      });
+      // server call
+      const result = await updateStatus({ id: applicationId, status: newStatus });
 
-      console.log('상태 업데이트 성공:', result);
-      setShowConfirmDialog(false);
-
-      // 성공 시에는 추가 데이터 갱신 불필요 (optimistic update로 이미 반영됨)
-    } catch (error) {
-      console.error('상태 업데이트 실패:', error);
-
-      // 실패 시 원래 상태로 되돌리기
-      setApplications((prevApplications) =>
-        prevApplications.map((app) =>
-          app._id === applicationId
-            ? { ...app, status: 'pending' } // 기본 상태로 되돌리기
-            : app,
-        ),
+      // sync with server response if any shape differs
+      await mutateApplications(
+        (prev) =>
+          (prev ?? []).map((app) => (app._id === applicationId ? { ...app, ...result } : app)),
+        { revalidate: false },
       );
-
-      alert(
-        `상태 업데이트에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`,
-      );
+    } catch (e) {
+      // fallback: revalidate to rollback to server state
+      await mutateApplications();
+      console.error('상태 업데이트 실패', e);
+    } finally {
+      toggleBusy(applicationId, false);
+      setShowConfirm(false);
     }
   };
 
-  const openStatusDialog = (application: TournamentApplication, status: string) => {
-    setSelectedApplication(application);
-    setSelectedStatus(status);
-    setShowConfirmDialog(true);
+  const onTournamentChange = (id: string) => {
+    setSelectedTournamentId(id);
+    setDivisionFilter('all');
   };
 
-  // 대회 선택 변경 시 해당 대회의 신청만 가져오기
-  const handleTournamentChange = (tournamentId: string) => {
-    console.log('applications', applications);
-    setSelectedTournamentId(tournamentId);
-    setDivisionFilter('all'); // 부서 필터 초기화
-  };
+  const canEdit = (app: TournamentApplication | undefined | null) =>
+    !!app && (app.createdBy === user?._id || hasPermissionLevel(user, 4));
 
-  const filteredApplications = applications
-    .filter((application) => {
-      // 부서 필터만 적용 (대회 필터는 이미 API에서 처리됨)
-      if (divisionFilter !== 'all' && application.division !== divisionFilter) {
-        return false;
-      }
-      return true;
-    })
-    .sort((a, b) => {
-      // 1. 부서별로 정렬
-      if (a.division !== b.division) {
-        return a.division.localeCompare(b.division);
-      }
-      // 2. 같은 부서 내에서는 최신 신청이 먼저 표시되도록 정렬
-      return (b.applicationOrder || 0) - (a.applicationOrder || 0);
-    });
+  // ---------------------------------
+  // render
+  // ---------------------------------
+  const loading = tournamentsLoading || applicationsLoading;
 
   return (
     <Container>
-      {tournamentsLoading || applicationsLoading ? (
+      {loading ? (
         <SkeletonCard />
       ) : (
         <Box>
-          {/* 필터 */}
+          {/* Filters */}
           <Box mb="6">
             <Flex gap="3" mb="4" align="center" wrap="wrap">
               <Flex gap="3" align="center">
                 <Select.Root
                   value={selectedTournamentId}
-                  onValueChange={handleTournamentChange}
+                  onValueChange={onTournamentChange}
                   size="3"
                 >
-                  <Select.Trigger placeholder={getSelectedTournamentName()} />
+                  <Select.Trigger placeholder={tournaments?.[0]?.title || '대회를 선택하세요'} />
                   <Select.Content>
-                    {tournaments.map((tournament) => (
-                      <Select.Item key={tournament._id} value={tournament._id}>
-                        {tournament.title}
+                    {tournaments.map((t) => (
+                      <Select.Item key={t._id} value={t._id}>
+                        {t.title}
                       </Select.Item>
                     ))}
                   </Select.Content>
@@ -266,15 +239,9 @@ export default function TournamentApplicationsPage() {
                   <Select.Trigger placeholder="전체" />
                   <Select.Content>
                     <Select.Item value="all">전체</Select.Item>
-                    {Array.from(
-                      new Set(
-                        applications
-                          .filter((app) => app.tournamentId === selectedTournamentId)
-                          .map((app) => app.division),
-                      ),
-                    ).map((division) => (
-                      <Select.Item key={division} value={division}>
-                        {getDivisionLabel(division)}
+                    {divisionOptions.map((d) => (
+                      <Select.Item key={d} value={d}>
+                        {DIVISION_LABEL[d] || d}
                       </Select.Item>
                     ))}
                   </Select.Content>
@@ -283,7 +250,7 @@ export default function TournamentApplicationsPage() {
             </Flex>
           </Box>
 
-          {/* 나의 신청 내역 */}
+          {/* My applications */}
           {myApplications.length > 0 && (
             <Box mb="6">
               <Heading size="4" mb="3">
@@ -293,90 +260,81 @@ export default function TournamentApplicationsPage() {
                 {myApplications.map((application) => (
                   <Card
                     key={application._id}
-                    className={`p-6 transition-colors ${
-                      application.createdBy === user?._id || hasPermissionLevel(user, 4)
-                        ? 'cursor-pointer hover:bg-gray-50'
-                        : ''
-                    }`}
+                    className={`p-6 transition-colors ${canEdit(application) ? 'cursor-pointer hover:bg-gray-50' : ''}`}
                     onClick={() => {
-                      if (application.createdBy === user?._id || hasPermissionLevel(user, 4)) {
+                      if (canEdit(application))
                         router.push(`/tournament-applications/${application._id}/edit`);
-                      }
                     }}
                   >
                     <div className="space-y-4">
-                      {/* 헤더 */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Badge color={getStatusColor(application.status)}>
-                            {getStatusLabel(application.status)}
+                          <Badge color={STATUS_COLOR[application.status] || 'gray'}>
+                            {STATUS_LABEL[application.status] || application.status}
                           </Badge>
                           {application.applicationOrder && (
                             <Badge color="blue">{application.applicationOrder}번째 신청</Badge>
                           )}
                           <Badge color="blue" style={{ fontWeight: 500 }}>
-                            현재
-                            {getDivisionTeamCount(application.tournamentId, application.division)}팀
-                            신청
+                            현재 {divisionCounts[application.division] ?? 0}팀 신청
                           </Badge>
                         </div>
                         <Text color="gray" size="2">
-                          {formatDate(application.createdAt)}
+                          {fmt(application.createdAt)}
                         </Text>
                       </div>
 
-                      {/* 참가자 정보 */}
+                      {/* 참가자 */}
                       <div className="space-y-3">
                         <Text size="4" weight="bold" mb="2" as="div">
                           {application.tournament?.title || `대회 ID: ${application.tournamentId}`}{' '}
-                          - {getDivisionLabel(application.division)}
+                          - {DIVISION_LABEL[application.division] || application.division}
                         </Text>
 
-                        <div className="space-y-3">
-                          {application.tournamentType === 'team' && (
-                            <div className="p-3 bg-blue-50 rounded border-l-4 border-blue-500">
-                              <Text weight="bold" color="gray" mr="2">
-                                참가 클럽
-                              </Text>
-                              <Text weight="bold" color="blue">
-                                {application.teamMembers[0]?.clubName || '-'}
-                              </Text>
-                              <Text weight="bold">({application.teamMembers.length}명)</Text>
-                            </div>
-                          )}
-                          <div className="grid gap-2">
-                            {application.teamMembers.map((member, index) => (
-                              <div
-                                key={index}
-                                className="p-3 bg-gray-50 rounded flex items-center justify-between"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <Text weight="bold" color="gray">
-                                    {index + 1}번
-                                  </Text>
-                                  <Text weight="bold">
-                                    {member.name}
-                                    {application.tournamentType === 'individual' && (
-                                      <>
-                                        {' / '}
-                                        {member.clubName}
-                                      </>
-                                    )}
-                                  </Text>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  <Text weight="bold" color="gray">
-                                    점수
-                                  </Text>
-                                  <Text>{member.score || '-'}</Text>
-                                </div>
-                              </div>
-                            ))}
+                        {application.tournamentType === 'team' && (
+                          <div className="p-3 bg-blue-50 rounded border-l-4 border-blue-500">
+                            <Text weight="bold" color="gray" mr="2">
+                              참가 클럽
+                            </Text>
+                            <Text weight="bold" color="blue">
+                              {application.teamMembers[0]?.clubName || '-'}
+                            </Text>
+                            <Text weight="bold">({application.teamMembers.length}명)</Text>
                           </div>
+                        )}
+
+                        <div className="grid gap-2">
+                          {application.teamMembers.map((m, i) => (
+                            <div
+                              key={i}
+                              className="p-3 bg-gray-50 rounded flex items-center justify-between"
+                            >
+                              <div className="flex items-center gap-3">
+                                <Text weight="bold" color="gray">
+                                  {i + 1}번
+                                </Text>
+                                <Text weight="bold">
+                                  {m.name}
+                                  {application.tournamentType === 'individual' && (
+                                    <>
+                                      {' / '}
+                                      {m.clubName}
+                                    </>
+                                  )}
+                                </Text>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <Text weight="bold" color="gray">
+                                  점수
+                                </Text>
+                                <Text>{m.score || '-'}</Text>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
 
-                      {/* 참가비 납부 여부 */}
+                      {/* 참가비 */}
                       <div className="flex items-center justify-between">
                         <Text weight="bold">참가비 납부</Text>
                         <div className="flex items-center gap-2">
@@ -389,7 +347,6 @@ export default function TournamentApplicationsPage() {
                         </div>
                       </div>
 
-                      {/* 메모 */}
                       {application.memo && (
                         <div>
                           <Text weight="bold">메모</Text>
@@ -397,21 +354,17 @@ export default function TournamentApplicationsPage() {
                         </div>
                       )}
 
-                      {/* 액션 버튼 */}
                       <Flex gap="3" justify="end" pt="4" className="border-t">
                         <Button
                           variant="soft"
-                          onClick={() => {
-                            const tournamentId = application.tournamentId;
-                            if (tournamentId && tournamentId.trim() !== '') {
-                              router.push(`/tournaments/${tournamentId as string}`);
-                            }
-                          }}
+                          onClick={() =>
+                            application.tournamentId &&
+                            router.push(`/tournaments/${application.tournamentId}`)
+                          }
                         >
                           대회 상세보기
                         </Button>
-                        {/* 본인의 신청이거나 관리자인 경우에만 수정 가능 */}
-                        {(application.createdBy === user?._id || hasPermissionLevel(user, 4)) && (
+                        {canEdit(application) && (
                           <Button
                             variant="soft"
                             onClick={() =>
@@ -429,11 +382,9 @@ export default function TournamentApplicationsPage() {
             </Box>
           )}
 
-          {/* 전체 참가 신청 목록 */}
+          {/* 전체 목록 */}
           <Box>
-            <Heading size="4" mb="3">
-              전체참가신청목록
-            </Heading>
+            <Heading size="4">전체참가신청목록</Heading>
 
             {filteredApplications.length === 0 ? (
               <Card className="p-6 text-center">
@@ -441,416 +392,175 @@ export default function TournamentApplicationsPage() {
               </Card>
             ) : (
               <div className="space-y-6">
-                {/* 부서별로 그룹핑 */}
-                {(() => {
-                  const groupedByDivision: Record<string, TournamentApplication[]> = {};
+                {groupedByDivision.map(([division, apps]) => (
+                  <Box key={division}>
+                    <Flex justify="between" align="center" py="3">
+                      <Heading size="3" color="blue">
+                        {DIVISION_LABEL[division] || division} ({apps.length}팀 신청)
+                      </Heading>
+                      <Button
+                        variant="soft"
+                        size="2"
+                        onClick={() => {
+                          router.push(
+                            `/tournament-grouping/new?tournamentId=${selectedTournamentId}&division=${division}`,
+                          );
+                        }}
+                      >
+                        조편성
+                      </Button>
+                    </Flex>
+                    <div className="space-y-4">
+                      {apps.map((application) => {
+                        const isAdmin = hasPermissionLevel(user, 4);
+                        return (
+                          <Card
+                            key={application._id}
+                            className={`p-6 transition-colors ${canEdit(application) ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+                            onClick={() => {
+                              if (canEdit(application))
+                                router.push(`/tournament-applications/${application._id}/edit`);
+                            }}
+                          >
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  {isAdmin && (
+                                    <Badge color={STATUS_COLOR[application.status] || 'gray'}>
+                                      {STATUS_LABEL[application.status] || application.status}
+                                    </Badge>
+                                  )}
+                                  {application.applicationOrder && (
+                                    <Badge color="blue">
+                                      {application.applicationOrder}번째 신청
+                                    </Badge>
+                                  )}
+                                </div>
+                                <Text color="gray" size="2">
+                                  {fmt(application.createdAt)}
+                                </Text>
+                              </div>
 
-                  filteredApplications.forEach((application) => {
-                    if (!groupedByDivision[application.division]) {
-                      groupedByDivision[application.division] = [];
-                    }
-                    groupedByDivision[application.division].push(application);
-                  });
+                              {application.tournamentType === 'team' && (
+                                <div className="p-3 bg-blue-50 rounded border-l-4 border-blue-500">
+                                  <Text weight="bold" color="gray" mr="2">
+                                    참가 클럽
+                                  </Text>
+                                  <Text weight="bold" color="blue">
+                                    {application.teamMembers[0]?.clubName || '-'}
+                                  </Text>
+                                  <Text weight="bold">({application.teamMembers.length}명)</Text>
+                                </div>
+                              )}
 
-                  return Object.entries(groupedByDivision)
-                    .sort(([a], [b]) => a.localeCompare(b)) // 부서명 알파벳 순 정렬
-                    .map(([division, applications]) => {
-                      // 관리자용 통계 계산
-                      const stats = hasPermissionLevel(user, 4)
-                        ? getDivisionStats(selectedTournamentId, division)
-                        : null;
-                      const approvedApps = hasPermissionLevel(user, 4)
-                        ? getApprovedApplications(division)
-                        : [];
-                      const rejectedApps = hasPermissionLevel(user, 4)
-                        ? getRejectedApplications(division)
-                        : [];
-                      const unpaidApps = hasPermissionLevel(user, 4)
-                        ? getUnpaidApplications(division)
-                        : [];
-
-                      return (
-                        <Box key={division}>
-                          <Heading size="3" mb="3" color="blue">
-                            {getDivisionLabel(division)}
-                            {(() => {
-                              const limit = getDivisionTeamLimit(division);
-                              if (limit) {
-                                return ` - 총 ${limit}팀 모집중 ${applications.length}팀 신청`;
-                              } else {
-                                return ` (${applications.length}팀 신청)`;
-                              }
-                            })()}
-                          </Heading>
-
-                          {/* 관리자용 통계 섹션 */}
-                          {hasPermissionLevel(user, 4) && stats && (
-                            <Box
-                              mb="4"
-                              p="4"
-                              style={{
-                                backgroundColor: '#f8fafc',
-                                borderRadius: '8px',
-                                border: '1px solid #e2e8f0',
-                              }}
-                            >
-                              <Text size="3" weight="bold" mb="3" color="gray">
-                                관리자 통계
-                              </Text>
-
-                              {/* 통계 요약 */}
-                              <Flex gap="3" mb="4" wrap="wrap">
-                                <Badge size="2" color="gray">
-                                  총 {stats.total}
-                                  {(() => {
-                                    const limit = getDivisionTeamLimit(division);
-                                    return limit ? `/${limit}` : '';
-                                  })()}
-                                  팀
-                                </Badge>
-                                <Badge size="2" color="green">
-                                  승인 {stats.approved}팀
-                                </Badge>
-                                <Badge size="2" color="red">
-                                  거절 {stats.rejected}팀
-                                </Badge>
-                                <Badge size="2" color="blue">
-                                  대기 {stats.pending}팀
-                                </Badge>
-                                <Badge size="2" color="orange">
-                                  미납 {stats.unpaid}팀
-                                </Badge>
-                                {(() => {
-                                  const limit = getDivisionTeamLimit(division);
-                                  if (limit && stats.approved > limit) {
-                                    return (
-                                      <Badge size="2" color="red">
-                                        ⚠️ 제한 초과 (+{stats.approved - limit})
-                                      </Badge>
-                                    );
-                                  }
-                                  return null;
-                                })()}
-                              </Flex>
-
-                              {/* 상세 목록 토글 버튼들 */}
-                              <Flex gap="2" wrap="wrap">
-                                {stats.approved > 0 && (
-                                  <Button
-                                    variant="soft"
-                                    color="green"
-                                    size="1"
-                                    onClick={() => setShowApprovedList(!showApprovedList)}
+                              <div className="grid gap-2">
+                                {application.teamMembers.map((member, index) => (
+                                  <div
+                                    key={index}
+                                    className="p-3 bg-gray-50 rounded flex items-center justify-between"
                                   >
-                                    승인 목록 {showApprovedList ? '숨기기' : '보기'}
-                                  </Button>
-                                )}
-                                {stats.rejected > 0 && (
+                                    <div className="flex items-center gap-3">
+                                      <Text weight="bold" color="gray">
+                                        {index + 1}번
+                                      </Text>
+                                      <Text weight="bold">
+                                        {isAdmin
+                                          ? member.name
+                                          : member.name.charAt(0) +
+                                            '*'.repeat(Math.max(member.name.length - 1, 0))}
+                                        {application.tournamentType === 'individual' && (
+                                          <>
+                                            {' / '}
+                                            {member.clubName}
+                                          </>
+                                        )}
+                                      </Text>
+                                      {isAdmin && (
+                                        <>
+                                          {member.isRegisteredMember === false && (
+                                            <Badge color="red" size="1">
+                                              미등록
+                                            </Badge>
+                                          )}
+                                          {member.isRegisteredMember === true && (
+                                            <Badge color="green" size="1">
+                                              등록회원
+                                            </Badge>
+                                          )}
+                                        </>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <Text weight="bold" color="gray">
+                                        점수
+                                      </Text>
+                                      <Text>{member.score || '-'}</Text>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+
+                              {hasPermissionLevel(user, 4) && (
+                                <div className="btn-wrap border-t pt-4 flex gap-2">
                                   <Button
                                     variant="soft"
                                     color="red"
-                                    size="1"
-                                    onClick={() => setShowRejectedList(!showRejectedList)}
+                                    size="2"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openStatusDialog(application, 'rejected');
+                                    }}
+                                    disabled={
+                                      application.status === 'rejected' ||
+                                      busyIds.has(application._id || '')
+                                    }
                                   >
-                                    거절 목록 {showRejectedList ? '숨기기' : '보기'}
+                                    {busyIds.has(application._id || '') ? '처리중...' : '거절'}
                                   </Button>
-                                )}
-                                {stats.unpaid > 0 && (
                                   <Button
                                     variant="soft"
-                                    color="orange"
-                                    size="1"
-                                    onClick={() => setShowUnpaidList(!showUnpaidList)}
+                                    color="green"
+                                    size="2"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openStatusDialog(application, 'approved');
+                                    }}
+                                    disabled={
+                                      application.status === 'approved' ||
+                                      busyIds.has(application._id || '')
+                                    }
                                   >
-                                    미납 목록 {showUnpaidList ? '숨기기' : '보기'}
+                                    {busyIds.has(application._id || '') ? '처리중...' : '승인'}
                                   </Button>
-                                )}
-                              </Flex>
-
-                              {/* 승인된 팀 목록 */}
-                              {showApprovedList && approvedApps.length > 0 && (
-                                <Box
-                                  mt="3"
-                                  p="3"
-                                  style={{ backgroundColor: '#f0f9ff', borderRadius: '6px' }}
-                                >
-                                  <Text weight="bold" color="green" mb="2" size="2">
-                                    승인된 팀 목록 ({approvedApps.length}팀)
-                                  </Text>
-                                  <div className="space-y-2">
-                                    {approvedApps.map((app, index) => (
-                                      <div
-                                        key={app._id}
-                                        className="flex items-center justify-between p-2 bg-white rounded border"
-                                      >
-                                        <div>
-                                          <Text size="1" weight="bold">
-                                            {index + 1}.{' '}
-                                            {app.teamMembers[0]?.clubName || '클럽명 없음'}
-                                          </Text>
-                                          <Text size="1" color="gray" className="block">
-                                            {app.teamMembers.map((m) => m.name).join(', ')}
-                                          </Text>
-                                        </div>
-                                        <Badge color={app.isFeePaid ? 'green' : 'red'} size="1">
-                                          {app.isFeePaid ? '납부완료' : '미납'}
-                                        </Badge>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </Box>
-                              )}
-
-                              {/* 거절된 팀 목록 */}
-                              {showRejectedList && rejectedApps.length > 0 && (
-                                <Box
-                                  mt="3"
-                                  p="3"
-                                  style={{ backgroundColor: '#fef2f2', borderRadius: '6px' }}
-                                >
-                                  <Text weight="bold" color="red" mb="2" size="2">
-                                    거절된 팀 목록 ({rejectedApps.length}팀)
-                                  </Text>
-                                  <div className="space-y-2">
-                                    {rejectedApps.map((app, index) => (
-                                      <div
-                                        key={app._id}
-                                        className="flex items-center justify-between p-2 bg-white rounded border"
-                                      >
-                                        <div>
-                                          <Text size="1" weight="bold">
-                                            {index + 1}.{' '}
-                                            {app.teamMembers[0]?.clubName || '클럽명 없음'}
-                                          </Text>
-                                          <Text size="1" color="gray" className="block">
-                                            {app.teamMembers.map((m) => m.name).join(', ')}
-                                          </Text>
-                                        </div>
-                                        <Text size="1" color="gray">
-                                          {formatDate(app.updatedAt)}
-                                        </Text>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </Box>
-                              )}
-
-                              {/* 참가비 미납 팀 목록 */}
-                              {showUnpaidList && unpaidApps.length > 0 && (
-                                <Box
-                                  mt="3"
-                                  p="3"
-                                  style={{ backgroundColor: '#fff7ed', borderRadius: '6px' }}
-                                >
-                                  <Text weight="bold" color="orange" mb="2" size="2">
-                                    참가비 미납 팀 목록 ({unpaidApps.length}팀)
-                                  </Text>
-                                  <div className="space-y-2">
-                                    {unpaidApps.map((app, index) => (
-                                      <div
-                                        key={app._id}
-                                        className="flex items-center justify-between p-2 bg-white rounded border"
-                                      >
-                                        <div>
-                                          <Text size="1" weight="bold">
-                                            {index + 1}.{' '}
-                                            {app.teamMembers[0]?.clubName || '클럽명 없음'}
-                                          </Text>
-                                          <Text size="1" color="gray" className="block">
-                                            {app.teamMembers.map((m) => m.name).join(', ')}
-                                          </Text>
-                                        </div>
-                                        <Badge color={getStatusColor(app.status)} size="1">
-                                          {getStatusLabel(app.status)}
-                                        </Badge>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </Box>
-                              )}
-                            </Box>
-                          )}
-
-                          <div className="space-y-4">
-                            {applications.map((application) => (
-                              <Card
-                                key={application._id}
-                                className={`p-6 transition-colors ${
-                                  application.createdBy === user?._id || hasPermissionLevel(user, 4)
-                                    ? 'cursor-pointer hover:bg-gray-50'
-                                    : ''
-                                }`}
-                                onClick={() => {
-                                  // 본인의 신청이거나 관리자인 경우에만 수정 페이지로 이동
-                                  if (
-                                    application.createdBy === user?._id ||
-                                    hasPermissionLevel(user, 4)
-                                  ) {
-                                    router.push(`/tournament-applications/${application._id}/edit`);
-                                  }
-                                }}
-                              >
-                                <div className="space-y-4">
-                                  {/* 헤더 */}
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      {hasPermissionLevel(user, 4) && (
-                                        <Badge color={getStatusColor(application.status)}>
-                                          {getStatusLabel(application.status)}
-                                        </Badge>
-                                      )}
-                                      {application.applicationOrder && (
-                                        <Badge color="blue">
-                                          {application.applicationOrder}번째 신청
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <Text color="gray" size="2">
-                                      {formatDate(application.createdAt)}
-                                    </Text>
-                                  </div>
-
-                                  {/* 참가자 정보 */}
-                                  <div className="space-y-3">
-                                    {application.tournamentType === 'team' && (
-                                      <div className="p-3 bg-blue-50 rounded border-l-4 border-blue-500">
-                                        <Text weight="bold" color="gray" mr="2">
-                                          참가 클럽
-                                        </Text>
-                                        <Text weight="bold" color="blue">
-                                          {application.teamMembers[0]?.clubName || '-'}
-                                        </Text>
-                                        <Text weight="bold">
-                                          ({application.teamMembers.length}명)
-                                        </Text>
-                                      </div>
-                                    )}
-                                    <div className="grid gap-2">
-                                      {application.teamMembers.map((member, index) => (
-                                        <div
-                                          key={index}
-                                          className="p-3 bg-gray-50 rounded flex items-center justify-between"
-                                        >
-                                          <div className="flex items-center gap-3">
-                                            <Text weight="bold" color="gray">
-                                              {index + 1}번
-                                            </Text>
-                                            <Text weight="bold">
-                                              {hasPermissionLevel(user, 4)
-                                                ? member.name
-                                                : member.name.charAt(0) +
-                                                  '*'.repeat(member.name.length - 1)}
-                                              {application.tournamentType === 'individual' && (
-                                                <>
-                                                  {' / '}
-                                                  {member.clubName}
-                                                </>
-                                              )}
-                                            </Text>
-                                            {/* 관리자용 회원등록 여부 표시 */}
-                                            {hasPermissionLevel(user, 4) && (
-                                              <>
-                                                {member.isRegisteredMember === false && (
-                                                  <Badge color="red" size="1">
-                                                    미등록
-                                                  </Badge>
-                                                )}
-                                                {member.isRegisteredMember === true && (
-                                                  <Badge color="green" size="1">
-                                                    등록회원
-                                                  </Badge>
-                                                )}
-                                              </>
-                                            )}
-                                          </div>
-                                          <div className="flex items-center gap-3">
-                                            <Text weight="bold" color="gray">
-                                              점수
-                                            </Text>
-                                            <Text>{member.score || '-'}</Text>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-
-                                  {/* 관리자용 참가비 납부 여부 */}
-                                  {hasPermissionLevel(user, 4) && (
-                                    <div className="flex items-center justify-between">
-                                      <Text weight="bold">참가비 납부</Text>
-                                      <div className="flex items-center gap-2">
-                                        <div
-                                          className={`w-4 h-4 rounded-full ${application.isFeePaid ? 'bg-green-500' : 'bg-red-500'}`}
-                                        />
-                                        <Text
-                                          weight="bold"
-                                          color={application.isFeePaid ? 'green' : 'red'}
-                                        >
-                                          {application.isFeePaid ? '납부 완료' : '미납'}
-                                        </Text>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* 관리자용 액션 버튼 */}
-                                  {hasPermissionLevel(user, 4) && (
-                                    <div className="btn-wrap border-t pt-4">
-                                      <Button
-                                        variant="soft"
-                                        color="red"
-                                        size="2"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          openStatusDialog(application, 'rejected');
-                                        }}
-                                        disabled={isUpdating || application.status === 'rejected'}
-                                      >
-                                        거절
-                                      </Button>
-                                      <Button
-                                        variant="soft"
-                                        color="green"
-                                        size="2"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          openStatusDialog(application, 'approved');
-                                        }}
-                                        disabled={isUpdating || application.status === 'approved'}
-                                      >
-                                        승인
-                                      </Button>
-                                    </div>
-                                  )}
                                 </div>
-                              </Card>
-                            ))}
-                          </div>
-                        </Box>
-                      );
-                    });
-                })()}
+                              )}
+                            </div>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </Box>
+                ))}
               </div>
             )}
           </Box>
         </Box>
       )}
 
-      {/* 상태 변경 확인 다이얼로그 */}
       <ConfirmDialog
         title="상태 변경"
-        description={`이 신청을 ${getStatusLabel(selectedStatus)}로 변경하시겠습니까?`}
+        description={`이 신청을 ${STATUS_LABEL[confirmStatus] || confirmStatus}로 변경하시겠습니까?`}
         confirmText="변경"
         cancelText="취소"
-        confirmColor={selectedStatus === 'approved' ? 'green' : 'red'}
-        open={showConfirmDialog}
-        onOpenChange={setShowConfirmDialog}
+        confirmColor={confirmStatus === 'approved' ? 'green' : 'red'}
+        open={showConfirm}
+        onOpenChange={setShowConfirm}
         onConfirm={() => {
-          if (selectedApplication && selectedApplication._id && selectedStatus) {
-            handleStatusUpdate(selectedApplication._id, selectedStatus);
+          if (confirmApp?._id && confirmStatus) {
+            handleStatusUpdate(confirmApp._id, confirmStatus);
           }
-          setShowConfirmDialog(false);
         }}
-        onCancel={() => setShowConfirmDialog(false)}
+        onCancel={() => setShowConfirm(false)}
       />
     </Container>
   );

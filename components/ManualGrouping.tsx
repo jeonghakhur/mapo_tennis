@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Box, Text, Button, Flex, Card, Heading, Badge, TextField, Select } from '@radix-ui/themes';
+import { Box, Text, Button, Flex, Card, Heading, Badge } from '@radix-ui/themes';
 import { Plus, Trash2 } from 'lucide-react';
 import type { Team, Group } from '@/types/tournament';
+import { Combobox } from '@/components/ui/combobox';
 
 interface ManualGroupingProps {
   teams: Team[];
@@ -91,11 +92,6 @@ export default function ManualGrouping({
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-  };
-
-  // 터치 오버
-  const handleTouchOver = (e: React.TouchEvent) => {
-    e.preventDefault();
   };
 
   // 드롭
@@ -352,48 +348,6 @@ export default function ManualGrouping({
       </Flex>
 
       <Flex direction="column" gap="4">
-        {/* 미배정 팀 영역 */}
-        <Heading size="3" mb="3">
-          미배정 팀 ({unassignedTeams.length})
-        </Heading>
-        <Box
-          p="3"
-          style={{
-            minHeight: '200px',
-            maxHeight: '300px',
-            border: '2px dashed var(--gray-6)',
-            borderRadius: 'var(--radius-2)',
-            overflowY: 'auto',
-          }}
-          onDragOver={handleDragOverUnassigned}
-          onDrop={handleUnassignedDrop}
-          onTouchEnd={(e) => handleUnassignedTouchDrop(e)}
-        >
-          <Flex direction="column" gap="2">
-            {unassignedTeams.map((team) => (
-              <Card
-                key={team._id}
-                size="1"
-                draggable
-                onDragStart={(e) => handleDragStart(e, team)}
-                onTouchStart={(e) => handleTouchStart(e, team)}
-                style={{ cursor: 'grab' }}
-              >
-                <Box p="2">
-                  <Text size="2" weight="bold" style={{ wordBreak: 'break-word' }}>
-                    {team.name.length > 20 ? `${team.name.substring(0, 20)}...` : team.name}
-                  </Text>
-                  {team.members && team.members.length > 0 && (
-                    <Text size="1" color="gray">
-                      {team.members.length}명
-                    </Text>
-                  )}
-                </Box>
-              </Card>
-            ))}
-          </Flex>
-        </Box>
-
         {/* 조별 영역 */}
         <Flex direction="column" gap="3">
           {groups.map((group) => (
@@ -406,22 +360,19 @@ export default function ManualGrouping({
                   </Badge>
                   {group.teams.length < teamsPerGroup && unassignedTeams.length > 0 && (
                     <Flex align="center" gap="1">
-                      <Select.Root
-                        size="1"
+                      <Combobox
+                        options={unassignedTeams.map((team) => ({
+                          value: team._id,
+                          label:
+                            team.name.length > 15 ? `${team.name.substring(0, 15)}...` : team.name,
+                        }))}
                         value={selectedTeamForGroup[group.groupId] || ''}
                         onValueChange={(value) => handleTeamSelectionChange(group.groupId, value)}
-                      >
-                        <Select.Trigger placeholder="팀 선택" style={{ minWidth: '120px' }} />
-                        <Select.Content>
-                          {unassignedTeams.map((team) => (
-                            <Select.Item key={team._id} value={team._id}>
-                              {team.name.length > 15
-                                ? `${team.name.substring(0, 15)}...`
-                                : team.name}
-                            </Select.Item>
-                          ))}
-                        </Select.Content>
-                      </Select.Root>
+                        placeholder="팀 선택"
+                        searchPlaceholder="팀 검색..."
+                        emptyMessage="선택할 팀이 없습니다."
+                        className="min-w-[120px]"
+                      />
                       <Button
                         size="1"
                         variant="soft"

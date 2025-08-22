@@ -4,10 +4,7 @@ import { client } from '@/sanity/lib/client';
 import type { Group } from '@/types/tournament';
 
 // 수동 조편성 생성 핸들러
-async function createManualGroupingHandler(
-  req: NextRequest,
-  _user: { id: string; level?: number },
-) {
+async function createManualGroupingHandler(req: NextRequest) {
   try {
     const body = await req.json();
     const { tournamentId, division, groups } = body;
@@ -32,8 +29,8 @@ async function createManualGroupingHandler(
       division,
       groupId: group.groupId,
       name: group.name,
-      teams: group.teams.map((team) => ({
-        _id: team._id,
+      teams: group.teams.map((team, index) => ({
+        _key: team._id || `team-${index}-${Date.now()}`,
         name: team.name,
         seed: team.seed,
         members: team.members,

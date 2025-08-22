@@ -165,12 +165,6 @@ export default function ManualGrouping({
     return Math.min(Math.max(0, dropIndex), group.teams.length);
   };
 
-  // 미배정 영역 드래그 오버
-  const handleDragOverUnassigned = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
   // 터치 드롭
   const handleTouchDrop = (e: React.TouchEvent, targetGroupId: string) => {
     e.preventDefault();
@@ -207,54 +201,6 @@ export default function ManualGrouping({
       ),
     );
 
-    setDraggedTeam(null);
-  };
-
-  // 미배정 영역으로 드롭
-  const handleUnassignedDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-
-    if (!draggedTeam) return;
-
-    const { team, sourceGroupId } = draggedTeam;
-
-    // 조에서 드래그된 경우에만 미배정으로 이동
-    if (sourceGroupId) {
-      // 소스 그룹에서 팀 제거
-      setGroups((prevGroups) =>
-        prevGroups.map((group) =>
-          group.groupId === sourceGroupId
-            ? { ...group, teams: group.teams.filter((t) => t._id !== team._id) }
-            : group,
-        ),
-      );
-
-      // 미배정 팀에 추가
-      setUnassignedTeams((prev) => [...prev, team]);
-    }
-
-    setDraggedTeam(null);
-  };
-
-  // 미배정 영역으로 터치 드롭
-  const handleUnassignedTouchDrop = (e: React.TouchEvent) => {
-    e.preventDefault();
-
-    if (!draggedTeam || !draggedTeam.sourceGroupId) return;
-
-    const { team, sourceGroupId } = draggedTeam;
-
-    // 소스 그룹에서 팀 제거
-    setGroups((prevGroups) =>
-      prevGroups.map((group) =>
-        group.groupId === sourceGroupId
-          ? { ...group, teams: group.teams.filter((t) => t._id !== team._id) }
-          : group,
-      ),
-    );
-
-    // 미배정 팀에 추가
-    setUnassignedTeams((prev) => [...prev, team]);
     setDraggedTeam(null);
   };
 

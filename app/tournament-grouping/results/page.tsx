@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import { Box, Text, Button, Flex, Card, Heading, Badge, Separator } from '@radix-ui/themes';
 import { useLoading } from '@/hooks/useLoading';
+import { useRouter } from 'next/navigation';
+import { mutate } from 'swr';
 
-import type { Group, Match } from '@/types/tournament';
+import type { Group } from '@/types/tournament';
 import Container from '@/components/Container';
 import ConfirmDialog from '@/components/ConfirmDialog';
 
@@ -20,14 +22,14 @@ interface GroupingResult {
 }
 
 export default function TournamentGroupingResultsPage() {
+  const router = useRouter();
   const { loading, withLoading } = useLoading();
 
   const [selectedTournament, setSelectedTournament] = useState<string>('');
   const [selectedDivision, setSelectedDivision] = useState<string>('');
   const [groupingResult, setGroupingResult] = useState<GroupingResult | null>(null);
-  const [matches, setMatches] = useState<Match[]>([]);
+  const [hasMatches, setHasMatches] = useState<boolean>(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [groupToDelete, setGroupToDelete] = useState<string | null>(null);
   const [showCreateMatchesDialog, setShowCreateMatchesDialog] = useState(false);
 
   // URL 파라미터에서 초기값 설정
@@ -39,6 +41,27 @@ export default function TournamentGroupingResultsPage() {
     if (tournamentId) setSelectedTournament(tournamentId);
     if (division) setSelectedDivision(division);
   }, []);
+
+  // 경기 정보 조회
+  const fetchMatchesInfo = async () => {
+    if (!selectedTournament || !selectedDivision) return;
+
+    try {
+      const matchesResponse = await fetch(
+        `/api/tournament-grouping/matches?tournamentId=${selectedTournament}&division=${selectedDivision}`,
+      );
+
+      if (matchesResponse.ok) {
+        const matchesData = await matchesResponse.json();
+        setHasMatches(matchesData.length > 0);
+      } else {
+        setHasMatches(false);
+      }
+    } catch (error) {
+      console.error('경기 정보 조회 오류:', error);
+      setHasMatches(false);
+    }
+  };
 
   // 조편성 결과 조회
   const fetchGroupingResults = async () => {
@@ -56,23 +79,16 @@ export default function TournamentGroupingResultsPage() {
       }
 
       // 경기 정보 조회
-      const matchesResponse = await fetch(
-        `/api/tournament-grouping/matches?tournamentId=${selectedTournament}&division=${selectedDivision}`,
-      );
-
-      if (matchesResponse.ok) {
-        const matchesData = await matchesResponse.json();
-        setMatches(matchesData);
-      }
+      await fetchMatchesInfo();
     });
   };
 
-  // 조 삭제 실행
-  const handleDeleteGroup = async () => {
-    if (!groupToDelete || !selectedTournament || !selectedDivision) return;
+  // 대진표 삭제 실행
+  const handleDeleteAll = async () => {
+    if (!selectedTournament || !selectedDivision) return;
 
     await withLoading(async () => {
-      const response = await fetch(`/api/tournament-grouping/groups/${groupToDelete}`, {
+      const response = await fetch('/api/tournament-grouping/delete-all', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -84,10 +100,14 @@ export default function TournamentGroupingResultsPage() {
       });
 
       if (response.ok) {
-        // 삭제 후 결과 다시 조회
-        await fetchGroupingResults();
-        setShowDeleteDialog(false);
-        setGroupToDelete(null);
+        // 캐시를 완전히 무효화하여 삭제된 데이터가 표시되지 않도록 함
+        await mutate('/api/tournament-grouping/index', undefined, false);
+
+        // 삭제 후 tournament-grouping/ 페이지로 이동
+        router.push('/tournament-grouping/');
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || '삭제 중 오류가 발생했습니다.');
       }
     });
   };
@@ -115,8 +135,12 @@ export default function TournamentGroupingResultsPage() {
 
       if (response.ok) {
         setShowCreateMatchesDialog(false);
-        // 최신 경기 목록 갱신
-        await fetchGroupingResults();
+        // 경기 정보 다시 조회
+        await fetchMatchesInfo();
+        // 예선 경기 상세 페이지로 이동
+        router.push(
+          `/tournament-grouping/matches?tournamentId=${selectedTournament}&division=${selectedDivision}`,
+        );
       }
     });
   };
@@ -126,25 +150,33 @@ export default function TournamentGroupingResultsPage() {
       {/* 조편성 결과 */}
       {groupingResult && (
         <Box>
-          {/* 예선 경기 생성 버튼 */}
-          <Flex justify="end" mb="3">
-            <Button size="2" onClick={() => setShowCreateMatchesDialog(true)}>
-              예선 경기 생성/재생성
+          {/* 예선 경기 관련 버튼 */}
+          <Flex justify="end" gap="2" mb="3">
+            {hasMatches ? (
+              <Button
+                size="3"
+                onClick={() =>
+                  router.push(
+                    `/tournament-grouping/matches?tournamentId=${selectedTournament}&division=${selectedDivision}`,
+                  )
+                }
+              >
+                예선경기상세
+              </Button>
+            ) : (
+              <Button size="3" onClick={() => setShowCreateMatchesDialog(true)}>
+                예선경기생성
+              </Button>
+            )}
+            <Button size="3" color="red" variant="soft" onClick={() => setShowDeleteDialog(true)}>
+              대진표삭제
             </Button>
           </Flex>
 
           <Flex direction="column" gap="4" mb="4">
-            <Box>
-              <Text size="3" weight="bold">
-                총 조 수: {groupingResult.totalGroups}조
-              </Text>
-            </Box>
-            <Box>
-              <Text size="3" weight="bold">
-                분배: {groupingResult.distribution.groupsWith3Teams}개 조(3팀) +{' '}
-                {groupingResult.distribution.groupsWith2Teams}개 조(2팀)
-              </Text>
-            </Box>
+            <Text size="3" weight="bold">
+              총 조 수: {groupingResult.totalGroups}조
+            </Text>
           </Flex>
 
           {/* 조별 팀 목록 */}
@@ -182,65 +214,6 @@ export default function TournamentGroupingResultsPage() {
         </Box>
       )}
 
-      {/* 경기 목록 */}
-      {matches.length > 0 && (
-        <Card mb="6">
-          <Box p="4">
-            <Heading size="4" weight="bold" mb="4">
-              경기 목록
-            </Heading>
-
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="p-3 text-left border-b">경기 번호</th>
-                    <th className="p-3 text-left border-b">조</th>
-                    <th className="p-3 text-left border-b">팀 1</th>
-                    <th className="p-3 text-left border-b">팀 2</th>
-                    <th className="p-3 text-left border-b">상태</th>
-                    <th className="p-3 text-left border-b">코트</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {matches.map((match) => (
-                    <tr key={match._id} className="border-b hover:bg-gray-50">
-                      <td className="p-3">{match.matchNumber}경기</td>
-                      <td className="p-3">{match.groupId || '-'}</td>
-                      <td className="p-3">{match.team1.teamName}</td>
-                      <td className="p-3">{match.team2.teamName}</td>
-                      <td className="p-3">
-                        <Badge
-                          color={
-                            match.status === 'completed'
-                              ? 'green'
-                              : match.status === 'in_progress'
-                                ? 'yellow'
-                                : match.status === 'cancelled'
-                                  ? 'red'
-                                  : 'gray'
-                          }
-                          size="1"
-                        >
-                          {match.status === 'completed'
-                            ? '완료'
-                            : match.status === 'in_progress'
-                              ? '진행중'
-                              : match.status === 'cancelled'
-                                ? '취소'
-                                : '예정'}
-                        </Badge>
-                      </td>
-                      <td className="p-3">{match.court || '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Box>
-        </Card>
-      )}
-
       {/* 데이터가 없을 때 */}
       {selectedTournament && selectedDivision && !groupingResult && !loading && (
         <Card>
@@ -256,9 +229,9 @@ export default function TournamentGroupingResultsPage() {
       <ConfirmDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
-        title="조 삭제 확인"
-        description="이 조를 삭제하시겠습니까? 삭제된 조는 복구할 수 없습니다."
-        onConfirm={handleDeleteGroup}
+        title="대진표 삭제 확인"
+        description="조편성과 모든 경기 정보를 삭제하시겠습니까? 삭제된 데이터는 복구할 수 없습니다."
+        onConfirm={handleDeleteAll}
         confirmText="삭제"
         cancelText="취소"
         confirmColor="red"

@@ -3,13 +3,9 @@ import type {
   Team,
   Group,
   Match,
-  TournamentBracket,
   GroupStanding,
   GroupingOptions,
   GroupingResult,
-  MatchResult,
-  GroupResult,
-  BracketOptions,
 } from '@/types/tournament';
 
 // 조편성 유틸리티 함수들
@@ -28,7 +24,6 @@ export class TournamentGroupingService {
     const totalGroups = Math.ceil(totalTeams / teamsPerGroup);
 
     // 조별 팀 수 분배 계산
-    const baseTeamsPerGroup = Math.floor(totalTeams / totalGroups);
     const remainingTeams = totalTeams % totalGroups;
 
     const groupsWith3Teams = remainingTeams;
@@ -163,6 +158,7 @@ export class TournamentGroupingService {
       standings.set(team._id, {
         teamId: team._id,
         teamName: team.name,
+        groupId: group.groupId, // 조 ID 추가
         played: 0,
         won: 0,
         drawn: 0,
@@ -269,97 +265,6 @@ export class TournamentGroupingService {
   }
 
   /**
-   * 본선 대진표 생성
-   * @param advancingTeams 진출 팀 목록 (조별 1,2위)
-   * @param options 대진표 생성 옵션
-   * @param tournamentId 대회 ID
-   * @param division 부서
-   * @returns 본선 경기 목록
-   */
-  static createBracketMatches(
-    advancingTeams: Team[],
-    options: BracketOptions,
-    tournamentId: string,
-    division: string,
-  ): Match[] {
-    const { method, avoidSameGroup, seedByGroupPosition } = options;
-
-    // 팀 정렬
-    let sortedTeams = [...advancingTeams];
-    if (method === 'seeded') {
-      if (seedByGroupPosition) {
-        // 조 순위로 시드 배정 (1위가 상위 시드)
-        sortedTeams.sort((a, b) => {
-          const aSeed = a.seed || 0;
-          const bSeed = b.seed || 0;
-          return aSeed - bSeed;
-        });
-      } else {
-        // 기존 시드 순서 유지
-        sortedTeams.sort((a, b) => (a.seed || 0) - (b.seed || 0));
-      }
-    } else {
-      // 랜덤 배정
-      sortedTeams = this.shuffleArray(sortedTeams);
-    }
-
-    // 같은 조 1,2위 분리
-    if (avoidSameGroup) {
-      sortedTeams = this.separateGroupWinners(sortedTeams);
-    }
-
-    // 토너먼트 브라켓 생성
-    const totalTeams = sortedTeams.length;
-    const rounds = this.calculateRounds(totalTeams);
-    const matches: Match[] = [];
-    let matchNumber = 1;
-
-    // 각 라운드별 경기 생성
-    for (let round = 1; round <= rounds; round++) {
-      const teamsInRound = Math.pow(2, rounds - round + 1);
-      const matchesInRound = teamsInRound / 2;
-
-      for (let i = 0; i < matchesInRound; i++) {
-        const team1Index = i * 2;
-        const team2Index = team1Index + 1;
-
-        const team1 = sortedTeams[team1Index];
-        const team2 = sortedTeams[team2Index];
-
-        if (team1 && team2) {
-          matches.push({
-            _id: `match_${tournamentId}_${division}_${matchNumber}`,
-            tournamentId,
-            division,
-            round,
-            matchNumber,
-            team1: {
-              teamId: team1._id,
-              teamName: team1.name,
-            },
-            team2: {
-              teamId: team2._id,
-              teamName: team2.name,
-            },
-            status: 'scheduled',
-            createdAt: new Date().toISOString(),
-          });
-        }
-        matchNumber++;
-      }
-    }
-
-    return matches;
-  }
-
-  /**
-   * 라운드 수 계산 (16강=4라운드, 8강=3라운드 등)
-   */
-  private static calculateRounds(teamCount: number): number {
-    return Math.ceil(Math.log2(teamCount));
-  }
-
-  /**
    * 조 ID 생성
    */
   private static generateGroupId(index: number): string {
@@ -418,50 +323,45 @@ export class TournamentGroupingService {
 
     return separated;
   }
+}
 
-  /**
-   * 같은 조 1,2위 분리
-   */
-  private static separateGroupWinners(teams: Team[]): Team[] {
-    // 조별로 팀 그룹화 (시드 번호로 조 구분)
-    const groupTeams = new Map<string, Team[]>();
+// 타입 정의
+interface SanityGroup {
+  _id: string;
+  groupId: string;
+  name: string;
+  teams: Array<{
+    _key: string;
+    name: string;
+    seed?: number;
+    members: Array<{
+      _key: string;
+      name: string;
+      clubId: string;
+      clubName: string;
+      birth?: string;
+      score?: number;
+      isRegisteredMember: boolean;
+    }>;
+    createdAt: string;
+  }>;
+  division: string;
+}
 
-    teams.forEach((team) => {
-      const groupKey = Math.floor((team.seed || 0) / 2).toString(); // 2팀씩 조
-      if (!groupTeams.has(groupKey)) {
-        groupTeams.set(groupKey, []);
-      }
-      groupTeams.get(groupKey)!.push(team);
-    });
-
-    // 1위와 2위 분리
-    const winners: Team[] = [];
-    const runnersUp: Team[] = [];
-
-    groupTeams.forEach((groupTeam) => {
-      if (groupTeam.length >= 1) {
-        winners.push(groupTeam[0]); // 1위
-      }
-      if (groupTeam.length >= 2) {
-        runnersUp.push(groupTeam[1]); // 2위
-      }
-    });
-
-    // 1위와 2위를 번갈아가며 배정
-    const separated: Team[] = [];
-    const maxLength = Math.max(winners.length, runnersUp.length);
-
-    for (let i = 0; i < maxLength; i++) {
-      if (i < winners.length) {
-        separated.push(winners[i]);
-      }
-      if (i < runnersUp.length) {
-        separated.push(runnersUp[i]);
-      }
-    }
-
-    return separated;
-  }
+interface SanityApplication {
+  _id: string;
+  division: string;
+  teamMembers: Array<{
+    _key: string;
+    name: string;
+    clubId: string;
+    clubName: string;
+    birth?: string;
+    score?: number;
+    isRegisteredMember: boolean;
+  }>;
+  createdAt: string;
+  createdBy: string;
 }
 
 // 서비스 함수들 (기존 API 패턴과 일치)
@@ -479,10 +379,13 @@ export async function createTournamentGroups(
     createdBy
   } | order(createdAt asc)`;
 
-  const applications = await client.fetch(query, { tournamentId, division });
+  const applications = (await client.fetch(query, {
+    tournamentId,
+    division,
+  })) as SanityApplication[];
 
   // 팀 객체로 변환
-  const teams: Team[] = applications.map((app: any, index: number) => ({
+  const teams: Team[] = applications.map((app, index: number) => ({
     _id: app._id,
     name: `팀 ${index + 1}`,
     division: app.division,
@@ -500,8 +403,8 @@ export async function createTournamentGroups(
     division,
     groupId: group.groupId,
     name: group.name,
-    teams: group.teams.map((team) => ({
-      _id: team._id,
+    teams: group.teams.map((team, index) => ({
+      _key: team._id || `team-${index}-${Date.now()}`,
       name: team.name,
       seed: team.seed,
       members: team.members,
@@ -533,9 +436,19 @@ export async function createGroupMatches(tournamentId: string, division: string)
     division
   }`;
 
-  const groups = await client.fetch(groupsQuery, { tournamentId, division });
+  const groups = (await client.fetch(groupsQuery, { tournamentId, division })) as SanityGroup[];
 
-  const matches = TournamentGroupingService.createGroupMatches(groups, tournamentId);
+  // Sanity에서 가져온 teams 배열의 _key를 _id로 변환
+  const processedGroups = groups.map((group) => ({
+    ...group,
+    teams: group.teams.map((team) => ({
+      ...team,
+      _id: team._key, // _key를 _id로 변환
+      division: group.division, // division 필드 추가
+    })),
+  }));
+
+  const matches = TournamentGroupingService.createGroupMatches(processedGroups, tournamentId);
 
   // 기존 경기 정보 삭제
   await client.delete({
@@ -589,7 +502,7 @@ export async function calculateGroupStandings(
   }`;
 
   const [groups, matches] = await Promise.all([
-    client.fetch(groupsQuery, { tournamentId, division }),
+    client.fetch(groupsQuery, { tournamentId, division }) as unknown as SanityGroup[],
     client.fetch(matchesQuery, { tournamentId, division }),
   ]);
 
@@ -597,10 +510,20 @@ export async function calculateGroupStandings(
     throw new Error('조 정보를 찾을 수 없습니다.');
   }
 
+  // Sanity에서 가져온 teams 배열의 _key를 _id로 변환
+  const processedGroups = groups.map((group) => ({
+    ...group,
+    teams: group.teams.map((team) => ({
+      ...team,
+      _id: team._key, // _key를 _id로 변환
+      division: group.division, // division 필드 추가
+    })),
+  }));
+
   // 모든 조의 순위를 합쳐서 반환
   const allStandings: GroupStanding[] = [];
 
-  groups.forEach((group: Group) => {
+  processedGroups.forEach((group: Group) => {
     const groupStandings = TournamentGroupingService.calculateGroupStandings(group, matches);
     allStandings.push(...groupStandings);
   });

@@ -65,6 +65,26 @@ export interface Match {
   updatedAt?: string;
 }
 
+export interface BracketMatch {
+  _key: string;
+  _id: string;
+  round: 'round32' | 'round16' | 'quarterfinal' | 'semifinal' | 'final';
+  matchNumber: number;
+  team1: {
+    teamId: string;
+    teamName: string;
+    score?: number;
+  };
+  team2: {
+    teamId: string;
+    teamName: string;
+    score?: number;
+  };
+  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+  court?: string;
+  winner?: string;
+}
+
 export interface TournamentBracket {
   tournamentId: string;
   division: string;
@@ -80,6 +100,7 @@ export interface TournamentBracket {
 export interface GroupStanding {
   teamId: string;
   teamName: string;
+  groupId?: string; // 조 ID (선택적)
   played: number; // 경기 수
   won: number; // 승리 수
   drawn: number; // 무승부 수

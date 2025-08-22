@@ -1,17 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { Box, Text, Button, Flex, Card, Heading, Select, Badge, TextField } from '@radix-ui/themes';
+import { useState, useEffect, useCallback } from 'react';
+import { Box, Text, Button, Flex, Card, Heading, Badge, TextField, Select } from '@radix-ui/themes';
 
 import { useLoading } from '@/hooks/useLoading';
-import { useTournamentsByUserLevel } from '@/hooks/useTournaments';
+import { useTournament } from '@/hooks/useTournaments';
 import type { Match } from '@/types/tournament';
 
 interface GroupStanding {
   teamId: string;
   teamName: string;
-  groupId: string;
+  groupId?: string;
   position: number;
   points: number;
   goalDifference: number;
@@ -46,8 +45,7 @@ interface BracketData {
 }
 
 export default function TournamentBracketPage() {
-  const { data: session } = useSession();
-  const { loading, withLoading } = useLoading();
+  const { withLoading } = useLoading();
 
   const [selectedTournament, setSelectedTournament] = useState<string>('');
   const [selectedDivision, setSelectedDivision] = useState<string>('');
@@ -65,9 +63,8 @@ export default function TournamentBracketPage() {
     court: '',
   });
 
-  const { tournaments, isLoading: tournamentsLoading } = useTournamentsByUserLevel(
-    session?.user?.level,
-  );
+  // SWR 훅 사용
+  const { tournament } = useTournament(selectedTournament || '');
 
   // 경기 상태 옵션
   const statusOptions = [
@@ -77,17 +74,29 @@ export default function TournamentBracketPage() {
     { value: 'cancelled', label: '취소' },
   ];
 
-  // 부서 옵션
-  const divisionOptions = [
-    { value: 'master', label: '마스터부' },
-    { value: 'challenger', label: '챌린저부' },
-    { value: 'futures', label: '퓨처스부' },
-    { value: 'forsythia', label: '개나리부' },
-    { value: 'chrysanthemum', label: '국화부' },
-  ];
+  // 부서 이름 매핑
+  const divisionNameMap: Record<string, string> = {
+    master: '마스터부',
+    challenger: '챌린저부',
+    futures: '퓨처스부',
+    forsythia: '개나리부',
+    chrysanthemum: '국화부',
+  };
+
+  // URL 파라미터에서 대회 ID와 부서 가져오기
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tournamentId = urlParams.get('tournamentId');
+    const division = urlParams.get('division');
+
+    if (tournamentId && division) {
+      setSelectedTournament(tournamentId);
+      setSelectedDivision(division);
+    }
+  }, []);
 
   // 순위 정보 조회
-  const fetchStandings = async () => {
+  const fetchStandings = useCallback(async () => {
     if (!selectedTournament || !selectedDivision) return;
 
     return withLoading(async () => {
@@ -100,10 +109,10 @@ export default function TournamentBracketPage() {
         setStandings(data.data || []);
       }
     });
-  };
+  }, [selectedTournament, selectedDivision, withLoading]);
 
   // 본선 대진표 조회
-  const fetchBracket = async () => {
+  const fetchBracket = useCallback(async () => {
     if (!selectedTournament || !selectedDivision) return;
 
     return withLoading(async () => {
@@ -116,7 +125,7 @@ export default function TournamentBracketPage() {
         setBracketMatches(data.matches || []);
       }
     });
-  };
+  }, [selectedTournament, selectedDivision, withLoading]);
 
   // 대회 또는 부서 변경 시 데이터 조회
   useEffect(() => {
@@ -124,7 +133,7 @@ export default function TournamentBracketPage() {
       fetchStandings();
       fetchBracket();
     }
-  }, [selectedTournament, selectedDivision]);
+  }, [fetchStandings, fetchBracket]);
 
   // 본선 대진표 생성
   const createBracket = async () => {
@@ -160,6 +169,7 @@ export default function TournamentBracketPage() {
 
     standings.forEach((standing) => {
       const groupId = standing.groupId || 'unknown';
+
       if (!standingsByGroup.has(groupId)) {
         standingsByGroup.set(groupId, []);
       }
@@ -167,15 +177,25 @@ export default function TournamentBracketPage() {
     });
 
     // 각 조별로 1,2위 팀 선정
-    standingsByGroup.forEach((groupStandings) => {
+    standingsByGroup.forEach((groupStandings, groupId) => {
       const sortedStandings = groupStandings.sort((a, b) => a.position - b.position);
-      qualifiedTeams.push(sortedStandings[0]); // 1위
+
+      if (sortedStandings[0]) {
+        qualifiedTeams.push(sortedStandings[0]); // 1위
+      }
       if (sortedStandings[1]) {
         qualifiedTeams.push(sortedStandings[1]); // 2위
       }
     });
 
-    return qualifiedTeams;
+    // 조 이름으로 정렬 (A조, B조, C조 순서)
+    const sortedQualifiedTeams = qualifiedTeams.sort((a, b) => {
+      const groupA = a.groupId?.replace('group_', '').toUpperCase() || '';
+      const groupB = b.groupId?.replace('group_', '').toUpperCase() || '';
+      return groupA.localeCompare(groupB);
+    });
+
+    return sortedQualifiedTeams;
   };
 
   const qualifiedTeams = getQualifiedTeams();
@@ -191,11 +211,14 @@ export default function TournamentBracketPage() {
     },
   ) => {
     return withLoading(async () => {
-      const response = await fetch(`/api/tournament-grouping/bracket/${matchId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(matchData),
-      });
+      const response = await fetch(
+        `/api/tournament-grouping/bracket/${matchId}?tournamentId=${selectedTournament}&division=${selectedDivision}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(matchData),
+        },
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -212,6 +235,47 @@ export default function TournamentBracketPage() {
     });
   };
 
+  // 다음 라운드 대진표 생성
+  const createNextRound = async (currentRound: string) => {
+    await withLoading(async () => {
+      const response = await fetch('/api/tournament-grouping/bracket', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tournamentId: selectedTournament,
+          division: selectedDivision,
+          currentRound,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '다음 라운드 대진표 생성에 실패했습니다.');
+      }
+
+      const result = await response.json();
+      setSuccessMessage(result.message || '다음 라운드 대진표가 성공적으로 생성되었습니다.');
+      setShowSuccessDialog(true);
+
+      // 데이터 새로고침
+      await fetchBracket();
+    });
+  };
+
+  // 현재 라운드가 완료되었는지 확인
+  const isCurrentRoundCompleted = (round: string) => {
+    const roundMatches = bracketMatches.filter((m) => m.round === round);
+    return roundMatches.length > 0 && roundMatches.every((m) => m.status === 'completed');
+  };
+
+  // 다음 라운드 이름 가져오기
+  const getNextRoundName = (currentRound: string) => {
+    const roundOrder = ['round32', 'round16', 'quarterfinal', 'semifinal', 'final'];
+    const currentIndex = roundOrder.indexOf(currentRound);
+    if (currentIndex === -1 || currentIndex === roundOrder.length - 1) return null;
+    return roundOrder[currentIndex + 1];
+  };
+
   // 점수 입력 다이얼로그 열기
   const openScoreDialog = (match: BracketMatch) => {
     setSelectedMatch(match);
@@ -224,63 +288,28 @@ export default function TournamentBracketPage() {
     setShowScoreDialog(true);
   };
 
+  // 보기 페이지로 이동
+  const handleViewBracket = () => {
+    window.location.href = `/tournament-grouping/bracket/view?tournamentId=${selectedTournament}&division=${selectedDivision}`;
+  };
+
   return (
     <Container>
       <Box mb="6">
-        <Heading size="5" weight="bold" mb="2">
-          본선 대진표 관리
-        </Heading>
-        <Text size="3" color="gray">
-          예선 조별 1,2위 진출팀을 기반으로 본선 토너먼트 대진표를 생성합니다.
-        </Text>
+        <Flex align="center" justify="between">
+          <Box>
+            <Heading size="5" weight="bold" mb="2">
+              {tournament?.title || '대회 정보 로딩 중...'}
+            </Heading>
+            <Text size="3" color="gray">
+              {divisionNameMap[selectedDivision] || selectedDivision} • 본선 대진표 관리
+            </Text>
+          </Box>
+          <Button size="3" color="green" onClick={handleViewBracket}>
+            대진표 보기
+          </Button>
+        </Flex>
       </Box>
-
-      {/* 대회 및 부서 선택 */}
-      <Card mb="6">
-        <Box p="4">
-          <Heading size="4" weight="bold" mb="4">
-            대회 및 부서 선택
-          </Heading>
-
-          <Flex direction="column" gap="4">
-            <Box>
-              <Text size="3" weight="bold" mb="2">
-                대회 선택
-              </Text>
-              <Select.Root
-                size="3"
-                value={selectedTournament}
-                onValueChange={setSelectedTournament}
-              >
-                <Select.Trigger placeholder="대회를 선택하세요" />
-                <Select.Content>
-                  {tournaments.map((tournament) => (
-                    <Select.Item key={tournament._id} value={tournament._id}>
-                      {tournament.title}
-                    </Select.Item>
-                  ))}
-                </Select.Content>
-              </Select.Root>
-            </Box>
-
-            <Box>
-              <Text size="3" weight="bold" mb="2">
-                부서 선택
-              </Text>
-              <Select.Root size="3" value={selectedDivision} onValueChange={setSelectedDivision}>
-                <Select.Trigger placeholder="부서를 선택하세요" />
-                <Select.Content>
-                  {divisionOptions.map((option) => (
-                    <Select.Item key={option.value} value={option.value}>
-                      {option.label}
-                    </Select.Item>
-                  ))}
-                </Select.Content>
-              </Select.Root>
-            </Box>
-          </Flex>
-        </Box>
-      </Card>
 
       {/* 진출팀 목록 */}
       {qualifiedTeams.length > 0 && (
@@ -304,7 +333,11 @@ export default function TournamentBracketPage() {
                 <tbody>
                   {qualifiedTeams.map((team) => (
                     <tr key={team.teamId} className="border-b hover:bg-gray-50">
-                      <td className="p-3">{team.groupId || '-'}</td>
+                      <td className="p-3">
+                        {team.groupId
+                          ? team.groupId.replace('group_', '').toUpperCase() + '조'
+                          : '-'}
+                      </td>
                       <td className="p-3">
                         <Badge color="blue" size="1">
                           {team.position}위
@@ -494,6 +527,22 @@ export default function TournamentBracketPage() {
                       </Card>
                     ))}
                 </div>
+
+                {/* 16강 완료 시 8강 생성 버튼 */}
+                {isCurrentRoundCompleted('round16') &&
+                  !bracketMatches.some((m) => m.round === 'quarterfinal') && (
+                    <Box mt="4" p="4" className="bg-blue-50 border border-blue-200 rounded-lg">
+                      <Text size="3" weight="bold" mb="2" color="blue">
+                        16강이 완료되었습니다!
+                      </Text>
+                      <Text size="2" color="gray" mb="3">
+                        승리한 팀들로 8강 대진표를 생성하시겠습니까?
+                      </Text>
+                      <Button size="2" color="blue" onClick={() => createNextRound('round16')}>
+                        8강 대진표 생성
+                      </Button>
+                    </Box>
+                  )}
               </Box>
             )}
 
@@ -508,7 +557,7 @@ export default function TournamentBracketPage() {
                     .filter((m) => m.round === 'quarterfinal')
                     .sort((a, b) => a.matchNumber - b.matchNumber)
                     .map((match) => (
-                      <Card key={match._id}>
+                      <Card key={match._key}>
                         <Text size="2" weight="bold" mb="2">
                           {match.matchNumber}경기
                         </Text>
@@ -563,6 +612,22 @@ export default function TournamentBracketPage() {
                       </Card>
                     ))}
                 </div>
+
+                {/* 8강 완료 시 4강 생성 버튼 */}
+                {isCurrentRoundCompleted('quarterfinal') &&
+                  !bracketMatches.some((m) => m.round === 'semifinal') && (
+                    <Box mt="4" p="4" className="bg-blue-50 border border-blue-200 rounded-lg">
+                      <Text size="3" weight="bold" mb="2" color="blue">
+                        8강이 완료되었습니다!
+                      </Text>
+                      <Text size="2" color="gray" mb="3">
+                        승리한 팀들로 4강 대진표를 생성하시겠습니까?
+                      </Text>
+                      <Button size="2" color="blue" onClick={() => createNextRound('quarterfinal')}>
+                        4강 대진표 생성
+                      </Button>
+                    </Box>
+                  )}
               </Box>
             )}
 
@@ -577,7 +642,7 @@ export default function TournamentBracketPage() {
                     .filter((m) => m.round === 'semifinal')
                     .sort((a, b) => a.matchNumber - b.matchNumber)
                     .map((match) => (
-                      <Card key={match._id}>
+                      <Card key={match._key}>
                         <Text size="2" weight="bold" mb="2">
                           {match.matchNumber}경기
                         </Text>
@@ -632,6 +697,22 @@ export default function TournamentBracketPage() {
                       </Card>
                     ))}
                 </div>
+
+                {/* 4강 완료 시 결승 생성 버튼 */}
+                {isCurrentRoundCompleted('semifinal') &&
+                  !bracketMatches.some((m) => m.round === 'final') && (
+                    <Box mt="4" p="4" className="bg-blue-50 border border-blue-200 rounded-lg">
+                      <Text size="3" weight="bold" mb="2" color="blue">
+                        4강이 완료되었습니다!
+                      </Text>
+                      <Text size="2" color="gray" mb="3">
+                        승리한 팀들로 결승 대진표를 생성하시겠습니까?
+                      </Text>
+                      <Button size="2" color="blue" onClick={() => createNextRound('semifinal')}>
+                        결승 대진표 생성
+                      </Button>
+                    </Box>
+                  )}
               </Box>
             )}
 
@@ -646,7 +727,7 @@ export default function TournamentBracketPage() {
                     .filter((m) => m.round === 'final')
                     .sort((a, b) => a.matchNumber - b.matchNumber)
                     .map((match) => (
-                      <Card key={match._id}>
+                      <Card key={match._key}>
                         <Text size="2" weight="bold" mb="2">
                           {match.matchNumber}경기
                         </Text>
@@ -818,7 +899,7 @@ export default function TournamentBracketPage() {
                     size="3"
                     onClick={() => {
                       if (selectedMatch) {
-                        handleUpdateBracketMatch(selectedMatch._id, {
+                        handleUpdateBracketMatch(selectedMatch._key, {
                           team1Score: parseInt(scoreForm.team1Score) || undefined,
                           team2Score: parseInt(scoreForm.team2Score) || undefined,
                           status: scoreForm.status,
@@ -837,6 +918,17 @@ export default function TournamentBracketPage() {
             </Box>
           </Card>
         </div>
+      )}
+
+      {/* 파라미터가 없을 때 */}
+      {(!selectedTournament || !selectedDivision) && (
+        <Card>
+          <Box p="4">
+            <Text size="3" color="gray" align="center">
+              대회 ID와 부서 정보가 필요합니다. 올바른 URL로 접근해주세요.
+            </Text>
+          </Box>
+        </Card>
       )}
 
       {/* 성공 다이얼로그 */}

@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { client } from '@/sanity/lib/client';
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     // 모든 조 문서를 가져와 (tournamentId, division)로 집계
     const groups: Array<{ tournamentId: string; division: string; _updatedAt?: string }> =

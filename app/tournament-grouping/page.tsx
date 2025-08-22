@@ -1,42 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Box, Text, Button, Flex, Card, Heading, Badge } from '@radix-ui/themes';
-import { useLoading } from '@/hooks/useLoading';
 import Container from '@/components/Container';
-
-interface GroupingItem {
-  tournamentId: string;
-  division: string;
-  tournamentTitle: string;
-  count: number;
-  updatedAt: string;
-}
+import { useTournamentGroupings } from '@/hooks/useTournamentGroupings';
 
 export default function TournamentGroupingListPage() {
   const router = useRouter();
-  const { loading, withLoading } = useLoading();
-
-  const [groupings, setGroupings] = useState<GroupingItem[]>([]);
-
-  // 조편성 목록 조회
-  const fetchGroupings = async () => {
-    return withLoading(async () => {
-      const response = await fetch('/api/tournament-grouping/index');
-      if (response.ok) {
-        const data = await response.json();
-        setGroupings(data.groupings || []);
-      } else {
-        console.error('조편성 목록 조회 실패');
-      }
-    });
-  };
-
-  useEffect(() => {
-    fetchGroupings();
-  }, []);
+  const { groupings, isLoading, error, mutate } = useTournamentGroupings();
 
   // 새 조편성 생성 페이지로 이동
   const handleCreateNew = () => {
@@ -89,7 +60,7 @@ export default function TournamentGroupingListPage() {
         </Flex>
       </Box>
 
-      {loading ? (
+      {isLoading ? (
         <Card>
           <Box p="6" style={{ textAlign: 'center' }}>
             <Text size="3" color="gray">
@@ -97,14 +68,14 @@ export default function TournamentGroupingListPage() {
             </Text>
           </Box>
         </Card>
-      ) : groupings.length === 0 ? (
+      ) : error ? (
         <Card>
           <Box p="6" style={{ textAlign: 'center' }}>
-            <Text size="3" color="gray" mb="4">
-              생성된 조편성이 없습니다.
+            <Text size="3" color="red" mb="4">
+              조편성 목록 조회에 실패했습니다.
             </Text>
-            <Button size="3" onClick={handleCreateNew}>
-              첫 조편성 생성하기
+            <Button size="3" onClick={() => mutate()}>
+              다시 시도
             </Button>
           </Box>
         </Card>

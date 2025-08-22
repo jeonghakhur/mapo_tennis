@@ -49,12 +49,6 @@ export default defineType({
           title: '팀 정보',
           fields: [
             {
-              name: 'teamId',
-              title: '팀 ID',
-              type: 'string',
-              validation: (Rule) => Rule.required(),
-            },
-            {
               name: 'name',
               title: '팀 이름',
               type: 'string',

@@ -9,9 +9,11 @@ import { useTournamentsByUserLevel } from '@/hooks/useTournaments';
 import { useUser } from '@/hooks/useUser';
 import { isAdmin } from '@/lib/authUtils';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import type { GroupingResult, Group, Team } from '@/types/tournament';
+import type { Group, Team } from '@/types/tournament';
 import Container from '@/components/Container';
 import ManualGrouping from '@/components/ManualGrouping';
+import { wrapTextWithSpans } from '@/lib/utils';
+import { mutate } from 'swr';
 
 export default function NewTournamentGroupingPage() {
   const router = useRouter();
@@ -23,7 +25,6 @@ export default function NewTournamentGroupingPage() {
   const [selectedDivision, setSelectedDivision] = useState<string>('');
   const [teamsPerGroup, setTeamsPerGroup] = useState<2 | 3>(3);
   const [maxTeams, setMaxTeams] = useState<string>(''); // 최대 팀 수 입력
-  const [groupingResult, setGroupingResult] = useState<GroupingResult | null>(null);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [approvedApplications, setApprovedApplications] = useState<number>(0);
@@ -214,6 +215,8 @@ export default function NewTournamentGroupingPage() {
       return;
     }
 
+    console.log(manualGroups);
+
     return withLoading(async () => {
       // 조편성 저장만 수행 (예선 경기는 결과 페이지에서 생성)
       const saveRes = await fetch('/api/tournament-grouping/manual', {
@@ -231,10 +234,11 @@ export default function NewTournamentGroupingPage() {
         throw new Error(errorData.error || '조편성 생성에 실패했습니다.');
       }
 
-      const result = await saveRes.json();
-      setGroupingResult(result.data);
       setSuccessMessage('조편성이 성공적으로 저장되었습니다.');
       setShowSuccessDialog(true);
+
+      // SWR 캐시 무효화
+      await mutate('/api/tournament-grouping/index');
     });
   };
 
@@ -259,7 +263,6 @@ export default function NewTournamentGroupingPage() {
 
     // 조편성 인터페이스 표시 및 기존 조편성 결과 초기화
     setShowGroupingInterface(true);
-    setGroupingResult(null);
     setManualGroups([]);
   };
 
@@ -269,33 +272,6 @@ export default function NewTournamentGroupingPage() {
     // 모든 팀으로 조편성 진행
     setTeams(allTeams);
     setShowGroupingInterface(true);
-  };
-
-  // 예선 경기 생성
-  const handleCreateMatches = async () => {
-    if (!selectedTournament || !selectedDivision) {
-      alert('대회와 부서를 선택해주세요.');
-      return;
-    }
-
-    return withLoading(async () => {
-      const response = await fetch('/api/tournament-grouping', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tournamentId: selectedTournament,
-          division: selectedDivision,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || '경기 생성에 실패했습니다.');
-      }
-
-      setSuccessMessage('예선 경기가 성공적으로 생성되었습니다.');
-      setShowSuccessDialog(true);
-    });
   };
 
   // 로딩 중이거나 권한 확인 중인 경우
@@ -327,146 +303,130 @@ export default function NewTournamentGroupingPage() {
         </Text>
       </Box>
 
-      {/* 대회 및 부서 선택 */}
-      <Card mb="6">
-        <Box p="4">
-          <Heading size="4" weight="bold" mb="4">
-            대회 및 부서 선택
-          </Heading>
-
-          <Flex direction="column" gap="4">
-            <Box>
-              <Text size="3" weight="bold" mb="2">
-                대회 선택
-              </Text>
-              <Select.Root
-                size="3"
-                value={selectedTournament}
-                onValueChange={setSelectedTournament}
-              >
-                <Select.Trigger placeholder="대회를 선택하세요" />
-                <Select.Content>
-                  {tournaments.map((tournament) => (
-                    <Select.Item key={tournament._id} value={tournament._id}>
-                      {tournament.title}
-                    </Select.Item>
-                  ))}
-                </Select.Content>
-              </Select.Root>
-            </Box>
-
-            <Box>
-              <Text size="3" weight="bold" mb="2">
-                부서 선택
-              </Text>
-              <Select.Root size="3" value={selectedDivision} onValueChange={setSelectedDivision}>
-                <Select.Trigger placeholder="부서를 선택하세요" />
-                <Select.Content>
-                  {divisionOptions.map((option) => {
-                    // 이미 조편성이 있는지 확인
-                    const hasExistingGrouping = existingGroupings.some(
-                      (g) => g.tournamentId === selectedTournament && g.division === option.value,
-                    );
-
-                    return (
-                      <Select.Item
-                        key={option.value}
-                        value={option.value}
-                        disabled={hasExistingGrouping}
-                      >
-                        {option.label}
-                        {hasExistingGrouping && ' (이미 조편성됨)'}
-                      </Select.Item>
-                    );
-                  })}
-                </Select.Content>
-              </Select.Root>
-            </Box>
-
-            {/* 승인된 신청서 수 표시 */}
-            {selectedTournament && selectedDivision && (
-              <Box>
-                <Text size="3" weight="bold" mb="2">
-                  승인된 신청서 수
-                </Text>
-                <Flex align="center" gap="2">
-                  <Badge color={approvedApplications > 0 ? 'green' : 'red'} size="2">
-                    {approvedApplications}개
-                  </Badge>
-                  <Text size="2" color="gray">
-                    {approvedApplications > 0 ? '조편성 가능합니다.' : '승인된 신청서가 없습니다.'}
-                  </Text>
+      <Box className="table-form">
+        <table>
+          <tbody>
+            <tr>
+              <th>
+                <Flex justify="between" align="center">
+                  {wrapTextWithSpans('대회선택')}
                 </Flex>
-              </Box>
-            )}
-          </Flex>
-        </Box>
-      </Card>
+              </th>
+              <td>
+                <Select.Root
+                  size="3"
+                  value={selectedTournament}
+                  onValueChange={setSelectedTournament}
+                >
+                  <Select.Trigger placeholder="대회를 선택하세요" />
+                  <Select.Content>
+                    {tournaments.map((tournament) => (
+                      <Select.Item key={tournament._id} value={tournament._id}>
+                        {tournament.title}
+                      </Select.Item>
+                    ))}
+                  </Select.Content>
+                </Select.Root>
+              </td>
+            </tr>
+            <tr>
+              <th>
+                <Flex justify="between" align="center">
+                  {wrapTextWithSpans('부서선택')}
+                </Flex>
+              </th>
+              <td>
+                <Select.Root size="3" value={selectedDivision} onValueChange={setSelectedDivision}>
+                  <Select.Trigger placeholder="부서를 선택하세요" />
+                  <Select.Content>
+                    {divisionOptions.map((option) => {
+                      // 이미 조편성이 있는지 확인
+                      const hasExistingGrouping = existingGroupings.some(
+                        (g) => g.tournamentId === selectedTournament && g.division === option.value,
+                      );
 
-      {/* 조편성 옵션 */}
-      <Card mb="6">
-        <Box p="4">
-          <Heading size="4" weight="bold" mb="4">
-            조편성 옵션
-          </Heading>
+                      return (
+                        <Select.Item
+                          key={option.value}
+                          value={option.value}
+                          disabled={hasExistingGrouping}
+                        >
+                          {option.label}
+                          {hasExistingGrouping && ' (이미 조편성됨)'}
+                        </Select.Item>
+                      );
+                    })}
+                  </Select.Content>
+                </Select.Root>
 
-          <Flex direction="column" gap="4">
-            <Box>
-              <Text size="3" weight="bold" mb="2">
-                조당 팀 수
-              </Text>
-              <Select.Root
-                size="3"
-                value={teamsPerGroup.toString()}
-                onValueChange={(value) => setTeamsPerGroup(parseInt(value) as 2 | 3)}
-              >
-                <Select.Trigger />
-                <Select.Content>
-                  <Select.Item value="2">2팀</Select.Item>
-                  <Select.Item value="3">3팀</Select.Item>
-                </Select.Content>
-              </Select.Root>
-            </Box>
-
-            <Box>
-              <Text size="3" weight="bold" mb="2">
-                최대 팀 수 (선택사항)
-              </Text>
-              <TextField.Root
-                size="3"
-                placeholder="예: 30 (비워두면 모든 팀 사용)"
-                value={maxTeams}
-                onChange={(e) => setMaxTeams(e.target.value)}
-              />
-              <Text size="2" color="gray" mt="1">
-                시드 순서대로 상위 팀들만 조편성에 사용합니다.
-              </Text>
-            </Box>
-
-            {/* 조편성 시작 버튼 */}
-            {selectedTournament && selectedDivision && approvedApplications > 0 && (
-              <Box mt="4">
-                <Text size="3" weight="bold" mb="2">
-                  {showGroupingInterface ? '조편성 재시작' : '조편성 시작'}
-                </Text>
-                <Text size="3" color="gray" mb="3">
-                  {maxTeams && !isNaN(Number(maxTeams))
-                    ? `상위 ${Math.min(parseInt(maxTeams), approvedApplications)}개 팀으로 조편성을 시작합니다.`
-                    : '모든 팀으로 조편성을 시작합니다.'}
-                </Text>
-                {maxTeams && !isNaN(Number(maxTeams)) && (
-                  <Text size="2" color="blue" mb="3">
-                    설정된 팀 수: {Math.min(parseInt(maxTeams), approvedApplications)}개
-                  </Text>
+                {/* 승인된 신청서 수 표시 */}
+                {selectedTournament && selectedDivision && (
+                  <Flex gap="1" align="center" mt="2">
+                    <Badge color={approvedApplications > 0 ? 'green' : 'red'} size="2">
+                      {approvedApplications}개팀
+                    </Badge>
+                    <Text size="2" color="gray">
+                      {approvedApplications > 0
+                        ? '조편성 가능합니다.'
+                        : '승인된 신청서가 없습니다.'}
+                    </Text>
+                  </Flex>
                 )}
-                <Button size="3" onClick={handleStartGrouping} disabled={loading}>
-                  {showGroupingInterface ? '조편성 다시 시작하기' : '조편성 시작하기'}
-                </Button>
-              </Box>
-            )}
-          </Flex>
+              </td>
+            </tr>
+            <tr>
+              <th>
+                <Flex justify="between" align="center">
+                  {wrapTextWithSpans('조당팀수')}
+                </Flex>
+              </th>
+              <td>
+                <Select.Root
+                  size="3"
+                  value={teamsPerGroup.toString()}
+                  onValueChange={(value) => setTeamsPerGroup(parseInt(value) as 2 | 3)}
+                >
+                  <Select.Trigger />
+                  <Select.Content>
+                    <Select.Item value="2">2팀</Select.Item>
+                    <Select.Item value="3">3팀</Select.Item>
+                  </Select.Content>
+                </Select.Root>
+              </td>
+            </tr>
+            <tr>
+              <th>
+                <Flex justify="between" align="center">
+                  {wrapTextWithSpans('최대팀수')}
+                </Flex>
+                <Text size="2" color="gray">
+                  (선택)
+                </Text>
+              </th>
+              <td>
+                <TextField.Root
+                  size="3"
+                  placeholder="예: 30 (비워두면 모든 팀 사용)"
+                  value={maxTeams}
+                  onChange={(e) => setMaxTeams(e.target.value)}
+                />
+                <Text size="2" color="gray" mt="1">
+                  시드 순서대로 상위 팀들만 조편성에 사용합니다.
+                </Text>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </Box>
+
+      {/* 조편성 시작 버튼 */}
+      {selectedTournament && selectedDivision && approvedApplications > 0 && (
+        <Box my="4" className="btn-wrap">
+          <Button size="3" onClick={handleStartGrouping} disabled={loading}>
+            {showGroupingInterface ? '조편성 다시 시작하기' : '조편성 시작하기'}
+          </Button>
         </Box>
-      </Card>
+      )}
 
       {/* 조편성 인터페이스 */}
       {showGroupingInterface && teams.length > 0 && (
@@ -479,62 +439,9 @@ export default function NewTournamentGroupingPage() {
         </Box>
       )}
 
-      {/* 조편성 결과 */}
-      {groupingResult && (
-        <Card mb="6">
-          <Box p="4">
-            <Heading size="4" weight="bold" mb="4">
-              조편성 결과
-            </Heading>
-
-            <Flex direction="column" gap="4" mb="4">
-              <Box>
-                <Text size="3" weight="bold">
-                  총 조 수: {groupingResult.totalGroups}조
-                </Text>
-              </Box>
-              <Box>
-                <Text size="3" weight="bold">
-                  분배: {groupingResult.distribution.groupsWith3Teams}개 조(3팀) +{' '}
-                  {groupingResult.distribution.groupsWith2Teams}개 조(2팀)
-                </Text>
-              </Box>
-            </Flex>
-
-            {/* 조별 팀 목록 */}
-            <Box>
-              <Text size="3" weight="bold" mb="3">
-                조별 팀 목록
-              </Text>
-              <Flex direction="column" gap="3">
-                {groupingResult.groups.map((group) => (
-                  <Card key={group.groupId} size="2">
-                    <Box p="3">
-                      <Flex align="center" justify="between" mb="2">
-                        <Text size="3" weight="bold">
-                          {group.name}
-                        </Text>
-                        <Badge color="blue">{group.teams.length}팀</Badge>
-                      </Flex>
-                      <Flex direction="column" gap="1">
-                        {group.teams.map((team, index) => (
-                          <Text key={team._id} size="2" style={{ wordBreak: 'break-word' }}>
-                            {index + 1}. {team.name}
-                          </Text>
-                        ))}
-                      </Flex>
-                    </Box>
-                  </Card>
-                ))}
-              </Flex>
-            </Box>
-          </Box>
-        </Card>
-      )}
-
       {/* 액션 버튼 */}
       {showGroupingInterface && (
-        <Flex gap="3" mb="6">
+        <Box className="btn-wrap" mt="4">
           <Button
             size="3"
             onClick={handleCreateGrouping}
@@ -542,15 +449,7 @@ export default function NewTournamentGroupingPage() {
           >
             조편성 저장
           </Button>
-          <Button
-            size="3"
-            variant="soft"
-            onClick={handleCreateMatches}
-            disabled={loading || !selectedTournament || !selectedDivision || !groupingResult}
-          >
-            예선 경기 생성
-          </Button>
-        </Flex>
+        </Box>
       )}
 
       {/* 성공 다이얼로그 */}
@@ -561,7 +460,13 @@ export default function NewTournamentGroupingPage() {
         confirmColor="green"
         open={showSuccessDialog}
         onOpenChange={setShowSuccessDialog}
-        onConfirm={() => setShowSuccessDialog(false)}
+        onConfirm={() => {
+          setShowSuccessDialog(false);
+          // 조편성 상세 페이지로 이동
+          router.push(
+            `/tournament-grouping/results?tournamentId=${selectedTournament}&division=${selectedDivision}`,
+          );
+        }}
       />
 
       {/* 경고 다이얼로그 */}

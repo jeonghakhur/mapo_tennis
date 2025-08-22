@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTournamentBracket, updateBracketMatch } from '@/lib/tournamentBracketUtils';
+import type { BracketMatch } from '@/types/tournament';
 
 interface MatchUpdateData {
   team1Score?: number;
@@ -31,19 +32,30 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ mat
     }
 
     // 업데이트할 데이터 준비
-    const updateData: Record<string, unknown> = {};
+    const updateData: Partial<BracketMatch> = {};
 
-    if (matchData.team1Score !== undefined) {
-      updateData['team1.score'] = matchData.team1Score;
-    }
-    if (matchData.team2Score !== undefined) {
-      updateData['team2.score'] = matchData.team2Score;
-    }
     if (matchData.status) {
       updateData.status = matchData.status;
     }
     if (matchData.court !== undefined) {
       updateData.court = matchData.court;
+    }
+
+    // 팀 점수 업데이트
+    if (matchData.team1Score !== undefined || matchData.team2Score !== undefined) {
+      const currentMatch = bracket.matches.find((m) => m._key === matchKey);
+      if (currentMatch) {
+        updateData.team1 = {
+          teamId: currentMatch.team1.teamId,
+          teamName: currentMatch.team1.teamName,
+          score: matchData.team1Score,
+        };
+        updateData.team2 = {
+          teamId: currentMatch.team2.teamId,
+          teamName: currentMatch.team2.teamName,
+          score: matchData.team2Score,
+        };
+      }
     }
 
     // 경기가 완료된 경우 승자 결정
@@ -59,10 +71,13 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ mat
       }
     }
 
+    console.log('업데이트할 데이터:', { bracketId: bracket._id, matchKey, updateData });
+
     // 경기 결과 업데이트
     const success = await updateBracketMatch(bracket._id, matchKey, updateData);
 
     if (!success) {
+      console.error('경기 결과 업데이트 실패');
       return NextResponse.json({ error: '경기 결과 업데이트에 실패했습니다.' }, { status: 500 });
     }
 

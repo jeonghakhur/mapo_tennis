@@ -15,6 +15,8 @@ async function getStandingsHandler(req: NextRequest, _user: UserWithLevel) {
 
     const standings = await calculateGroupStandings(tournamentId, division);
 
+    console.log('API 응답 - 순위 데이터:', standings);
+
     return NextResponse.json({
       success: true,
       data: standings,

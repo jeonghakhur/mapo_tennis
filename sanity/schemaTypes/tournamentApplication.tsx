@@ -39,6 +39,13 @@ export default defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
+      name: 'seed',
+      type: 'number',
+      title: '시드',
+      description: '조편성 시 사용될 시드 번호 (1부터 시작)',
+      validation: (Rule) => Rule.min(1).max(100),
+    }),
+    defineField({
       name: 'teamMembers',
       type: 'array',
       title: '참가자 목록',
@@ -140,14 +147,16 @@ export default defineType({
       status: 'status',
       tournamentId: 'tournamentId',
       memberCount: 'teamMembers',
+      seed: 'seed',
     },
     prepare(selection: {
       title?: string;
       subtitle?: string;
       status?: string;
       memberCount?: Array<{ name: string }>;
+      seed?: number;
     }) {
-      const { title, subtitle, status, memberCount } = selection;
+      const { title, subtitle, status, memberCount, seed } = selection;
       const statusLabels = {
         pending: '대기중',
         approved: '승인',
@@ -163,9 +172,10 @@ export default defineType({
       };
       const memberCountText =
         memberCount && memberCount.length > 0 ? `외 ${memberCount.length - 1}명` : '';
+      const seedText = seed ? ` • 시드 ${seed}` : '';
       return {
         title: `${title}${memberCountText}`,
-        subtitle: `${divisionLabels[subtitle as keyof typeof divisionLabels] || subtitle} • ${statusLabels[status as keyof typeof statusLabels] || status}`,
+        subtitle: `${divisionLabels[subtitle as keyof typeof divisionLabels] || subtitle} • ${statusLabels[status as keyof typeof statusLabels] || status}${seedText}`,
       };
     },
   },

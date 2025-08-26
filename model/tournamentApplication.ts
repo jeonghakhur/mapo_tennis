@@ -5,6 +5,7 @@ export interface TournamentApplication {
   tournamentId: string; // 참가할 대회 ID
   division: string; // 참가부서 (master, challenger, futures, chrysanthemum, forsythia)
   tournamentType: 'individual' | 'team'; // 대회 유형
+  seed?: number; // 시드 번호 (조편성 시 사용)
 
   // 모든 대회 유형에서 teamMembers 사용
   // 개인전: 2명, 단체전: 6-8명
@@ -54,6 +55,7 @@ export interface TournamentApplicationInput {
   tournamentId: string;
   division: string;
   tournamentType: 'individual' | 'team';
+  seed?: number; // 시드 번호 (조편성 시 사용)
   teamMembers: Array<{
     _key?: string; // Sanity 배열 항목의 고유 키
     name: string;

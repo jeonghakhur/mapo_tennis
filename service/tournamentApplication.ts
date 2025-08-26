@@ -41,6 +41,7 @@ export async function getTournamentApplications(
         tournamentId,
         division,
         tournamentType,
+        seed,
         teamMembers,
         status,
         memo,
@@ -82,6 +83,7 @@ export async function getTournamentApplications(
       tournamentId,
       division,
       tournamentType,
+      seed,
       teamMembers,
       status,
       memo,
@@ -142,7 +144,26 @@ export async function getTournamentApplications(
 
 // 참가 신청 개별 조회
 export async function getTournamentApplication(id: string): Promise<TournamentApplication | null> {
-  return await client.fetch(`*[_type == "tournamentApplication" && _id == $id][0]`, { id });
+  return await client.fetch(
+    `*[_type == "tournamentApplication" && _id == $id][0] {
+    _id,
+    _type,
+    tournamentId,
+    division,
+    tournamentType,
+    seed,
+    teamMembers,
+    status,
+    memo,
+    isFeePaid,
+    createdAt,
+    updatedAt,
+    createdBy,
+    contact,
+    email
+  }`,
+    { id },
+  );
 }
 
 // 참가 신청 상태 업데이트
@@ -201,6 +222,7 @@ export async function getUserTournamentApplications(
       tournamentId,
       division,
       tournamentType,
+      seed,
       teamMembers,
       status,
       memo,

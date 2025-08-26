@@ -159,6 +159,74 @@ export default function TournamentMatchesPage() {
     [withLoading, mutateMatches, mutateStandings],
   );
 
+  // 모든 경기에 랜덤 점수 자동 입력
+  const handleAutoScoreAllMatches = useCallback(async () => {
+    return withLoading(async () => {
+      console.log('모든 경기에 랜덤 점수 자동 입력 시작');
+
+      // 점수가 입력되지 않은 경기들만 필터링
+      const matchesToUpdate = matches.filter(
+        (match) =>
+          match.team1.score === undefined ||
+          match.team2.score === undefined ||
+          match.status !== 'completed',
+      );
+
+      if (matchesToUpdate.length === 0) {
+        setSuccessMessage('업데이트할 경기가 없습니다.');
+        setShowSuccessDialog(true);
+        return;
+      }
+
+      // 각 경기에 대해 랜덤 점수 생성 및 업데이트
+      const updatePromises = matchesToUpdate.map(async (match) => {
+        // 한 팀은 6점, 다른 팀은 0-5점 사이에서 랜덤
+        const team1Score = Math.random() < 0.5 ? 6 : Math.floor(Math.random() * 6);
+        const team2Score = team1Score === 6 ? Math.floor(Math.random() * 6) : 6;
+
+        const matchData: MatchUpdateData = {
+          team1Score,
+          team2Score,
+          status: 'completed',
+          court: match.court || '1',
+        };
+
+        console.log(`경기 ${match.matchNumber} 점수 입력: ${team1Score}-${team2Score}`);
+
+        const response = await fetch(`/api/tournament-grouping/matches/${match._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(matchData),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`경기 ${match.matchNumber} 업데이트 실패: ${errorData.error}`);
+        }
+
+        return response.json();
+      });
+
+      try {
+        await Promise.all(updatePromises);
+        console.log('모든 경기 점수 자동 입력 완료');
+
+        setSuccessMessage(`${matchesToUpdate.length}개 경기의 점수가 자동으로 입력되었습니다.`);
+        setShowSuccessDialog(true);
+
+        // SWR 캐시 무효화
+        await mutateMatches();
+        await mutateStandings();
+      } catch (error) {
+        console.error('자동 점수 입력 오류:', error);
+        setSuccessMessage(
+          `오류가 발생했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`,
+        );
+        setShowSuccessDialog(true);
+      }
+    });
+  }, [withLoading, matches, mutateMatches, mutateStandings]);
+
   // 본선 대진표 생성 페이지로 이동
   const handleCreateBracket = () => {
     router.push(
@@ -198,11 +266,16 @@ export default function TournamentMatchesPage() {
               {divisionNameMap[selectedDivision] || selectedDivision}
             </Text>
           </Box>
-          {hasBracket && (
-            <Button size="3" color="blue" onClick={handleViewBracket}>
-              본선 대진표 보기
+          <Flex gap="2">
+            <Button size="3" color="orange" onClick={handleAutoScoreAllMatches}>
+              점수 자동 입력
             </Button>
-          )}
+            {hasBracket && (
+              <Button size="3" color="blue" onClick={handleViewBracket}>
+                본선 대진표 보기
+              </Button>
+            )}
+          </Flex>
         </Flex>
       </Box>
       {/* 조별 순위 */}

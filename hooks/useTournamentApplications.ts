@@ -9,18 +9,14 @@ export function useTournamentApplications(tournamentId?: string) {
     ? `/api/tournament-applications?tournamentId=${tournamentId}`
     : '/api/tournament-applications';
 
-  console.log('useTournamentApplications called with tournamentId:', tournamentId);
-
   const { data, error, isLoading, mutate } = useSWR<{ applications: TournamentApplication[] }>(
     tournamentId ? `tournament-applications-${tournamentId}` : 'tournament-applications-recent',
     async () => {
-      console.log('Fetching from URL:', url);
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Failed to fetch tournament applications');
       }
       const result = await response.json();
-      console.log('Fetched data:', result);
       return result;
     },
     {
@@ -91,7 +87,6 @@ async function patchStatus(url: string, { arg }: { arg: UpdateArg }): Promise<Up
 
 export function useUpdateApplicationStatus() {
   const { mutate } = useSWRConfig();
-
   return useSWRMutation<UpdateResult, Error, string, UpdateArg>(appKeys.all, patchStatus, {
     onSuccess: async () => {
       await Promise.all([

@@ -346,7 +346,7 @@ export default function TournamentApplicationsPage() {
         ),
       { revalidate: false, rollbackOnError: true },
     );
-
+    setShowSeedModal(false);
     try {
       const response = await fetch(`/api/tournament-applications/${selectedApplication._id}/seed`, {
         method: 'PATCH',
@@ -373,7 +373,6 @@ export default function TournamentApplicationsPage() {
         { revalidate: false },
       );
 
-      setShowSeedModal(false);
       setSelectedApplication(null);
       setSeedNumber('');
     } catch (error) {

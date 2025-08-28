@@ -172,11 +172,39 @@ export default function TournamentApplicationForm({
   );
 
   // 단체전 참가자 수 변경
-  const handleTeamMemberCountChange = useCallback((count: number) => {
-    if (count >= 6 && count <= 8) {
-      setTeamMemberCount(count);
-    }
-  }, []);
+  const handleTeamMemberCountChange = useCallback(
+    (count: number) => {
+      if (count >= 6 && count <= 8) {
+        setTeamMemberCount(count);
+
+        // 새로 추가된 참가자들에 대해 클럽 회원 검증 수행
+        if (count > teamMemberCount) {
+          // 새로 활성화된 참가자들 (teamMemberCount부터 count까지)
+          for (let i = teamMemberCount; i < count; i++) {
+            const participant = participants[i];
+            if (participant) {
+              // 단체전이고 공유 클럽이 설정되어 있다면 클럽 자동 설정
+              if (!isIndividual && sharedClubId) {
+                participant.setClubIdForced(sharedClubId);
+              }
+
+              // 첫 번째 참가자의 클럽 정보를 새 참가자들에게 복사 (편의성)
+              if (i === teamMemberCount && participants[0] && participants[0].clubId) {
+                participant.setClubIdForced(participants[0].clubId);
+              }
+
+              // 이름과 클럽이 모두 설정되어 있다면 검증 수행 (기존 blur 이벤트 활용)
+              if (participant.name && participant.clubId) {
+                // 이름 blur 이벤트를 트리거하여 검증 수행
+                participant.handleNameBlur();
+              }
+            }
+          }
+        }
+      }
+    },
+    [teamMemberCount, participants, isIndividual, sharedClubId],
+  );
 
   // 현재 활성 참가자 배열
   const activeParticipants = useMemo(() => {

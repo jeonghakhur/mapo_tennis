@@ -648,18 +648,20 @@ export default function TournamentApplicationsPage() {
                                   {application.seed && (
                                     <Badge color="orange">시드 {application.seed}번</Badge>
                                   )}
-                                  <Button
-                                    type="button"
-                                    size="1"
-                                    variant="soft"
-                                    color="gray"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      openSeedModal(application);
-                                    }}
-                                  >
-                                    {application.seed ? '시드수정' : '시드등록'}
-                                  </Button>
+                                  {isAdmin && (
+                                    <Button
+                                      type="button"
+                                      size="1"
+                                      variant="soft"
+                                      color="gray"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openSeedModal(application);
+                                      }}
+                                    >
+                                      {application.seed ? '시드수정' : '시드등록'}
+                                    </Button>
+                                  )}
                                 </div>
                                 <Text color="gray" size="2">
                                   {fmt(application.createdAt)}

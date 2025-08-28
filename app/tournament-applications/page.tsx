@@ -431,14 +431,23 @@ export default function TournamentApplicationsPage() {
                               </div>
 
                               {application.tournamentType === 'team' && (
-                                <div className="p-3 bg-blue-50 rounded border-l-4 border-blue-500">
-                                  <Text weight="bold" color="gray" mr="2">
-                                    참가 클럽
-                                  </Text>
+                                <div className="flex items-center p-3 bg-blue-50 rounded border-l-4 border-blue-500">
                                   <Text weight="bold" color="blue">
                                     {application.teamMembers[0]?.clubName || '-'}
                                   </Text>
                                   <Text weight="bold">({application.teamMembers.length}명)</Text>
+                                  <Text weight="bold" color="gray" ml="2">
+                                    {application.memo}
+                                  </Text>
+                                  {isAdmin && (
+                                    <Text
+                                      style={{ marginLeft: 'auto' }}
+                                      weight="bold"
+                                      color={application.isFeePaid ? 'green' : 'red'}
+                                    >
+                                      {application.isFeePaid ? '납부' : '미납'}
+                                    </Text>
+                                  )}
                                 </div>
                               )}
 

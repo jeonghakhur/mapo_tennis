@@ -13,7 +13,7 @@ export async function getTournaments(userLevel?: number): Promise<Tournament[]> 
   // 관리자가 아닌 경우 공개된 대회만 필터링 (isDraft가 false인 대회)
   const statusFilter = isAdmin ? `]` : ` && isDraft == false]`;
 
-  const orderClause = ` | order(_createdAt desc)`;
+  const orderClause = ` | order(startDate desc)`;
 
   const query = `${baseQuery}${statusFilter}${orderClause} {
     _id,

@@ -102,6 +102,22 @@ export default function TournamentApplicationsPage() {
   const [isUpdatingSeed, setIsUpdatingSeed] = useState(false);
   const [existingSeeds, setExistingSeeds] = useState<number[]>([]);
 
+  // 회원목록 토글 상태 - 애플리케이션 ID를 키로 사용
+  const [showMemberDetails, setShowMemberDetails] = useState<Set<string>>(new Set());
+
+  // 회원목록 토글 함수
+  const toggleMemberDetails = (applicationId: string) => {
+    setShowMemberDetails((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(applicationId)) {
+        newSet.delete(applicationId);
+      } else {
+        newSet.add(applicationId);
+      }
+      return newSet;
+    });
+  };
+
   // choose first tournament automatically
   useEffect(() => {
     if (tournaments?.length && !selectedTournamentId) {
@@ -121,6 +137,13 @@ export default function TournamentApplicationsPage() {
     fetcher,
     { keepPreviousData: false },
   );
+
+  // 참가 신청 목록이 변경될 때마다 showMemberDetails 초기화
+  useEffect(() => {
+    if (applications.length > 0) {
+      setShowMemberDetails(new Set());
+    }
+  }, [applications.length]);
 
   // my applications (memoized)
   const myApplications = useMemo(
@@ -669,72 +692,135 @@ export default function TournamentApplicationsPage() {
                               </div>
 
                               {application.tournamentType === 'team' && (
-                                <div className="flex items-center p-3 bg-blue-50 rounded border-l-4 border-blue-500">
-                                  <Text weight="bold" color="blue">
-                                    {application.teamMembers[0]?.clubName || '-'}
-                                  </Text>
-                                  <Text weight="bold">({application.teamMembers.length}명)</Text>
-                                  <Text weight="bold" color="gray" ml="2">
-                                    {application.memo}
-                                  </Text>
-                                  {isAdmin && (
-                                    <Text
-                                      style={{ marginLeft: 'auto' }}
-                                      weight="bold"
-                                      color={application.isFeePaid ? 'green' : 'red'}
-                                    >
-                                      {application.isFeePaid ? '납부' : '미납'}
-                                    </Text>
-                                  )}
+                                <div className="p-3 bg-blue-50 rounded border-l-4 border-blue-500">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <Text weight="bold" color="blue">
+                                        {application.teamMembers[0]?.clubName || '-'}
+                                      </Text>
+                                      <Text weight="bold">
+                                        ({application.teamMembers.length}명)
+                                      </Text>
+                                      <Text weight="bold" color="gray">
+                                        {application.memo}
+                                      </Text>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      {isAdmin && (
+                                        <Text
+                                          weight="bold"
+                                          color={application.isFeePaid ? 'green' : 'red'}
+                                        >
+                                          {application.isFeePaid ? '납부' : '미납'}
+                                        </Text>
+                                      )}
+                                      <Button
+                                        type="button"
+                                        size="1"
+                                        variant="soft"
+                                        color="gray"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (application._id) {
+                                            toggleMemberDetails(application._id);
+                                          }
+                                        }}
+                                      >
+                                        {(() => {
+                                          return application._id &&
+                                            showMemberDetails.has(application._id) ? (
+                                            <svg
+                                              width="16"
+                                              height="16"
+                                              viewBox="0 0 16 16"
+                                              fill="none"
+                                            >
+                                              <path
+                                                d="M4 10L8 6L12 10"
+                                                stroke="currentColor"
+                                                strokeWidth="1.5"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                              />
+                                            </svg>
+                                          ) : (
+                                            <svg
+                                              width="16"
+                                              height="16"
+                                              viewBox="0 0 16 16"
+                                              fill="none"
+                                            >
+                                              <path
+                                                d="M4 6L8 10L12 6"
+                                                stroke="currentColor"
+                                                strokeWidth="1.5"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                              />
+                                            </svg>
+                                          );
+                                        })()}
+                                      </Button>
+                                    </div>
+                                  </div>
                                 </div>
                               )}
 
-                              <div className="grid gap-2">
-                                {application.teamMembers.map((member, index) => (
-                                  <div
-                                    key={index}
-                                    className="p-3 bg-gray-50 rounded flex items-center justify-between"
-                                  >
-                                    <div className="flex items-center gap-3">
-                                      <Text weight="bold" color="gray">
-                                        {index + 1}번
-                                      </Text>
-                                      <Text weight="bold">
-                                        {isAdmin
-                                          ? member.name
-                                          : member.name.charAt(0) +
-                                            '*'.repeat(Math.max(member.name.length - 1, 0))}
-                                        {application.tournamentType === 'individual' && (
+                              {/* 개인전이거나 단체전에서 토글이 활성화된 경우에만 회원목록 표시 */}
+                              {(() => {
+                                if (application.tournamentType === 'individual') return true;
+                                if (application.tournamentType === 'team') {
+                                  return application._id && showMemberDetails.has(application._id);
+                                }
+                                return false;
+                              })() && (
+                                <div className="grid gap-2">
+                                  {application.teamMembers.map((member, index) => (
+                                    <div
+                                      key={index}
+                                      className="p-3 bg-gray-50 rounded flex items-center justify-between"
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <Text weight="bold" color="gray">
+                                          {index + 1}번
+                                        </Text>
+                                        <Text weight="bold">
+                                          {isAdmin
+                                            ? member.name
+                                            : member.name.charAt(0) +
+                                              '*'.repeat(Math.max(member.name.length - 1, 0))}
+                                          {application.tournamentType === 'individual' && (
+                                            <>
+                                              {' / '}
+                                              {member.clubName}
+                                            </>
+                                          )}
+                                        </Text>
+                                        {isAdmin && (
                                           <>
-                                            {' / '}
-                                            {member.clubName}
+                                            {member.isRegisteredMember === false && (
+                                              <Badge color="red" size="1">
+                                                미등록
+                                              </Badge>
+                                            )}
+                                            {member.isRegisteredMember === true && (
+                                              <Badge color="green" size="1">
+                                                등록회원
+                                              </Badge>
+                                            )}
                                           </>
                                         )}
-                                      </Text>
-                                      {isAdmin && (
-                                        <>
-                                          {member.isRegisteredMember === false && (
-                                            <Badge color="red" size="1">
-                                              미등록
-                                            </Badge>
-                                          )}
-                                          {member.isRegisteredMember === true && (
-                                            <Badge color="green" size="1">
-                                              등록회원
-                                            </Badge>
-                                          )}
-                                        </>
-                                      )}
+                                      </div>
+                                      <div className="flex items-center gap-3">
+                                        <Text weight="bold" color="gray">
+                                          점수
+                                        </Text>
+                                        <Text>{member.score || '-'}</Text>
+                                      </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                      <Text weight="bold" color="gray">
-                                        점수
-                                      </Text>
-                                      <Text>{member.score || '-'}</Text>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
+                                  ))}
+                                </div>
+                              )}
 
                               {hasPermissionLevel(user, 4) && (
                                 <div className="btn-wrap border-t pt-4 flex gap-2">

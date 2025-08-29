@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Box, Text, Button, Flex, Card, Badge, Separator } from '@radix-ui/themes';
 import { useLoading } from '@/hooks/useLoading';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { mutate } from 'swr';
 
 import type { Group } from '@/types/tournament';
@@ -23,6 +23,7 @@ interface GroupingResult {
 
 export default function TournamentGroupingResultsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { loading, withLoading } = useLoading();
 
   const [selectedTournament, setSelectedTournament] = useState<string>('');
@@ -34,16 +35,15 @@ export default function TournamentGroupingResultsPage() {
 
   // URL 파라미터에서 초기값 설정
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const tournamentId = urlParams.get('tournamentId');
-    const division = urlParams.get('division');
+    const tournamentId = searchParams.get('tournamentId');
+    const division = searchParams.get('division');
 
     if (tournamentId) setSelectedTournament(tournamentId);
     if (division) setSelectedDivision(division);
-  }, []);
+  }, [searchParams]);
 
   // 경기 정보 조회
-  const fetchMatchesInfo = async () => {
+  const fetchMatchesInfo = useCallback(async () => {
     if (!selectedTournament || !selectedDivision) return;
 
     try {
@@ -61,7 +61,7 @@ export default function TournamentGroupingResultsPage() {
       console.error('경기 정보 조회 오류:', error);
       setHasMatches(false);
     }
-  };
+  }, [selectedTournament, selectedDivision]);
 
   // 조편성 결과 조회
   const fetchGroupingResults = useCallback(async () => {
@@ -81,7 +81,7 @@ export default function TournamentGroupingResultsPage() {
       // 경기 정보 조회
       await fetchMatchesInfo();
     });
-  }, [selectedTournament, selectedDivision, withLoading]);
+  }, [selectedTournament, selectedDivision, withLoading, fetchMatchesInfo]);
 
   // 대진표 삭제 실행
   const handleDeleteAll = async () => {

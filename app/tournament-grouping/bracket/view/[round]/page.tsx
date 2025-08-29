@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import {
   Box,
   Text,
@@ -17,6 +18,8 @@ import { useLoading } from '@/hooks/useLoading';
 import { useTournament } from '@/hooks/useTournaments';
 import Container from '@/components/Container';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import { getNextRound } from '@/lib/tournamentBracketUtils';
 
 interface BracketMatch {
   _key: string;
@@ -38,17 +41,40 @@ interface BracketMatch {
   winner?: string;
 }
 
-interface PageProps {
-  params: Promise<{ round: string }>;
-}
+// 상수들을 컴포넌트 밖으로 이동
+const DIVISION_NAME_MAP: Record<string, string> = {
+  master: '마스터부',
+  challenger: '챌린저부',
+  futures: '퓨처스부',
+  forsythia: '개나리부',
+  chrysanthemum: '국화부',
+};
 
-export default function RoundPage({ params }: PageProps) {
-  const { withLoading } = useLoading();
+const ROUND_NAME_MAP: Record<string, string> = {
+  round32: '32강',
+  round16: '16강',
+  quarterfinal: '8강',
+  semifinal: '4강',
+  final: '결승',
+};
 
-  const [selectedTournament, setSelectedTournament] = useState<string>('');
-  const [selectedDivision, setSelectedDivision] = useState<string>('');
+const STATUS_OPTIONS = [
+  { value: 'scheduled', label: '예정' },
+  { value: 'in_progress', label: '진행중' },
+  { value: 'completed', label: '완료' },
+  { value: 'cancelled', label: '취소' },
+];
+
+const VALID_ROUNDS = ['round32', 'round16', 'quarterfinal', 'semifinal', 'final'] as const;
+type ValidRound = (typeof VALID_ROUNDS)[number];
+
+export default function RoundPage() {
+  const router = useRouter();
+  const params = useParams();
+  const searchParams = useSearchParams();
+  const { withLoading, loading } = useLoading();
+
   const [bracketMatches, setBracketMatches] = useState<BracketMatch[]>([]);
-  const [round, setRound] = useState<string>('');
   const [selectedMatch, setSelectedMatch] = useState<BracketMatch | null>(null);
   const [showScoreDialog, setShowScoreDialog] = useState(false);
   const [scoreForm, setScoreForm] = useState({
@@ -59,52 +85,42 @@ export default function RoundPage({ params }: PageProps) {
   });
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [hasBracket, setHasBracket] = useState(false);
+
+  // URL에서 파라미터 읽기
+  const round = params.round as ValidRound;
+  const selectedTournament = searchParams.get('tournamentId') || '';
+  const selectedDivision = searchParams.get('division') || '';
 
   // SWR 훅 사용
-  const { tournament } = useTournament(selectedTournament || '');
+  const { tournament } = useTournament(selectedTournament);
 
-  // 부서 이름 매핑
-  const divisionNameMap: Record<string, string> = {
-    master: '마스터부',
-    challenger: '챌린저부',
-    futures: '퓨처스부',
-    forsythia: '개나리부',
-    chrysanthemum: '국화부',
-  };
+  // 현재 라운드 경기만 필터링 (메모이제이션)
+  const currentRoundMatches = useMemo(
+    () => bracketMatches.filter((m) => m.round === round),
+    [bracketMatches, round],
+  );
 
-  // 경기 상태 옵션
-  const statusOptions = [
-    { value: 'scheduled', label: '예정' },
-    { value: 'in_progress', label: '진행중' },
-    { value: 'completed', label: '완료' },
-    { value: 'cancelled', label: '취소' },
-  ];
+  // 유효한 라운드인지 확인
+  const isValidRound = useMemo(() => VALID_ROUNDS.includes(round), [round]);
 
-  // 라운드 이름 매핑
-  const roundNameMap: Record<string, string> = {
-    round32: '32강',
-    round16: '16강',
-    quarterfinal: '8강',
-    semifinal: '4강',
-    final: '결승',
-  };
+  // 본선 대진표 존재 여부 확인
+  const checkBracketExists = useCallback(async () => {
+    if (!selectedTournament || !selectedDivision) return;
 
-  // URL 파라미터에서 대회 ID, 부서, 라운드 가져오기
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const tournamentId = urlParams.get('tournamentId');
-    const division = urlParams.get('division');
-
-    if (tournamentId && division) {
-      setSelectedTournament(tournamentId);
-      setSelectedDivision(division);
+    try {
+      const response = await fetch(
+        `/api/tournament-grouping/bracket?tournamentId=${selectedTournament}&division=${selectedDivision}`,
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setHasBracket(data.matches && data.matches.length > 0);
+      }
+    } catch (error) {
+      console.error('본선 대진표 확인 오류:', error);
+      setHasBracket(false);
     }
-
-    // params에서 라운드 정보 가져오기
-    params.then(({ round: roundParam }) => {
-      setRound(roundParam);
-    });
-  }, [params]);
+  }, [selectedTournament, selectedDivision]);
 
   // 본선 대진표 조회
   const fetchBracket = useCallback(async () => {
@@ -118,6 +134,7 @@ export default function RoundPage({ params }: PageProps) {
       if (response.ok) {
         const data = await response.json();
         setBracketMatches(data.matches || []);
+        setHasBracket(data.matches && data.matches.length > 0);
       }
     });
   }, [selectedTournament, selectedDivision, withLoading]);
@@ -126,26 +143,36 @@ export default function RoundPage({ params }: PageProps) {
   useEffect(() => {
     if (selectedTournament && selectedDivision) {
       fetchBracket();
+      checkBracketExists();
     }
-  }, [fetchBracket]);
+  }, [fetchBracket, checkBracketExists, selectedTournament, selectedDivision]);
 
   // 전체 대진표 보기로 이동
-  const handleViewAllBracket = () => {
-    window.location.href = `/tournament-grouping/bracket/view?tournamentId=${selectedTournament}&division=${selectedDivision}`;
-  };
+  const handleViewAllBracket = useCallback(() => {
+    router.push(
+      `/tournament-grouping/bracket/view?tournamentId=${selectedTournament}&division=${selectedDivision}`,
+    );
+  }, [router, selectedTournament, selectedDivision]);
 
   // 관리 페이지로 이동
-  const handleManageBracket = () => {
-    window.location.href = `/tournament-grouping/bracket?tournamentId=${selectedTournament}&division=${selectedDivision}`;
-  };
+  const handleManageBracket = useCallback(() => {
+    router.push(
+      `/tournament-grouping/bracket?tournamentId=${selectedTournament}&division=${selectedDivision}`,
+    );
+  }, [router, selectedTournament, selectedDivision]);
 
   // 특정 라운드로 이동
-  const handleNavigateToRound = (targetRound: string) => {
-    window.location.href = `/tournament-grouping/bracket/view/${targetRound}?tournamentId=${selectedTournament}&division=${selectedDivision}`;
-  };
+  const handleNavigateToRound = useCallback(
+    (targetRound: string) => {
+      router.push(
+        `/tournament-grouping/bracket/view/${targetRound}?tournamentId=${selectedTournament}&division=${selectedDivision}`,
+      );
+    },
+    [router, selectedTournament, selectedDivision],
+  );
 
   // 점수 입력 다이얼로그 열기
-  const openScoreDialog = (match: BracketMatch) => {
+  const openScoreDialog = useCallback((match: BracketMatch) => {
     setSelectedMatch(match);
     setScoreForm({
       team1Score: match.team1.score?.toString() || '',
@@ -154,26 +181,30 @@ export default function RoundPage({ params }: PageProps) {
       court: match.court || '',
     });
     setShowScoreDialog(true);
-  };
+  }, []);
 
   // 점수 저장
-  const handleSaveScore = async () => {
+  const handleSaveScore = useCallback(async () => {
     if (!selectedMatch) return;
 
     return withLoading(async () => {
-      const response = await fetch('/api/tournament-grouping/bracket/score', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tournamentId: selectedTournament,
-          division: selectedDivision,
-          matchId: selectedMatch._id,
-          team1Score: parseInt(scoreForm.team1Score) || 0,
-          team2Score: parseInt(scoreForm.team2Score) || 0,
-          status: scoreForm.status,
-          court: scoreForm.court,
-        }),
-      });
+      // 입력값 방어코드
+      const team1Score = Math.max(0, parseInt(scoreForm.team1Score) || 0);
+      const team2Score = Math.max(0, parseInt(scoreForm.team2Score) || 0);
+
+      const response = await fetch(
+        `/api/tournament-grouping/bracket/${selectedMatch._key}?tournamentId=${selectedTournament}&division=${selectedDivision}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            team1Score,
+            team2Score,
+            status: scoreForm.status,
+            court: scoreForm.court,
+          }),
+        },
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -187,13 +218,177 @@ export default function RoundPage({ params }: PageProps) {
       // 데이터 새로고침
       await fetchBracket();
     });
-  };
+  }, [selectedMatch, scoreForm, selectedTournament, selectedDivision, withLoading, fetchBracket]);
 
-  // 현재 라운드 경기만 필터링
-  const currentRoundMatches = bracketMatches.filter((m) => m.round === round);
+  // 현재 라운드의 모든 경기에 랜덤 점수 자동 입력 (병렬 처리)
+  const handleAutoScoreCurrentRound = useCallback(async () => {
+    return withLoading(async () => {
+      console.log(`${ROUND_NAME_MAP[round]} 라운드 모든 경기에 랜덤 점수 자동 입력 시작`);
 
-  // 유효한 라운드인지 확인
-  const isValidRound = Object.keys(roundNameMap).includes(round);
+      // 현재 라운드에서 점수가 입력되지 않은 경기들만 필터링
+      const matchesToUpdate = currentRoundMatches.filter(
+        (match) =>
+          match.team1.score === undefined ||
+          match.team2.score === undefined ||
+          match.status !== 'completed',
+      );
+
+      if (matchesToUpdate.length === 0) {
+        setSuccessMessage('업데이트할 경기가 없습니다.');
+        setShowSuccessDialog(true);
+        return;
+      }
+
+      console.log(`총 ${matchesToUpdate.length}개 경기에 점수 입력 시작`);
+
+      // 순차 처리로 안정성 향상 (병렬 처리에서 발생하는 문제 방지)
+      const updateResults = [];
+      for (const match of matchesToUpdate) {
+        try {
+          // 한 팀은 6점, 다른 팀은 0-5점 사이에서 랜덤
+          const team1Score = Math.random() < 0.5 ? 6 : Math.floor(Math.random() * 6);
+          const team2Score = team1Score === 6 ? Math.floor(Math.random() * 6) : 6;
+
+          console.log(`경기 ${match.matchNumber} 점수 입력 시도: ${team1Score}-${team2Score}`);
+
+          const response = await fetch(
+            `/api/tournament-grouping/bracket/${match._key}?tournamentId=${selectedTournament}&division=${selectedDivision}`,
+            {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                team1Score,
+                team2Score,
+                status: 'completed',
+                court: match.court || '1',
+              }),
+            },
+          );
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error(`경기 ${match.matchNumber} 업데이트 실패:`, errorData);
+            updateResults.push({
+              match: match.matchNumber,
+              success: false,
+              error: errorData.error,
+            });
+          } else {
+            console.log(`경기 ${match.matchNumber} 업데이트 성공`);
+            updateResults.push({ match: match.matchNumber, success: true });
+          }
+
+          // 각 경기 사이에 약간의 지연을 두어 서버 부하 방지
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        } catch (error) {
+          console.error(`경기 ${match.matchNumber} 처리 중 오류:`, error);
+          updateResults.push({
+            match: match.matchNumber,
+            success: false,
+            error: error instanceof Error ? error.message : '알 수 없는 오류',
+          });
+        }
+      }
+
+      // 결과 분석
+      const successfulUpdates = updateResults.filter((result) => result.success);
+      const failedUpdates = updateResults.filter((result) => !result.success);
+
+      console.log(`${ROUND_NAME_MAP[round]} 라운드 점수 입력 결과:`, {
+        total: matchesToUpdate.length,
+        success: successfulUpdates.length,
+        failed: failedUpdates.length,
+        failedDetails: failedUpdates,
+      });
+
+      if (successfulUpdates.length > 0) {
+        setSuccessMessage(
+          `${successfulUpdates.length}개 경기의 점수가 자동으로 입력되었습니다.${failedUpdates.length > 0 ? ` (${failedUpdates.length}개 실패)` : ''}`,
+        );
+        setShowSuccessDialog(true);
+
+        // 데이터 새로고침
+        await fetchBracket();
+      } else {
+        setSuccessMessage('점수 입력에 실패했습니다. 콘솔을 확인해주세요.');
+        setShowSuccessDialog(true);
+      }
+    });
+  }, [withLoading, currentRoundMatches, selectedTournament, selectedDivision, round, fetchBracket]);
+
+  // 다음 라운드 대진표 생성 함수
+  const handleGenerateNextRound = useCallback(async () => {
+    return withLoading(async () => {
+      console.log(`${ROUND_NAME_MAP[round]} 라운드 완료 확인, 다음 라운드 대진표 생성 시도`);
+
+      // 현재 라운드의 모든 경기가 완료되었는지 확인
+      const allCurrentRoundCompleted = currentRoundMatches.every(
+        (match) =>
+          match.status === 'completed' &&
+          match.team1.score !== undefined &&
+          match.team2.score !== undefined,
+      );
+
+      if (!allCurrentRoundCompleted) {
+        setSuccessMessage('현재 라운드의 모든 경기가 완료되지 않았습니다.');
+        setShowSuccessDialog(true);
+        return;
+      }
+
+      try {
+        const nextRoundResponse = await fetch('/api/tournament-grouping/bracket', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tournamentId: selectedTournament,
+            division: selectedDivision,
+            currentRound: round,
+          }),
+        });
+
+        if (nextRoundResponse.ok) {
+          const nextRoundData = await nextRoundResponse.json();
+          console.log('다음 라운드 대진표 생성 성공:', nextRoundData);
+
+          setSuccessMessage(
+            '다음 라운드 대진표가 성공적으로 생성되었습니다. 다음 라운드로 이동합니다.',
+          );
+          setShowSuccessDialog(true);
+
+          // 데이터 새로고침
+          await fetchBracket();
+
+          // 다음 라운드로 이동
+          const nextRound = getNextRound(round);
+          if (nextRound) {
+            setTimeout(() => {
+              router.push(
+                `/tournament-grouping/bracket/view/${nextRound}?tournamentId=${selectedTournament}&division=${selectedDivision}`,
+              );
+            }, 1500); // 1.5초 후 이동
+          }
+        } else {
+          const nextRoundError = await nextRoundResponse.json();
+          console.log('다음 라운드 대진표 생성 실패:', nextRoundError);
+
+          setSuccessMessage(`다음 라운드 생성 실패: ${nextRoundError.error}`);
+          setShowSuccessDialog(true);
+        }
+      } catch (nextRoundError) {
+        console.error('다음 라운드 대진표 생성 중 오류:', nextRoundError);
+        setSuccessMessage('다음 라운드 대진표 생성 중 오류가 발생했습니다.');
+        setShowSuccessDialog(true);
+      }
+    });
+  }, [
+    withLoading,
+    currentRoundMatches,
+    selectedTournament,
+    selectedDivision,
+    round,
+    fetchBracket,
+    router,
+  ]);
 
   return (
     <Container>
@@ -204,25 +399,29 @@ export default function RoundPage({ params }: PageProps) {
               {tournament?.title || '대회 정보 로딩 중...'}
             </Heading>
             <Text size="3" color="gray">
-              {divisionNameMap[selectedDivision] || selectedDivision} •{' '}
-              {roundNameMap[round] || round}
+              {DIVISION_NAME_MAP[selectedDivision] || selectedDivision} •{' '}
+              {ROUND_NAME_MAP[round] || round}
             </Text>
           </Box>
           <Flex gap="2">
-            <Button size="3" color="blue" onClick={handleViewAllBracket}>
-              전체 대진표
-            </Button>
-            <Button size="3" color="green" onClick={handleManageBracket}>
-              대진표 관리
-            </Button>
+            {hasBracket && (
+              <Button size="3" color="blue" onClick={handleViewAllBracket}>
+                전체 대진표
+              </Button>
+            )}
+            {hasBracket && (
+              <Button size="3" color="green" onClick={handleManageBracket}>
+                대진표 관리
+              </Button>
+            )}
           </Flex>
         </Flex>
       </Box>
 
       {/* 라운드별 이동 버튼 */}
-      {bracketMatches.length > 0 && (
-        <Card mb="6">
-          <Box p="4">
+      {hasBracket && bracketMatches.length > 0 && (
+        <Card mb="3">
+          <Box p="1">
             <Heading size="4" weight="bold" mb="4">
               라운드별 보기
             </Heading>
@@ -278,59 +477,82 @@ export default function RoundPage({ params }: PageProps) {
       )}
 
       {/* 현재 라운드 대진표 */}
-      {currentRoundMatches.length > 0 && (
-        <Card mb="6">
-          <Box p="4">
-            <Heading size="4" weight="bold" mb="4">
-              {roundNameMap[round]} 대진표
+      {hasBracket && currentRoundMatches.length > 0 && (
+        <Box>
+          <Flex align="center" mb="4" justify="between" gap="2">
+            <Heading size="4" weight="bold">
+              {ROUND_NAME_MAP[round]} 대진표
             </Heading>
-            <div
-              className={`grid grid-cols-1 gap-4 ${
-                round === 'round32' || round === 'round16'
-                  ? 'md:grid-cols-2 lg:grid-cols-4'
-                  : round === 'quarterfinal' || round === 'semifinal'
-                    ? 'md:grid-cols-2'
-                    : ''
-              }`}
-            >
-              {currentRoundMatches
-                .sort((a, b) => a.matchNumber - b.matchNumber)
-                .map((match) => (
-                  <Card key={match._key}>
-                    <Box p="3">
-                      <Text size="2" weight="bold" mb="2">
-                        {match.matchNumber}경기
+            <Box>
+              <Button
+                size="2"
+                color="orange"
+                variant="soft"
+                onClick={handleAutoScoreCurrentRound}
+                disabled={loading}
+              >
+                {loading ? '점수 입력 중...' : '자동 점수 입력 (순차 처리)'}
+              </Button>
+              <Button
+                size="2"
+                color="green"
+                variant="soft"
+                onClick={handleGenerateNextRound}
+                disabled={loading}
+                ml="2"
+              >
+                {loading ? '생성 중...' : '다음 라운드 생성'}
+              </Button>
+            </Box>
+          </Flex>
+          <div
+            className={`grid grid-cols-1 gap-4 ${
+              round === 'round32' || round === 'round16'
+                ? 'md:grid-cols-2 lg:grid-cols-4'
+                : round === 'quarterfinal' || round === 'semifinal'
+                  ? 'md:grid-cols-2'
+                  : ''
+            }`}
+          >
+            {currentRoundMatches
+              .sort((a, b) => a.matchNumber - b.matchNumber)
+              .map((match) => (
+                <Card key={match._key}>
+                  <Box p="3">
+                    <Text size="2" weight="bold" mb="2">
+                      {match.matchNumber}경기
+                    </Text>
+                    <Box mb="2">
+                      <Text
+                        size="2"
+                        className={
+                          match.winner === match.team1.teamId ? 'font-bold text-green-600' : ''
+                        }
+                      >
+                        {match.team1.teamName}
                       </Text>
-                      <Box mb="2">
-                        <Text
-                          size="2"
-                          className={
-                            match.winner === match.team1.teamId ? 'font-bold text-green-600' : ''
-                          }
-                        >
-                          {match.team1.teamName}
+                      {match.team1.score !== undefined && (
+                        <Text size="1" color="gray">
+                          {match.team1.score}점
                         </Text>
-                        {match.team1.score !== undefined && (
-                          <Text size="1" color="gray">
-                            {match.team1.score}점
-                          </Text>
-                        )}
-                      </Box>
-                      <Box mb="2">
-                        <Text
-                          size="2"
-                          className={
-                            match.winner === match.team2.teamId ? 'font-bold text-green-600' : ''
-                          }
-                        >
-                          {match.team2.teamName}
+                      )}
+                    </Box>
+                    <Box mb="2">
+                      <Text
+                        size="2"
+                        className={
+                          match.winner === match.team2.teamId ? 'font-bold text-green-600' : ''
+                        }
+                      >
+                        {match.team2.teamName}
+                      </Text>
+                      {match.team2.score !== undefined && (
+                        <Text size="1" color="gray">
+                          {match.team2.score}점
                         </Text>
-                        {match.team2.score !== undefined && (
-                          <Text size="1" color="gray">
-                            {match.team2.score}점
-                          </Text>
-                        )}
-                      </Box>
+                      )}
+                    </Box>
+                    <Flex align="center" justify="between" gap="2">
                       <Badge
                         color={
                           match.status === 'completed'
@@ -341,7 +563,7 @@ export default function RoundPage({ params }: PageProps) {
                                 ? 'red'
                                 : 'gray'
                         }
-                        size="1"
+                        size="3"
                       >
                         {match.status === 'completed'
                           ? '완료'
@@ -351,15 +573,20 @@ export default function RoundPage({ params }: PageProps) {
                               ? '취소'
                               : '예정'}
                       </Badge>
-                      <Button size="1" variant="soft" onClick={() => openScoreDialog(match)} mt="2">
-                        점수 입력
+                      <Button
+                        size="2"
+                        variant="soft"
+                        onClick={() => openScoreDialog(match)}
+                        disabled={loading}
+                      >
+                        {loading ? '처리 중...' : '점수 입력'}
                       </Button>
-                    </Box>
-                  </Card>
-                ))}
-            </div>
-          </Box>
-        </Card>
+                    </Flex>
+                  </Box>
+                </Card>
+              ))}
+          </div>
+        </Box>
       )}
 
       {/* 파라미터가 없을 때 */}
@@ -384,15 +611,27 @@ export default function RoundPage({ params }: PageProps) {
         </Card>
       )}
 
+      {/* 본선 대진표가 없을 때 */}
+      {selectedTournament && selectedDivision && !hasBracket && (
+        <Card>
+          <Box p="4">
+            <Text size="3" color="gray" align="center">
+              본선 대진표가 생성되지 않았습니다. 예선 경기 완료 후 본선 대진표를 생성해주세요.
+            </Text>
+          </Box>
+        </Card>
+      )}
+
       {/* 현재 라운드가 없을 때 */}
       {selectedTournament &&
         selectedDivision &&
         isValidRound &&
+        hasBracket &&
         currentRoundMatches.length === 0 && (
           <Card>
             <Box p="4">
               <Text size="3" color="gray" align="center">
-                {roundNameMap[round]} 대진표가 없습니다.
+                {ROUND_NAME_MAP[round]} 대진표가 없습니다.
               </Text>
             </Box>
           </Card>
@@ -444,7 +683,7 @@ export default function RoundPage({ params }: PageProps) {
               >
                 <Select.Trigger />
                 <Select.Content>
-                  {statusOptions.map((option) => (
+                  {STATUS_OPTIONS.map((option) => (
                     <Select.Item key={option.value} value={option.value}>
                       {option.label}
                     </Select.Item>
@@ -471,8 +710,8 @@ export default function RoundPage({ params }: PageProps) {
                 취소
               </Button>
             </Dialog.Close>
-            <Button size="2" color="green" onClick={handleSaveScore}>
-              저장
+            <Button size="2" color="green" onClick={handleSaveScore} disabled={loading}>
+              {loading ? '저장 중...' : '저장'}
             </Button>
           </Flex>
         </Dialog.Content>
@@ -488,6 +727,9 @@ export default function RoundPage({ params }: PageProps) {
         onOpenChange={setShowSuccessDialog}
         onConfirm={() => setShowSuccessDialog(false)}
       />
+
+      {/* 로딩 오버레이 */}
+      {loading && <LoadingOverlay />}
     </Container>
   );
 }

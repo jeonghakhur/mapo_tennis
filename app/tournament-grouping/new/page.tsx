@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Box, Text, Button, Flex, Heading, Select, Badge, TextField } from '@radix-ui/themes';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useLoading } from '@/hooks/useLoading';
 import { useTournamentsByUserLevel } from '@/hooks/useTournaments';
 import { useUser } from '@/hooks/useUser';
@@ -17,6 +17,7 @@ import { mutate } from 'swr';
 
 export default function NewTournamentGroupingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { status, data: session } = useSession();
   const { user } = useUser(session?.user?.email);
   const { loading, withLoading } = useLoading();
@@ -78,13 +79,12 @@ export default function NewTournamentGroupingPage() {
 
   // URL 파라미터에서 초기값 설정
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const tournamentId = urlParams.get('tournamentId');
-    const division = urlParams.get('division');
+    const tournamentId = searchParams.get('tournamentId');
+    const division = searchParams.get('division');
 
     if (tournamentId) setSelectedTournament(tournamentId);
     if (division) setSelectedDivision(division);
-  }, []);
+  }, [searchParams]);
 
   // 컴포넌트 마운트 시 기존 조편성 목록 조회 (관리자만)
   useEffect(() => {

@@ -68,8 +68,6 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/admin/users', label: '회원관리', icon: UserCog, adminOnly: true },
   { path: '/admin/dashboard', label: '대시보드', icon: UserCog, adminOnly: true },
   { path: '/tournament-grouping', label: '조편성', icon: Trophy, adminOnly: true },
-  { path: '/tournament-grouping/results', label: '조편성결과', icon: Trophy, adminOnly: true },
-  { path: '/tournament-grouping/matches', label: '경기관리', icon: Trophy, adminOnly: true },
 ];
 
 // 페이지 제목 매핑
@@ -91,8 +89,6 @@ const PAGE_TITLES: Record<string, string> = {
   '/questions/create': '문의작성',
   '/admin/questions': '1:1 문의(전체)',
   '/tournament-grouping': '조편성',
-  '/tournament-grouping/results': '조편성결과',
-  '/tournament-grouping/matches': '경기관리',
 };
 
 // 동적 라우트 제목 매핑

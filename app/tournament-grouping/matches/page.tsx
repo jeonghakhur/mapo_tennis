@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Box,
   Text,
@@ -32,6 +32,7 @@ interface MatchUpdateData {
 
 export default function TournamentMatchesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { withLoading } = useLoading();
 
   const [selectedTournament, setSelectedTournament] = useState<string>('');
@@ -97,15 +98,14 @@ export default function TournamentMatchesPage() {
 
   // URL 파라미터에서 대회 ID와 부서 가져오기
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const tournamentId = urlParams.get('tournamentId');
-    const division = urlParams.get('division');
+    const tournamentId = searchParams.get('tournamentId');
+    const division = searchParams.get('division');
 
     if (tournamentId && division) {
       setSelectedTournament(tournamentId);
       setSelectedDivision(division);
     }
-  }, []);
+  }, [searchParams]);
 
   // 부서 이름 매핑
   const divisionNameMap: Record<string, string> = {

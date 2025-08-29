@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Box, Text, Button, Flex, Card, Heading, Badge } from '@radix-ui/themes';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useLoading } from '@/hooks/useLoading';
 import { useTournament } from '@/hooks/useTournaments';
 import Container from '@/components/Container';
@@ -27,6 +28,8 @@ interface BracketMatch {
 }
 
 export default function TournamentBracketViewPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { withLoading } = useLoading();
 
   const [selectedTournament, setSelectedTournament] = useState<string>('');
@@ -47,15 +50,14 @@ export default function TournamentBracketViewPage() {
 
   // URL 파라미터에서 대회 ID와 부서 가져오기
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const tournamentId = urlParams.get('tournamentId');
-    const division = urlParams.get('division');
+    const tournamentId = searchParams.get('tournamentId');
+    const division = searchParams.get('division');
 
     if (tournamentId && division) {
       setSelectedTournament(tournamentId);
       setSelectedDivision(division);
     }
-  }, []);
+  }, [searchParams]);
 
   // 본선 대진표 조회
   const fetchBracket = useCallback(async () => {
@@ -82,7 +84,9 @@ export default function TournamentBracketViewPage() {
 
   // 관리 페이지로 이동
   const handleManageBracket = () => {
-    window.location.href = `/tournament-grouping/bracket?tournamentId=${selectedTournament}&division=${selectedDivision}`;
+    router.push(
+      `/tournament-grouping/bracket?tournamentId=${selectedTournament}&division=${selectedDivision}`,
+    );
   };
 
   return (

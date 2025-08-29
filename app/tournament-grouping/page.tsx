@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Box, Text, Button, Flex, Card, Heading, Badge } from '@radix-ui/themes';
 import Container from '@/components/Container';
@@ -8,6 +9,9 @@ import { useTournamentGroupings } from '@/hooks/useTournamentGroupings';
 export default function TournamentGroupingListPage() {
   const router = useRouter();
   const { groupings, isLoading, error, mutate } = useTournamentGroupings();
+  const [groupingStatus, setGroupingStatus] = useState<
+    Record<string, { hasMatches: boolean; hasBracket: boolean }>
+  >({});
 
   // 새 조편성 생성 페이지로 이동
   const handleCreateNew = () => {
@@ -18,6 +22,52 @@ export default function TournamentGroupingListPage() {
   const handleViewDetail = (tournamentId: string, division: string) => {
     router.push(`/tournament-grouping/${tournamentId}/${division}`);
   };
+
+  // 예선 경기 상세 페이지로 이동
+  const handleViewMatches = (tournamentId: string, division: string) => {
+    router.push(`/tournament-grouping/matches?tournamentId=${tournamentId}&division=${division}`);
+  };
+
+  // 본선 대진표 상세 페이지로 이동
+  const handleViewBracket = (tournamentId: string, division: string) => {
+    router.push(
+      `/tournament-grouping/bracket/view?tournamentId=${tournamentId}&division=${division}`,
+    );
+  };
+
+  // 예선 경기와 본선 대진표 존재 여부 확인
+  const checkGroupingStatus = useCallback(async (tournamentId: string, division: string) => {
+    const key = `${tournamentId}__${division}`;
+
+    try {
+      // 예선 경기 확인
+      const matchesResponse = await fetch(
+        `/api/tournament-grouping/matches?tournamentId=${tournamentId}&division=${division}`,
+      );
+      const hasMatches = matchesResponse.ok;
+
+      // 본선 대진표 확인
+      const bracketResponse = await fetch(
+        `/api/tournament-grouping/bracket?tournamentId=${tournamentId}&division=${division}`,
+      );
+      let hasBracket = false;
+      if (bracketResponse.ok) {
+        const bracketData = await bracketResponse.json();
+        hasBracket = bracketData.matches && bracketData.matches.length > 0;
+      }
+
+      setGroupingStatus((prev) => ({
+        ...prev,
+        [key]: { hasMatches, hasBracket },
+      }));
+    } catch (error) {
+      console.error('조편성 상태 확인 오류:', error);
+      setGroupingStatus((prev) => ({
+        ...prev,
+        [key]: { hasMatches: false, hasBracket: false },
+      }));
+    }
+  }, []);
 
   // 부서명 변환
   const getDivisionLabel = (division: string) => {
@@ -41,6 +91,15 @@ export default function TournamentGroupingListPage() {
       minute: '2-digit',
     });
   };
+
+  // 조편성 목록이 로드될 때 각 조편성의 상태 확인
+  useEffect(() => {
+    if (groupings.length > 0) {
+      groupings.forEach((grouping) => {
+        checkGroupingStatus(grouping.tournamentId, grouping.division);
+      });
+    }
+  }, [groupings, checkGroupingStatus]);
 
   return (
     <Container>
@@ -82,13 +141,9 @@ export default function TournamentGroupingListPage() {
       ) : (
         <Flex direction="column" gap="3">
           {groupings.map((grouping) => (
-            <Card
-              key={`${grouping.tournamentId}__${grouping.division}`}
-              style={{ cursor: 'pointer' }}
-              onClick={() => handleViewDetail(grouping.tournamentId, grouping.division)}
-            >
+            <Card key={`${grouping.tournamentId}__${grouping.division}`}>
               <Box p="4">
-                <Flex align="center" justify="between">
+                <Flex align="center" justify="between" mb="3">
                   <Box>
                     <Flex align="center" gap="2" mb="2">
                       <Text size="4" weight="bold">
@@ -109,10 +164,49 @@ export default function TournamentGroupingListPage() {
                     <Badge color="blue" size="2">
                       {grouping.count}개 조
                     </Badge>
-                    <Text size="2" color="gray">
-                      →
-                    </Text>
                   </Flex>
+                </Flex>
+
+                {/* 버튼 영역 */}
+                <Flex gap="2" wrap="wrap">
+                  <Button
+                    size="2"
+                    variant="soft"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleViewDetail(grouping.tournamentId, grouping.division);
+                    }}
+                  >
+                    조편성 상세
+                  </Button>
+
+                  {groupingStatus[`${grouping.tournamentId}__${grouping.division}`]?.hasMatches && (
+                    <Button
+                      size="2"
+                      color="orange"
+                      variant="soft"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewMatches(grouping.tournamentId, grouping.division);
+                      }}
+                    >
+                      예선 경기
+                    </Button>
+                  )}
+
+                  {groupingStatus[`${grouping.tournamentId}__${grouping.division}`]?.hasBracket && (
+                    <Button
+                      size="2"
+                      color="green"
+                      variant="soft"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewBracket(grouping.tournamentId, grouping.division);
+                      }}
+                    >
+                      본선 대진표
+                    </Button>
+                  )}
                 </Flex>
               </Box>
             </Card>

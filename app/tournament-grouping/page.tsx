@@ -2,16 +2,24 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { Box, Text, Button, Flex, Card, Heading, Badge } from '@radix-ui/themes';
 import Container from '@/components/Container';
 import { useTournamentGroupings } from '@/hooks/useTournamentGroupings';
+import { useUser } from '@/hooks/useUser';
+import { isAdmin } from '@/lib/authUtils';
 
 export default function TournamentGroupingListPage() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const { user } = useUser(session?.user?.email);
   const { groupings, isLoading, error, mutate } = useTournamentGroupings();
   const [groupingStatus, setGroupingStatus] = useState<
     Record<string, { hasMatches: boolean; hasBracket: boolean }>
   >({});
+
+  // 관리자 권한 확인
+  const admin = isAdmin(user);
 
   // 새 조편성 생성 페이지로 이동
   const handleCreateNew = () => {
@@ -113,9 +121,11 @@ export default function TournamentGroupingListPage() {
               생성된 조편성을 확인하고 관리합니다.
             </Text>
           </Box>
-          <Button size="3" onClick={handleCreateNew}>
-            새 조편성 생성
-          </Button>
+          {admin && (
+            <Button size="3" onClick={handleCreateNew}>
+              새 조편성 생성
+            </Button>
+          )}
         </Flex>
       </Box>
 

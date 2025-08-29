@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSession } from 'next-auth/react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import {
   Box,
@@ -20,6 +21,8 @@ import Container from '@/components/Container';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import { getNextRound } from '@/lib/tournamentBracketUtils';
+import { useUser } from '@/hooks/useUser';
+import { isAdmin } from '@/lib/authUtils';
 
 interface BracketMatch {
   _key: string;
@@ -72,6 +75,8 @@ export default function RoundPage() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
+  const { user } = useUser(session?.user?.email);
   const { withLoading, loading } = useLoading();
 
   const [bracketMatches, setBracketMatches] = useState<BracketMatch[]>([]);
@@ -88,6 +93,10 @@ export default function RoundPage() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [hasBracket, setHasBracket] = useState(false);
+  const [showDeleteRoundDialog, setShowDeleteRoundDialog] = useState(false);
+
+  // 관리자 권한 확인
+  const admin = isAdmin(user);
 
   // URL에서 파라미터 읽기
   const round = params.round as ValidRound;
@@ -396,6 +405,88 @@ export default function RoundPage() {
     router,
   ]);
 
+  // 현재 라운드 삭제 함수
+  const handleDeleteCurrentRound = useCallback(async () => {
+    await withLoading(async () => {
+      console.log(`${ROUND_NAME_MAP[round]} 라운드 삭제 시작`);
+
+      try {
+        const response = await fetch('/api/tournament-grouping/bracket/delete-round', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tournamentId: selectedTournament,
+            division: selectedDivision,
+            round: round,
+          }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('라운드 삭제 성공:', result);
+
+          setSuccessMessage(`${ROUND_NAME_MAP[round]} 라운드가 성공적으로 삭제되었습니다.`);
+          setShowSuccessDialog(true);
+          setShowDeleteRoundDialog(false);
+
+          // 데이터 새로고침
+          await fetchBracket();
+
+          // 삭제 후 남은 라운드 확인
+          const updatedBracketResponse = await fetch(
+            `/api/tournament-grouping/bracket?tournamentId=${selectedTournament}&division=${selectedDivision}`,
+          );
+
+          let targetUrl: string;
+          if (updatedBracketResponse.ok) {
+            const updatedBracketData = await updatedBracketResponse.json();
+            const remainingMatches = updatedBracketData.matches || [];
+
+            if (remainingMatches.length === 0) {
+              // 모든 라운드가 삭제된 경우 대진표 관리 페이지로 이동
+              targetUrl = `/tournament-grouping/bracket?tournamentId=${selectedTournament}&division=${selectedDivision}`;
+            } else {
+              // 남은 라운드 중 가장 마지막 라운드로 이동
+              const remainingRounds = [
+                ...new Set(remainingMatches.map((match: { round: string }) => match.round)),
+              ];
+              const roundOrder = ['round32', 'round16', 'quarterfinal', 'semifinal', 'final'];
+
+              // 남은 라운드 중 가장 마지막 순서의 라운드 찾기
+              let lastRemainingRound = remainingRounds[0];
+              for (const remainingRound of remainingRounds) {
+                const currentIndex = roundOrder.indexOf(remainingRound as string);
+                const lastIndex = roundOrder.indexOf(lastRemainingRound as string);
+                if (currentIndex > lastIndex) {
+                  lastRemainingRound = remainingRound;
+                }
+              }
+
+              targetUrl = `/tournament-grouping/bracket/view/${lastRemainingRound}?tournamentId=${selectedTournament}&division=${selectedDivision}`;
+            }
+          } else {
+            // API 호출 실패 시 대진표 관리 페이지로 이동
+            targetUrl = `/tournament-grouping/bracket?tournamentId=${selectedTournament}&division=${selectedDivision}`;
+          }
+
+          // 1.5초 후 이동
+          setTimeout(() => {
+            router.push(targetUrl);
+          }, 1500);
+        } else {
+          const errorData = await response.json();
+          console.error('라운드 삭제 실패:', errorData);
+          setSuccessMessage(`라운드 삭제 실패: ${errorData.error}`);
+          setShowSuccessDialog(true);
+        }
+      } catch (error) {
+        console.error('라운드 삭제 중 오류:', error);
+        setSuccessMessage('라운드 삭제 중 오류가 발생했습니다.');
+        setShowSuccessDialog(true);
+      }
+    });
+  }, [withLoading, selectedTournament, selectedDivision, round, fetchBracket, router]);
+
   return (
     <Container>
       <Box mb="6">
@@ -417,7 +508,7 @@ export default function RoundPage() {
             )}
             {hasBracket && (
               <Button size="3" color="green" onClick={handleManageBracket}>
-                대진표 관리
+                예선결과보기
               </Button>
             )}
           </Flex>
@@ -485,31 +576,45 @@ export default function RoundPage() {
       {/* 현재 라운드 대진표 */}
       {hasBracket && currentRoundMatches.length > 0 && (
         <Box>
-          <Flex align="center" mb="4" justify="between" gap="2">
+          <Flex direction="column" mt="4" mb="4" gap="2">
             <Heading size="4" weight="bold">
               {ROUND_NAME_MAP[round]} 대진표
             </Heading>
-            <Box>
-              <Button
-                size="2"
-                color="orange"
-                variant="soft"
-                onClick={handleAutoScoreCurrentRound}
-                disabled={loading}
-              >
-                {loading ? '점수 입력 중...' : '자동 점수 입력 (순차 처리)'}
-              </Button>
-              <Button
-                size="2"
-                color="green"
-                variant="soft"
-                onClick={handleGenerateNextRound}
-                disabled={loading}
-                ml="2"
-              >
-                {loading ? '생성 중...' : '다음 라운드 생성'}
-              </Button>
-            </Box>
+            {admin && (
+              <Box>
+                <Button
+                  size="2"
+                  color="orange"
+                  variant="soft"
+                  onClick={handleAutoScoreCurrentRound}
+                  disabled={loading}
+                >
+                  {loading ? '점수 입력 중...' : '자동점수 입력'}
+                </Button>
+
+                <Button
+                  size="2"
+                  color="green"
+                  variant="soft"
+                  onClick={handleGenerateNextRound}
+                  disabled={loading}
+                  ml="2"
+                >
+                  {loading ? '생성 중...' : '다음라운드 생성'}
+                </Button>
+
+                <Button
+                  size="2"
+                  color="red"
+                  variant="soft"
+                  onClick={() => setShowDeleteRoundDialog(true)}
+                  disabled={loading}
+                  ml="2"
+                >
+                  {loading ? '삭제 중...' : '라운드 삭제'}
+                </Button>
+              </Box>
+            )}
           </Flex>
           <div
             className={`grid grid-cols-1 gap-4 ${
@@ -754,6 +859,18 @@ export default function RoundPage() {
           </Box>
         </Dialog.Content>
       </Dialog.Root>
+
+      {/* 라운드 삭제 확인 다이얼로그 */}
+      <ConfirmDialog
+        title={`${ROUND_NAME_MAP[round]} 라운드 삭제 확인`}
+        description={`${ROUND_NAME_MAP[round]} 라운드와 모든 경기 정보를 삭제하시겠습니까? 삭제된 데이터는 복구할 수 없습니다.`}
+        confirmText="삭제"
+        cancelText="취소"
+        confirmColor="red"
+        open={showDeleteRoundDialog}
+        onOpenChange={setShowDeleteRoundDialog}
+        onConfirm={handleDeleteCurrentRound}
+      />
 
       {/* 성공 다이얼로그 */}
       <ConfirmDialog

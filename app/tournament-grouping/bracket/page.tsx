@@ -1,11 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useSession } from 'next-auth/react';
 import { Box, Text, Button, Flex, Card, Heading, Badge } from '@radix-ui/themes';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { useLoading } from '@/hooks/useLoading';
 import { useTournament } from '@/hooks/useTournaments';
+import { useUser } from '@/hooks/useUser';
+import { isAdmin } from '@/lib/authUtils';
 
 interface GroupStanding {
   teamId: string;
@@ -41,6 +44,8 @@ interface BracketMatch {
 function TournamentBracketContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
+  const { user } = useUser(session?.user?.email);
   const { withLoading } = useLoading();
 
   const [selectedTournament, setSelectedTournament] = useState<string>('');
@@ -49,7 +54,9 @@ function TournamentBracketContent() {
   const [bracketMatches, setBracketMatches] = useState<BracketMatch[]>([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+
+  // 관리자 권한 확인
+  const admin = isAdmin(user);
 
   // SWR 훅 사용
   const { tournament } = useTournament(selectedTournament || '');
@@ -170,7 +177,7 @@ function TournamentBracketContent() {
     });
 
     // 각 조별로 1,2위 팀 선정
-    standingsByGroup.forEach((groupStandings, groupId) => {
+    standingsByGroup.forEach((groupStandings) => {
       const sortedStandings = groupStandings.sort((a, b) => a.position - b.position);
 
       if (sortedStandings[0]) {
@@ -195,24 +202,33 @@ function TournamentBracketContent() {
 
   // 보기 페이지로 이동
   const handleViewBracket = () => {
-    window.location.href = `/tournament-grouping/bracket/view?tournamentId=${selectedTournament}&division=${selectedDivision}`;
+    router.push(
+      `/tournament-grouping/bracket/view?tournamentId=${selectedTournament}&division=${selectedDivision}`,
+    );
   };
 
   return (
     <Container>
       <Box mb="6">
-        <Flex align="center" justify="between">
-          <Box>
-            <Heading size="5" weight="bold" mb="2">
-              {tournament?.title || '대회 정보 로딩 중...'}
-            </Heading>
-            <Text size="3" color="gray">
-              {divisionNameMap[selectedDivision] || selectedDivision} • 본선 대진표 관리
-            </Text>
-          </Box>
-          <Button size="3" color="green" onClick={handleViewBracket}>
-            대진표 보기
-          </Button>
+        <Box mb="2">
+          <Heading size="5" weight="bold" mb="2">
+            {tournament?.title || '대회 정보 로딩 중...'}
+          </Heading>
+          <Text size="3" color="gray">
+            {divisionNameMap[selectedDivision] || selectedDivision} • 본선 대진표 관리
+          </Text>
+        </Box>
+        <Flex gap="2">
+          {bracketMatches.length > 0 && (
+            <Button size="3" color="green" onClick={handleViewBracket}>
+              대진표보기
+            </Button>
+          )}
+          {qualifiedTeams.length > 0 && admin && (
+            <Button size="3" onClick={() => setShowCreateDialog(true)}>
+              본선 대진표 생성
+            </Button>
+          )}
         </Flex>
       </Box>
 
@@ -261,17 +277,6 @@ function TournamentBracketContent() {
       )}
 
       {/* 본선 대진표 생성 버튼 */}
-      {qualifiedTeams.length > 0 && (
-        <Flex align="center" justify="between">
-          <Heading size="4" weight="bold">
-            본선 대진표 생성
-          </Heading>
-
-          <Button size="3" onClick={() => setShowCreateDialog(true)}>
-            본선 대진표 생성
-          </Button>
-        </Flex>
-      )}
 
       {/* 본선 대진표 생성 확인 다이얼로그 */}
       <ConfirmDialog
@@ -299,7 +304,7 @@ function TournamentBracketContent() {
       {/* 성공 다이얼로그 */}
       <ConfirmDialog
         title="생성 완료"
-        description={successMessage}
+        description="본선 대진표가 성공적으로 생성되었습니다."
         confirmText="확인"
         confirmColor="green"
         open={showSuccessDialog}

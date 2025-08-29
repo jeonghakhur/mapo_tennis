@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Box,
@@ -13,6 +14,7 @@ import {
   Badge,
   TextField,
   Separator,
+  Dialog,
 } from '@radix-ui/themes';
 import { useLoading } from '@/hooks/useLoading';
 import { useTournament } from '@/hooks/useTournaments';
@@ -22,6 +24,8 @@ import { useGroups } from '@/hooks/useGroups';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import type { Match, GroupStanding } from '@/types/tournament';
 import Container from '@/components/Container';
+import { useUser } from '@/hooks/useUser';
+import { isAdmin } from '@/lib/authUtils';
 
 interface MatchUpdateData {
   team1Score?: number;
@@ -33,6 +37,8 @@ interface MatchUpdateData {
 function TournamentMatchesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
+  const { user } = useUser(session?.user?.email);
   const { withLoading } = useLoading();
 
   const [selectedTournament, setSelectedTournament] = useState<string>('');
@@ -48,6 +54,9 @@ function TournamentMatchesContent() {
     status: 'scheduled' as 'scheduled' | 'in_progress' | 'completed' | 'cancelled',
     court: '',
   });
+
+  // 관리자 권한 확인
+  const admin = isAdmin(user);
 
   // SWR 훅들 사용
   const { tournament } = useTournament(selectedTournament || '');
@@ -85,16 +94,6 @@ function TournamentMatchesContent() {
   useEffect(() => {
     checkBracket();
   }, [checkBracket]);
-
-  // 모든 경기가 완료되었는지 확인
-  const allMatchesCompleted =
-    matches.length > 0 &&
-    matches.every(
-      (match) =>
-        match.team1.score !== undefined &&
-        match.team2.score !== undefined &&
-        match.status === 'completed',
-    );
 
   // URL 파라미터에서 대회 ID와 부서 가져오기
   useEffect(() => {
@@ -266,16 +265,23 @@ function TournamentMatchesContent() {
               {divisionNameMap[selectedDivision] || selectedDivision}
             </Text>
           </Box>
-          <Flex gap="2">
+        </Flex>
+        <Flex gap="2" mt="2">
+          {admin && (
             <Button size="3" color="orange" onClick={handleAutoScoreAllMatches}>
-              점수 자동 입력
+              점수자동입력
             </Button>
-            {hasBracket && (
-              <Button size="3" color="blue" onClick={handleViewBracket}>
-                본선 대진표 보기
-              </Button>
-            )}
-          </Flex>
+          )}
+          {hasBracket && (
+            <Button size="3" color="blue" onClick={handleViewBracket}>
+              본선대진표보기
+            </Button>
+          )}
+          {hasBracket && (
+            <Button size="3" color="purple" onClick={handleCreateBracket}>
+              예선결과보기
+            </Button>
+          )}
         </Flex>
       </Box>
       {/* 조별 순위 */}
@@ -319,35 +325,35 @@ function TournamentMatchesContent() {
                     <Text size="3" weight="bold" mb="2">
                       {groupNameMap[groupId] || groupId}
                     </Text>
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse">
+                    <div className="table-view">
+                      <table>
                         <thead>
-                          <tr className="bg-gray-50">
-                            <th className="p-3 text-left border-b">순위</th>
-                            <th className="p-3 text-left border-b">팀명</th>
-                            <th className="p-3 text-left border-b">경기</th>
-                            <th className="p-3 text-left border-b">승</th>
-                            <th className="p-3 text-left border-b">무</th>
-                            <th className="p-3 text-left border-b">패</th>
-                            <th className="p-3 text-left border-b">득점</th>
-                            <th className="p-3 text-left border-b">실점</th>
-                            <th className="p-3 text-left border-b">득실차</th>
-                            <th className="p-3 text-left border-b">승점</th>
+                          <tr>
+                            <th>순위</th>
+                            <th>팀명</th>
+                            <th>경기</th>
+                            <th>승</th>
+                            <th>무</th>
+                            <th>패</th>
+                            <th>득점</th>
+                            <th>실점</th>
+                            <th>득실차</th>
+                            <th>승점</th>
                           </tr>
                         </thead>
                         <tbody>
                           {groupStandings.map((standing) => (
                             <tr key={standing.teamId} className="border-b hover:bg-gray-50">
-                              <td className="p-3">{standing.position}</td>
-                              <td className="p-3">{standing.teamName}</td>
-                              <td className="p-3">{standing.played}</td>
-                              <td className="p-3">{standing.won}</td>
-                              <td className="p-3">{standing.drawn}</td>
-                              <td className="p-3">{standing.lost}</td>
-                              <td className="p-3">{standing.goalsFor}</td>
-                              <td className="p-3">{standing.goalsAgainst}</td>
-                              <td className="p-3">{standing.goalDifference}</td>
-                              <td className="p-3">{standing.points}</td>
+                              <td>{standing.position}</td>
+                              <td>{standing.teamName}</td>
+                              <td>{standing.played}</td>
+                              <td>{standing.won}</td>
+                              <td>{standing.drawn}</td>
+                              <td>{standing.lost}</td>
+                              <td>{standing.goalsFor}</td>
+                              <td>{standing.goalsAgainst}</td>
+                              <td>{standing.goalDifference}</td>
+                              <td>{standing.points}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -367,25 +373,20 @@ function TournamentMatchesContent() {
             <Heading size="4" weight="bold">
               경기 목록
             </Heading>
-            {allMatchesCompleted && (
-              <Button size="3" color="green" onClick={handleCreateBracket}>
-                본선 대진표 생성
-              </Button>
-            )}
           </Flex>
 
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
+          <div className="table-view text-center">
+            <table>
               <thead>
-                <tr className="bg-gray-50">
-                  <th className="p-3 text-left border-b">경기 번호</th>
-                  <th className="p-3 text-left border-b">조</th>
-                  <th className="p-3 text-left border-b">팀 1</th>
-                  <th className="p-3 text-left border-b">팀 2</th>
-                  <th className="p-3 text-left border-b">점수</th>
-                  <th className="p-3 text-left border-b">상태</th>
-                  <th className="p-3 text-left border-b">코트</th>
-                  <th className="p-3 text-left border-b">액션</th>
+                <tr>
+                  <th>경기 번호</th>
+                  <th>조</th>
+                  <th>팀 1</th>
+                  <th>팀 2</th>
+                  <th>점수</th>
+                  <th>상태</th>
+                  <th>코트</th>
+                  <th>액션</th>
                 </tr>
               </thead>
               <tbody>
@@ -516,151 +517,127 @@ function TournamentMatchesContent() {
         </Box>
       )}
       {/* 점수 입력 다이얼로그 */}
-      {showScoreDialog && selectedMatch && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Card
-            style={{
-              maxWidth: '500px',
-              width: '90%',
-              backgroundColor: 'white',
-              borderRadius: '8px',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-            }}
-          >
-            <Box p="4">
-              <Heading size="4" weight="bold" mb="4">
+      <Dialog.Root open={showScoreDialog} onOpenChange={setShowScoreDialog}>
+        <Dialog.Content>
+          <Dialog.Title>
+            {selectedMatch && (
+              <>
                 {groupNameMap[selectedMatch.groupId || ''] || selectedMatch.groupId || '-'} •{' '}
                 {selectedMatch.matchNumber}경기
-              </Heading>
-              <Box className="table-form">
-                <table>
-                  <tbody>
-                    <tr>
-                      <th colSpan={2}>{selectedMatch.team1.teamName}</th>
-                    </tr>
-                    <tr>
-                      <th>점수 </th>
-                      <td>
-                        <TextField.Root
-                          size="3"
-                          type="number"
-                          placeholder="점수 입력"
-                          value={scoreForm.team1Score}
-                          onChange={(e) =>
-                            setScoreForm((prev) => ({ ...prev, team1Score: e.target.value }))
-                          }
-                        />
-                      </td>
-                    </tr>
-                    <tr>
-                      <th colSpan={2}>{selectedMatch.team2.teamName}</th>
-                    </tr>
-                    <tr>
-                      <th>점수</th>
-                      <td>
-                        <TextField.Root
-                          size="3"
-                          type="number"
-                          placeholder="점수 입력"
-                          value={scoreForm.team2Score}
-                          onChange={(e) =>
-                            setScoreForm((prev) => ({ ...prev, team2Score: e.target.value }))
-                          }
-                        />
-                      </td>
-                    </tr>
-                    <tr>
-                      <th>경기 상태</th>
-                      <td>
-                        <Select.Root
-                          size="3"
-                          value={scoreForm.status}
-                          onValueChange={(value) =>
-                            setScoreForm((prev) => ({
-                              ...prev,
-                              status: value as
-                                | 'scheduled'
-                                | 'in_progress'
-                                | 'completed'
-                                | 'cancelled',
-                            }))
-                          }
-                        >
-                          <Select.Trigger />
-                          <Select.Content>
-                            {statusOptions.map((option) => (
-                              <Select.Item key={option.value} value={option.value}>
-                                {option.label}
-                              </Select.Item>
-                            ))}
-                          </Select.Content>
-                        </Select.Root>
-                      </td>
-                    </tr>
-                    <tr>
-                      <th>코트</th>
-                      <td>
-                        {' '}
-                        <TextField.Root
-                          size="3"
-                          placeholder="코트 번호"
-                          value={scoreForm.court}
-                          onChange={(e) =>
-                            setScoreForm((prev) => ({ ...prev, court: e.target.value }))
-                          }
-                        />
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </Box>
+              </>
+            )}
+          </Dialog.Title>
+          <Dialog.Description>경기 점수와 상태를 입력해주세요.</Dialog.Description>
 
-              <Box className="btn-wrap" mt="4">
-                <Button
-                  size="3"
-                  onClick={() => {
-                    if (selectedMatch) {
-                      const team1Score =
-                        scoreForm.team1Score.trim() === ''
-                          ? undefined
-                          : parseInt(scoreForm.team1Score);
-                      const team2Score =
-                        scoreForm.team2Score.trim() === ''
-                          ? undefined
-                          : parseInt(scoreForm.team2Score);
+          <Box className="table-form" mt="4">
+            <table>
+              <tbody>
+                <tr>
+                  <th style={{ width: '80px' }}>팀1</th>
+                  <td>{selectedMatch?.team1.teamName}</td>
+                </tr>
+                <tr>
+                  <th>점수</th>
+                  <td>
+                    <TextField.Root
+                      size="3"
+                      type="number"
+                      placeholder="점수 입력"
+                      value={scoreForm.team1Score}
+                      onChange={(e) =>
+                        setScoreForm((prev) => ({ ...prev, team1Score: e.target.value }))
+                      }
+                      style={{ width: '40px' }}
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th>팀2</th>
+                  <td>{selectedMatch?.team2.teamName}</td>
+                </tr>
+                <tr>
+                  <th>점수</th>
+                  <td>
+                    <TextField.Root
+                      size="3"
+                      type="number"
+                      placeholder="점수 입력"
+                      value={scoreForm.team2Score}
+                      onChange={(e) =>
+                        setScoreForm((prev) => ({ ...prev, team2Score: e.target.value }))
+                      }
+                      style={{ width: '40px' }}
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th>경기상태</th>
+                  <td>
+                    <Select.Root
+                      size="3"
+                      value={scoreForm.status}
+                      onValueChange={(value) =>
+                        setScoreForm((prev) => ({
+                          ...prev,
+                          status: value as 'scheduled' | 'in_progress' | 'completed' | 'cancelled',
+                        }))
+                      }
+                    >
+                      <Select.Trigger />
+                      <Select.Content>
+                        {statusOptions.map((option) => (
+                          <Select.Item key={option.value} value={option.value}>
+                            {option.label}
+                          </Select.Item>
+                        ))}
+                      </Select.Content>
+                    </Select.Root>
+                  </td>
+                </tr>
+                <tr>
+                  <th>코트</th>
+                  <td>
+                    <TextField.Root
+                      size="3"
+                      placeholder="코트 번호"
+                      value={scoreForm.court}
+                      onChange={(e) => setScoreForm((prev) => ({ ...prev, court: e.target.value }))}
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </Box>
 
-                      handleUpdateMatch(selectedMatch._id, {
-                        team1Score,
-                        team2Score,
-                        status: scoreForm.status,
-                        court: scoreForm.court,
-                      });
-                    }
-                  }}
-                >
-                  저장
-                </Button>
-                <Button size="3" variant="soft" onClick={() => setShowScoreDialog(false)}>
-                  취소
-                </Button>
-              </Box>
-            </Box>
-          </Card>
-        </div>
-      )}
+          <Flex gap="3" mt="4" justify="end">
+            <Dialog.Close>
+              <Button size="3" variant="soft">
+                취소
+              </Button>
+            </Dialog.Close>
+            <Button
+              size="3"
+              onClick={() => {
+                if (selectedMatch) {
+                  const team1Score =
+                    scoreForm.team1Score.trim() === '' ? undefined : parseInt(scoreForm.team1Score);
+                  const team2Score =
+                    scoreForm.team2Score.trim() === '' ? undefined : parseInt(scoreForm.team2Score);
+
+                  handleUpdateMatch(selectedMatch._id, {
+                    team1Score,
+                    team2Score,
+                    status: scoreForm.status,
+                    court: scoreForm.court,
+                  });
+                }
+              }}
+            >
+              저장
+            </Button>
+          </Flex>
+        </Dialog.Content>
+      </Dialog.Root>
       {/* 파라미터가 없을 때 */}
       {(!selectedTournament || !selectedDivision) && (
         <Card>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useSession } from 'next-auth/react';
 import { Box, Text, Button, Flex, Card, Badge, Separator } from '@radix-ui/themes';
 import { useLoading } from '@/hooks/useLoading';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -10,6 +11,8 @@ import type { Group } from '@/types/tournament';
 import Container from '@/components/Container';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import LoadingOverlay from '@/components/LoadingOverlay';
+import { useUser } from '@/hooks/useUser';
+import { isAdmin } from '@/lib/authUtils';
 
 interface GroupingResult {
   groups: Group[];
@@ -25,6 +28,8 @@ interface GroupingResult {
 function TournamentGroupingResultsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
+  const { user } = useUser(session?.user?.email);
   const { loading, withLoading } = useLoading();
 
   const [selectedTournament, setSelectedTournament] = useState<string>('');
@@ -33,6 +38,9 @@ function TournamentGroupingResultsContent() {
   const [hasMatches, setHasMatches] = useState<boolean>(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showCreateMatchesDialog, setShowCreateMatchesDialog] = useState(false);
+
+  // 관리자 권한 확인
+  const admin = isAdmin(user);
 
   // URL 파라미터에서 초기값 설정
   useEffect(() => {
@@ -178,9 +186,11 @@ function TournamentGroupingResultsContent() {
                 예선경기생성
               </Button>
             )}
-            <Button size="3" color="red" variant="soft" onClick={() => setShowDeleteDialog(true)}>
-              대진표삭제
-            </Button>
+            {admin && (
+              <Button size="3" color="red" variant="soft" onClick={() => setShowDeleteDialog(true)}>
+                대진표삭제
+              </Button>
+            )}
           </Flex>
 
           <Flex direction="column" gap="4" mb="4">

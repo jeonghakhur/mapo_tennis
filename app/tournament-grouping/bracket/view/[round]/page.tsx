@@ -1,10 +1,22 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Box, Text, Button, Flex, Card, Heading, Badge } from '@radix-ui/themes';
+import {
+  Box,
+  Text,
+  Button,
+  Flex,
+  Card,
+  Heading,
+  Badge,
+  TextField,
+  Select,
+  Dialog,
+} from '@radix-ui/themes';
 import { useLoading } from '@/hooks/useLoading';
 import { useTournament } from '@/hooks/useTournaments';
 import Container from '@/components/Container';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 interface BracketMatch {
   _key: string;
@@ -37,6 +49,16 @@ export default function RoundPage({ params }: PageProps) {
   const [selectedDivision, setSelectedDivision] = useState<string>('');
   const [bracketMatches, setBracketMatches] = useState<BracketMatch[]>([]);
   const [round, setRound] = useState<string>('');
+  const [selectedMatch, setSelectedMatch] = useState<BracketMatch | null>(null);
+  const [showScoreDialog, setShowScoreDialog] = useState(false);
+  const [scoreForm, setScoreForm] = useState({
+    team1Score: '',
+    team2Score: '',
+    status: 'scheduled' as 'scheduled' | 'in_progress' | 'completed' | 'cancelled',
+    court: '',
+  });
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // SWR 훅 사용
   const { tournament } = useTournament(selectedTournament || '');
@@ -49,6 +71,14 @@ export default function RoundPage({ params }: PageProps) {
     forsythia: '개나리부',
     chrysanthemum: '국화부',
   };
+
+  // 경기 상태 옵션
+  const statusOptions = [
+    { value: 'scheduled', label: '예정' },
+    { value: 'in_progress', label: '진행중' },
+    { value: 'completed', label: '완료' },
+    { value: 'cancelled', label: '취소' },
+  ];
 
   // 라운드 이름 매핑
   const roundNameMap: Record<string, string> = {
@@ -112,6 +142,51 @@ export default function RoundPage({ params }: PageProps) {
   // 특정 라운드로 이동
   const handleNavigateToRound = (targetRound: string) => {
     window.location.href = `/tournament-grouping/bracket/view/${targetRound}?tournamentId=${selectedTournament}&division=${selectedDivision}`;
+  };
+
+  // 점수 입력 다이얼로그 열기
+  const openScoreDialog = (match: BracketMatch) => {
+    setSelectedMatch(match);
+    setScoreForm({
+      team1Score: match.team1.score?.toString() || '',
+      team2Score: match.team2.score?.toString() || '',
+      status: match.status,
+      court: match.court || '',
+    });
+    setShowScoreDialog(true);
+  };
+
+  // 점수 저장
+  const handleSaveScore = async () => {
+    if (!selectedMatch) return;
+
+    return withLoading(async () => {
+      const response = await fetch('/api/tournament-grouping/bracket/score', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tournamentId: selectedTournament,
+          division: selectedDivision,
+          matchId: selectedMatch._id,
+          team1Score: parseInt(scoreForm.team1Score) || 0,
+          team2Score: parseInt(scoreForm.team2Score) || 0,
+          status: scoreForm.status,
+          court: scoreForm.court,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '점수 저장에 실패했습니다.');
+      }
+
+      setSuccessMessage('점수가 성공적으로 저장되었습니다.');
+      setShowSuccessDialog(true);
+      setShowScoreDialog(false);
+
+      // 데이터 새로고침
+      await fetchBracket();
+    });
   };
 
   // 현재 라운드 경기만 필터링
@@ -276,6 +351,9 @@ export default function RoundPage({ params }: PageProps) {
                               ? '취소'
                               : '예정'}
                       </Badge>
+                      <Button size="1" variant="soft" onClick={() => openScoreDialog(match)} mt="2">
+                        점수 입력
+                      </Button>
                     </Box>
                   </Card>
                 ))}
@@ -319,6 +397,97 @@ export default function RoundPage({ params }: PageProps) {
             </Box>
           </Card>
         )}
+
+      {/* 점수 입력 다이얼로그 */}
+      <Dialog.Root open={showScoreDialog} onOpenChange={setShowScoreDialog}>
+        <Dialog.Content>
+          <Dialog.Title>경기 점수 입력</Dialog.Title>
+          <Dialog.Description>
+            {selectedMatch?.team1.teamName} vs {selectedMatch?.team2.teamName}
+          </Dialog.Description>
+
+          <Flex direction="column" gap="3" my="4">
+            <Box>
+              <Text size="2" weight="bold" mb="1">
+                {selectedMatch?.team1.teamName} 점수
+              </Text>
+              <TextField.Root
+                size="2"
+                type="number"
+                value={scoreForm.team1Score}
+                onChange={(e) => setScoreForm((prev) => ({ ...prev, team1Score: e.target.value }))}
+                placeholder="0"
+              />
+            </Box>
+            <Box>
+              <Text size="2" weight="bold" mb="1">
+                {selectedMatch?.team2.teamName} 점수
+              </Text>
+              <TextField.Root
+                size="2"
+                type="number"
+                value={scoreForm.team2Score}
+                onChange={(e) => setScoreForm((prev) => ({ ...prev, team2Score: e.target.value }))}
+                placeholder="0"
+              />
+            </Box>
+            <Box>
+              <Text size="2" weight="bold" mb="1">
+                경기 상태
+              </Text>
+              <Select.Root
+                size="2"
+                value={scoreForm.status}
+                onValueChange={(value: 'scheduled' | 'in_progress' | 'completed' | 'cancelled') =>
+                  setScoreForm((prev) => ({ ...prev, status: value }))
+                }
+              >
+                <Select.Trigger />
+                <Select.Content>
+                  {statusOptions.map((option) => (
+                    <Select.Item key={option.value} value={option.value}>
+                      {option.label}
+                    </Select.Item>
+                  ))}
+                </Select.Content>
+              </Select.Root>
+            </Box>
+            <Box>
+              <Text size="2" weight="bold" mb="1">
+                코트
+              </Text>
+              <TextField.Root
+                size="2"
+                value={scoreForm.court}
+                onChange={(e) => setScoreForm((prev) => ({ ...prev, court: e.target.value }))}
+                placeholder="코트 번호"
+              />
+            </Box>
+          </Flex>
+
+          <Flex gap="3" justify="end">
+            <Dialog.Close>
+              <Button size="2" variant="soft">
+                취소
+              </Button>
+            </Dialog.Close>
+            <Button size="2" color="green" onClick={handleSaveScore}>
+              저장
+            </Button>
+          </Flex>
+        </Dialog.Content>
+      </Dialog.Root>
+
+      {/* 성공 다이얼로그 */}
+      <ConfirmDialog
+        title="작업 완료"
+        description={successMessage}
+        confirmText="확인"
+        confirmColor="green"
+        open={showSuccessDialog}
+        onOpenChange={setShowSuccessDialog}
+        onConfirm={() => setShowSuccessDialog(false)}
+      />
     </Container>
   );
 }

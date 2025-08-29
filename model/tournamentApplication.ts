@@ -17,6 +17,20 @@ export interface TournamentApplication {
     birth?: string;
     score?: number;
     isRegisteredMember: boolean; // 등록된 회원인지 여부
+    clubMemberInfo?: {
+      _id: string;
+      user: string;
+      birth?: string;
+      tennisStartYear?: string;
+      gender?: string;
+      score?: number;
+      email?: string;
+      contact?: string;
+      role?: string;
+      status?: string;
+      joinedAt?: string;
+      approvedByAdmin?: boolean;
+    }; // clubMember에서 조인된 상세 정보
   }>;
 
   // 신청 정보
@@ -64,6 +78,20 @@ export interface TournamentApplicationInput {
     birth?: string;
     score?: number;
     isRegisteredMember: boolean;
+    clubMemberInfo?: {
+      _id: string;
+      user: string;
+      birth?: string;
+      tennisStartYear?: string;
+      gender?: string;
+      score?: number;
+      email?: string;
+      contact?: string;
+      role?: string;
+      status?: string;
+      joinedAt?: string;
+      approvedByAdmin?: boolean;
+    }; // clubMember에서 조인된 상세 정보
   }>;
 
   memo?: string;

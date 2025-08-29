@@ -419,6 +419,7 @@ export default function TournamentApplicationsPage() {
   // render
   // ---------------------------------
   const loading = tournamentsLoading || applicationsLoading;
+  const isAdmin = hasPermissionLevel(user, 4);
 
   return (
     <Container>
@@ -618,34 +619,37 @@ export default function TournamentApplicationsPage() {
                       <Heading size="3" color="blue">
                         {DIVISION_LABEL[division] || division} ({apps.length}팀 신청)
                       </Heading>
-                      {groupingStatus[division] ? (
-                        <Button
-                          variant="soft"
-                          size="2"
-                          color="green"
-                          onClick={() => {
-                            router.push(`/tournament-grouping/${selectedTournamentId}/${division}`);
-                          }}
-                        >
-                          조편성 보기
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="soft"
-                          size="2"
-                          onClick={() => {
-                            router.push(
-                              `/tournament-grouping/new?tournamentId=${selectedTournamentId}&division=${division}`,
-                            );
-                          }}
-                        >
-                          조편성
-                        </Button>
-                      )}
+
+                      {isAdmin &&
+                        (groupingStatus[division] ? (
+                          <Button
+                            variant="soft"
+                            size="2"
+                            color="green"
+                            onClick={() => {
+                              router.push(
+                                `/tournament-grouping/${selectedTournamentId}/${division}`,
+                              );
+                            }}
+                          >
+                            조편성 보기
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="soft"
+                            size="2"
+                            onClick={() => {
+                              router.push(
+                                `/tournament-grouping/new?tournamentId=${selectedTournamentId}&division=${division}`,
+                              );
+                            }}
+                          >
+                            조편성
+                          </Button>
+                        ))}
                     </Flex>
                     <div className="space-y-4">
                       {apps.map((application) => {
-                        const isAdmin = hasPermissionLevel(user, 4);
                         return (
                           <Card
                             key={application._id}
@@ -778,40 +782,63 @@ export default function TournamentApplicationsPage() {
                                   {application.teamMembers.map((member, index) => (
                                     <div
                                       key={index}
-                                      className="p-3 bg-gray-50 rounded flex items-center justify-between"
+                                      className="p-3 bg-gray-50 rounded flex items-center gap-2"
                                     >
-                                      <div className="flex items-center gap-3">
-                                        <Text weight="bold" color="gray">
-                                          {index + 1}번
-                                        </Text>
-                                        <Text weight="bold">
-                                          {isAdmin
-                                            ? member.name
-                                            : member.name.charAt(0) +
-                                              '*'.repeat(Math.max(member.name.length - 1, 0))}
-                                          {application.tournamentType === 'individual' && (
-                                            <>
-                                              {' / '}
-                                              {member.clubName}
-                                            </>
-                                          )}
-                                        </Text>
-                                        {isAdmin && (
+                                      <Text weight="bold" color="gray">
+                                        {index + 1}번
+                                      </Text>
+                                      <Text weight="bold">
+                                        {isAdmin
+                                          ? member.name
+                                          : member.name.charAt(0) +
+                                            '*'.repeat(Math.max(member.name.length - 1, 0))}
+                                        {application.tournamentType === 'individual' && (
                                           <>
-                                            {member.isRegisteredMember === false && (
-                                              <Badge color="red" size="1">
-                                                미등록
-                                              </Badge>
-                                            )}
-                                            {member.isRegisteredMember === true && (
-                                              <Badge color="green" size="1">
-                                                등록회원
-                                              </Badge>
-                                            )}
+                                            {' / '}
+                                            {member.clubName}
                                           </>
                                         )}
-                                      </div>
-                                      <div className="flex items-center gap-3">
+                                      </Text>
+                                      {isAdmin && (
+                                        <>
+                                          {member.isRegisteredMember === false && (
+                                            <Badge color="red" size="2">
+                                              미등록
+                                            </Badge>
+                                          )}
+                                          {member.isRegisteredMember === true && (
+                                            <Badge color="green" size="2">
+                                              등록
+                                            </Badge>
+                                          )}
+                                          <Text size="2">
+                                            {member.birth &&
+                                              (() => {
+                                                const birthYear = parseInt(member.birth, 10);
+                                                if (!isNaN(birthYear)) {
+                                                  const currentYear = new Date().getFullYear();
+                                                  const age = currentYear - birthYear + 1; // 한국식 나이
+                                                  return `${member.birth} (${age}세)`;
+                                                }
+                                                return member.birth;
+                                              })()}
+                                          </Text>
+                                          <Box>
+                                            {member.clubMemberInfo?.tennisStartYear && (
+                                              <Text size="2" color="gray">
+                                                {member.clubMemberInfo.tennisStartYear}년
+                                              </Text>
+                                            )}
+                                            {member.clubMemberInfo?.gender && (
+                                              <Text size="2" color="gray">
+                                                {member.clubMemberInfo.tennisStartYear && ' / '}
+                                                {member.clubMemberInfo.gender}
+                                              </Text>
+                                            )}
+                                          </Box>
+                                        </>
+                                      )}
+                                      <div className="ml-auto">
                                         <Text weight="bold" color="gray">
                                           점수
                                         </Text>

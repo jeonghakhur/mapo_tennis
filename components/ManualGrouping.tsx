@@ -47,6 +47,8 @@ export default function ManualGrouping({
     }
 
     setGroups(initialGroups);
+    // 선택된 팀 상태도 초기화
+    setSelectedTeamForGroup({});
 
     // 자동 배정 실행
     if (teams.length > 0) {
@@ -54,11 +56,36 @@ export default function ManualGrouping({
       const newGroups = [...initialGroups];
       const newUnassignedTeams: Team[] = [];
 
-      // 팀들을 순서대로 배정
-      shuffledTeams.forEach((team, index) => {
-        const groupIndex = Math.floor(index / teamsPerGroup);
-        if (groupIndex < newGroups.length) {
+      // 시드가 있는 팀들과 없는 팀들을 분리하고 시드 순서대로 정렬
+      const seededTeams = shuffledTeams.filter((team) => team.seed && team.seed > 0);
+      const nonSeededTeams = shuffledTeams.filter((team) => !team.seed || team.seed === 0);
+
+      // 시드가 있는 팀들을 시드 번호 순서대로 각 조에 분산 배정
+      seededTeams.forEach((team, index) => {
+        const groupIndex = index % newGroups.length;
+        if (groupIndex < newGroups.length && newGroups[groupIndex].teams.length < teamsPerGroup) {
           newGroups[groupIndex].teams.push(team);
+        } else {
+          newUnassignedTeams.push(team);
+        }
+      });
+
+      // 시드가 없는 팀들을 나머지 공간에 배정
+      nonSeededTeams.forEach((team) => {
+        // 가장 적은 팀이 있는 조를 찾아서 배정
+        let targetGroupIndex = 0;
+        let minTeamCount = newGroups[0].teams.length;
+
+        for (let i = 1; i < newGroups.length; i++) {
+          if (newGroups[i].teams.length < minTeamCount) {
+            minTeamCount = newGroups[i].teams.length;
+            targetGroupIndex = i;
+          }
+        }
+
+        // 조당 최대 팀 수를 초과하지 않는 경우에만 배정
+        if (newGroups[targetGroupIndex].teams.length < teamsPerGroup) {
+          newGroups[targetGroupIndex].teams.push(team);
         } else {
           newUnassignedTeams.push(team);
         }
@@ -69,7 +96,7 @@ export default function ManualGrouping({
     } else {
       setUnassignedTeams([...teams]);
     }
-  }, [teams, teamsPerGroup]);
+  }, [teams, teamsPerGroup, teams.length]);
 
   // 그룹 변경 시 부모 컴포넌트에 알림
   useEffect(() => {
@@ -215,11 +242,36 @@ export default function ManualGrouping({
       group.teams = [];
     });
 
-    // 팀들을 순서대로 배정
-    shuffledTeams.forEach((team, index) => {
-      const groupIndex = Math.floor(index / teamsPerGroup);
-      if (groupIndex < newGroups.length) {
+    // 시드가 있는 팀들과 없는 팀들을 분리
+    const seededTeams = shuffledTeams.filter((team) => team.seed && team.seed > 0);
+    const nonSeededTeams = shuffledTeams.filter((team) => !team.seed || team.seed === 0);
+
+    // 시드가 있는 팀들을 먼저 각 조에 분산 배정
+    seededTeams.forEach((team, index) => {
+      const groupIndex = index % newGroups.length;
+      if (groupIndex < newGroups.length && newGroups[groupIndex].teams.length < teamsPerGroup) {
         newGroups[groupIndex].teams.push(team);
+      } else {
+        newUnassignedTeams.push(team);
+      }
+    });
+
+    // 시드가 없는 팀들을 나머지 공간에 배정
+    nonSeededTeams.forEach((team) => {
+      // 가장 적은 팀이 있는 조를 찾아서 배정
+      let targetGroupIndex = 0;
+      let minTeamCount = newGroups[0].teams.length;
+
+      for (let i = 1; i < newGroups.length; i++) {
+        if (newGroups[i].teams.length < minTeamCount) {
+          minTeamCount = newGroups[i].teams.length;
+          targetGroupIndex = i;
+        }
+      }
+
+      // 조당 최대 팀 수를 초과하지 않는 경우에만 배정
+      if (newGroups[targetGroupIndex].teams.length < teamsPerGroup) {
+        newGroups[targetGroupIndex].teams.push(team);
       } else {
         newUnassignedTeams.push(team);
       }
@@ -361,7 +413,7 @@ export default function ManualGrouping({
                       <Box p="2">
                         <Flex align="center" justify="between">
                           <Text size="2" weight="bold" style={{ flex: '1' }}>
-                            {team.name}
+                            {team.name} {team.seed && `[시드 ${team.seed}]`}
                           </Text>
                           <Button
                             size="1"

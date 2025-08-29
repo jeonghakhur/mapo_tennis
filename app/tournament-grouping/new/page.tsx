@@ -130,10 +130,13 @@ export default function NewTournamentGroupingPage() {
 
         // 팀 목록 생성
         const teamList: Team[] = data.map(
-          (
-            app: { _id: string; division: string; teamMembers: unknown[]; createdAt: string },
-            index: number,
-          ) => {
+          (app: {
+            _id: string;
+            division: string;
+            teamMembers: unknown[];
+            createdAt: string;
+            seed?: number;
+          }) => {
             // 개인전/단체전에 따라 팀 이름 생성
             let teamName: string;
 
@@ -164,7 +167,7 @@ export default function NewTournamentGroupingPage() {
               name: teamName,
               division: app.division,
               members: app.teamMembers,
-              seed: index + 1,
+              seed: app.seed,
               createdAt: app.createdAt,
             };
           },
@@ -215,8 +218,6 @@ export default function NewTournamentGroupingPage() {
       return;
     }
 
-    console.log(manualGroups);
-
     return withLoading(async () => {
       // 조편성 저장만 수행 (예선 경기는 결과 페이지에서 생성)
       const saveRes = await fetch('/api/tournament-grouping/manual', {
@@ -244,6 +245,8 @@ export default function NewTournamentGroupingPage() {
 
   // 조편성 시작
   const handleStartGrouping = () => {
+    let teamsToUse: Team[];
+
     if (maxTeams && !isNaN(Number(maxTeams))) {
       const maxTeamCount = parseInt(maxTeams);
       if (maxTeamCount > approvedApplications) {
@@ -254,14 +257,16 @@ export default function NewTournamentGroupingPage() {
         return;
       }
       // 최대 팀 수에 따라 팀 목록 필터링
-      const filteredTeams = allTeams.slice(0, maxTeamCount);
-      setTeams(filteredTeams);
+      teamsToUse = allTeams.slice(0, maxTeamCount);
     } else {
       // 최대 팀 수가 입력되지 않았으면 모든 팀 사용
-      setTeams(allTeams);
+      teamsToUse = allTeams;
     }
 
+    console.log('조편성 시작 - 팀 목록:', teamsToUse);
+
     // 조편성 인터페이스 표시 및 기존 조편성 결과 초기화
+    setTeams([...teamsToUse]); // 새로운 배열 참조 생성
     setShowGroupingInterface(true);
     setManualGroups([]);
   };
@@ -270,8 +275,10 @@ export default function NewTournamentGroupingPage() {
   const handleWarningConfirm = () => {
     setShowWarningDialog(false);
     // 모든 팀으로 조편성 진행
-    setTeams(allTeams);
+    console.log('경고 확인 - 모든 팀 사용:', allTeams);
+    setTeams([...allTeams]); // 새로운 배열 참조 생성
     setShowGroupingInterface(true);
+    setManualGroups([]);
   };
 
   // 로딩 중이거나 권한 확인 중인 경우
@@ -432,6 +439,7 @@ export default function NewTournamentGroupingPage() {
       {showGroupingInterface && teams.length > 0 && (
         <Box>
           <ManualGrouping
+            key={`${selectedTournament}-${selectedDivision}-${teams.length}-${maxTeams}`}
             teams={teams}
             onGroupsChange={setManualGroups}
             teamsPerGroup={teamsPerGroup}

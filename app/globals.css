@@ -167,7 +167,7 @@
     border-collapse: collapse;
     border-top: 1px solid #e0e0e0;
 
-    /* table-layout: fixed; */
+    table-layout: fixed;
 
     th {
       padding: 8px;

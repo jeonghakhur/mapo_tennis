@@ -9,6 +9,7 @@ import { mutate } from 'swr';
 import type { Group } from '@/types/tournament';
 import Container from '@/components/Container';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 interface GroupingResult {
   groups: Group[];
@@ -100,13 +101,21 @@ function TournamentGroupingResultsContent() {
       });
 
       if (response.ok) {
-        // 캐시를 완전히 무효화하여 삭제된 데이터가 표시되지 않도록 함
-        await mutate('/api/tournament-grouping/index', undefined, false);
+        // 1) SWR 관련 키들 전부 무효화 (키가 불확실할 때)
+        await mutate(
+          (key) => typeof key === 'string' && key.startsWith('/api/tournament-grouping'),
+          undefined,
+          false,
+        );
 
-        // 삭제 후 tournament-grouping/ 페이지로 이동
-        router.push('/tournament-grouping/');
+        // 2) (옵션) 이동할 페이지 프리패치
+        router.prefetch('/tournament-grouping');
+
+        // 3) 이동 + 즉시 재요청
+        router.push('/tournament-grouping');
+        router.refresh();
       } else {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         alert(errorData.error || '삭제 중 오류가 발생했습니다.');
       }
     });
@@ -148,6 +157,7 @@ function TournamentGroupingResultsContent() {
   return (
     <Container>
       {/* 조편성 결과 */}
+      {loading && <LoadingOverlay />}
       {groupingResult && (
         <Box>
           {/* 예선 경기 관련 버튼 */}

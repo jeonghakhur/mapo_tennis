@@ -105,7 +105,10 @@ export async function deleteTournamentBracket(
 export async function updateBracketMatch(
   bracketId: string,
   matchKey: string,
-  matchData: Partial<BracketMatch>,
+  matchData: Partial<BracketMatch> & {
+    team1Name?: string;
+    team2Name?: string;
+  },
 ): Promise<boolean> {
   try {
     console.log('updateBracketMatch 시작:', { bracketId, matchKey, matchData });
@@ -120,8 +123,30 @@ export async function updateBracketMatch(
 
     const updatedMatches = bracket.matches.map((match: BracketMatch) => {
       if (match._key === matchKey) {
-        console.log('매치 업데이트:', { before: match, after: { ...match, ...matchData } });
-        return { ...match, ...matchData };
+        // 팀명 업데이트 처리
+        const updatedMatch = { ...match, ...matchData };
+
+        // team1Name이 있으면 team1.teamName 업데이트
+        if (matchData.team1Name !== undefined) {
+          updatedMatch.team1 = {
+            ...updatedMatch.team1,
+            teamName: matchData.team1Name,
+          };
+        }
+
+        // team2Name이 있으면 team2.teamName 업데이트
+        if (matchData.team2Name !== undefined) {
+          updatedMatch.team2 = {
+            ...updatedMatch.team2,
+            teamName: matchData.team2Name,
+          };
+        }
+
+        // team1Name, team2Name은 제거 (BracketMatch 타입에 없음)
+        const { ...finalMatch } = updatedMatch;
+
+        console.log('매치 업데이트:', { before: match, after: finalMatch });
+        return finalMatch;
       }
       return match;
     });

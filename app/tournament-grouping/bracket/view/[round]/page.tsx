@@ -80,6 +80,8 @@ export default function RoundPage() {
   const [scoreForm, setScoreForm] = useState({
     team1Score: '',
     team2Score: '',
+    team1Name: '',
+    team2Name: '',
     status: 'scheduled' as 'scheduled' | 'in_progress' | 'completed' | 'cancelled',
     court: '',
   });
@@ -177,6 +179,8 @@ export default function RoundPage() {
     setScoreForm({
       team1Score: match.team1.score?.toString() || '',
       team2Score: match.team2.score?.toString() || '',
+      team1Name: match.team1.teamName || '',
+      team2Name: match.team2.teamName || '',
       status: match.status,
       court: match.court || '',
     });
@@ -200,6 +204,8 @@ export default function RoundPage() {
           body: JSON.stringify({
             team1Score,
             team2Score,
+            team1Name: scoreForm.team1Name,
+            team2Name: scoreForm.team2Name,
             status: scoreForm.status,
             court: scoreForm.court,
           }),
@@ -518,11 +524,11 @@ export default function RoundPage() {
               .sort((a, b) => a.matchNumber - b.matchNumber)
               .map((match) => (
                 <Card key={match._key}>
-                  <Box p="3">
+                  <Box p="1">
                     <Text size="2" weight="bold" mb="2">
-                      {match.matchNumber}경기
+                      {match.matchNumber}경기 {match.court ? `(${match.court}코트)` : ''}
                     </Text>
-                    <Box mb="2">
+                    <Flex align="center" justify="between" mb="2">
                       <Text
                         size="2"
                         className={
@@ -532,12 +538,12 @@ export default function RoundPage() {
                         {match.team1.teamName}
                       </Text>
                       {match.team1.score !== undefined && (
-                        <Text size="1" color="gray">
+                        <Text size="2" color="gray">
                           {match.team1.score}점
                         </Text>
                       )}
-                    </Box>
-                    <Box mb="2">
+                    </Flex>
+                    <Flex align="center" justify="between" mb="2">
                       <Text
                         size="2"
                         className={
@@ -547,11 +553,11 @@ export default function RoundPage() {
                         {match.team2.teamName}
                       </Text>
                       {match.team2.score !== undefined && (
-                        <Text size="1" color="gray">
+                        <Text size="2" color="gray">
                           {match.team2.score}점
                         </Text>
                       )}
-                    </Box>
+                    </Flex>
                     <Flex align="center" justify="between" gap="2">
                       <Badge
                         color={
@@ -640,80 +646,112 @@ export default function RoundPage() {
       {/* 점수 입력 다이얼로그 */}
       <Dialog.Root open={showScoreDialog} onOpenChange={setShowScoreDialog}>
         <Dialog.Content>
-          <Dialog.Title>경기 점수 입력</Dialog.Title>
-          <Dialog.Description>
-            {selectedMatch?.team1.teamName} vs {selectedMatch?.team2.teamName}
-          </Dialog.Description>
+          <Dialog.Title>{selectedMatch?.matchNumber} 경기 점수 입력</Dialog.Title>
+          <div className="table-form">
+            <table>
+              <tbody>
+                <tr>
+                  <th style={{ width: '80px' }}>팀1 이름</th>
+                  <td>
+                    <TextField.Root
+                      size="3"
+                      value={scoreForm.team1Name}
+                      onChange={(e) =>
+                        setScoreForm((prev) => ({ ...prev, team1Name: e.target.value }))
+                      }
+                      placeholder="팀1 이름"
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th>팀1 점수</th>
+                  <td>
+                    <TextField.Root
+                      size="3"
+                      type="text"
+                      value={scoreForm.team1Score}
+                      onChange={(e) =>
+                        setScoreForm((prev) => ({ ...prev, team1Score: e.target.value }))
+                      }
+                      placeholder="0"
+                      style={{ width: '40px' }}
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th>팀2 이름</th>
+                  <td>
+                    <TextField.Root
+                      size="3"
+                      value={scoreForm.team2Name}
+                      onChange={(e) =>
+                        setScoreForm((prev) => ({ ...prev, team2Name: e.target.value }))
+                      }
+                      placeholder="팀2 이름"
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th>팀2 점수</th>
+                  <td className="text-center">
+                    <TextField.Root
+                      size="3"
+                      type="number"
+                      value={scoreForm.team2Score}
+                      onChange={(e) =>
+                        setScoreForm((prev) => ({ ...prev, team2Score: e.target.value }))
+                      }
+                      placeholder="0"
+                      style={{ width: '40px' }}
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th>경기 상태</th>
+                  <td>
+                    <Select.Root
+                      size="3"
+                      value={scoreForm.status}
+                      onValueChange={(
+                        value: 'scheduled' | 'in_progress' | 'completed' | 'cancelled',
+                      ) => setScoreForm((prev) => ({ ...prev, status: value }))}
+                    >
+                      <Select.Trigger />
+                      <Select.Content>
+                        {STATUS_OPTIONS.map((option) => (
+                          <Select.Item key={option.value} value={option.value}>
+                            {option.label}
+                          </Select.Item>
+                        ))}
+                      </Select.Content>
+                    </Select.Root>
+                  </td>
+                </tr>
+                <tr>
+                  <th>코트</th>
+                  <td>
+                    <TextField.Root
+                      size="3"
+                      value={scoreForm.court}
+                      onChange={(e) => setScoreForm((prev) => ({ ...prev, court: e.target.value }))}
+                      placeholder="코트 번호"
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-          <Flex direction="column" gap="3" my="4">
-            <Box>
-              <Text size="2" weight="bold" mb="1">
-                {selectedMatch?.team1.teamName} 점수
-              </Text>
-              <TextField.Root
-                size="2"
-                type="number"
-                value={scoreForm.team1Score}
-                onChange={(e) => setScoreForm((prev) => ({ ...prev, team1Score: e.target.value }))}
-                placeholder="0"
-              />
-            </Box>
-            <Box>
-              <Text size="2" weight="bold" mb="1">
-                {selectedMatch?.team2.teamName} 점수
-              </Text>
-              <TextField.Root
-                size="2"
-                type="number"
-                value={scoreForm.team2Score}
-                onChange={(e) => setScoreForm((prev) => ({ ...prev, team2Score: e.target.value }))}
-                placeholder="0"
-              />
-            </Box>
-            <Box>
-              <Text size="2" weight="bold" mb="1">
-                경기 상태
-              </Text>
-              <Select.Root
-                size="2"
-                value={scoreForm.status}
-                onValueChange={(value: 'scheduled' | 'in_progress' | 'completed' | 'cancelled') =>
-                  setScoreForm((prev) => ({ ...prev, status: value }))
-                }
-              >
-                <Select.Trigger />
-                <Select.Content>
-                  {STATUS_OPTIONS.map((option) => (
-                    <Select.Item key={option.value} value={option.value}>
-                      {option.label}
-                    </Select.Item>
-                  ))}
-                </Select.Content>
-              </Select.Root>
-            </Box>
-            <Box>
-              <Text size="2" weight="bold" mb="1">
-                코트
-              </Text>
-              <TextField.Root
-                size="2"
-                value={scoreForm.court}
-                onChange={(e) => setScoreForm((prev) => ({ ...prev, court: e.target.value }))}
-                placeholder="코트 번호"
-              />
-            </Box>
-          </Flex>
-
-          <Flex gap="3" justify="end">
+          <Box className="btn-wrap mt-3">
             <Dialog.Close>
-              <Button size="2" variant="soft">
+              <Button size="3" variant="soft">
                 취소
               </Button>
             </Dialog.Close>
-            <Button size="2" color="green" onClick={handleSaveScore} disabled={loading}>
+            <Button size="3" color="green" onClick={handleSaveScore} disabled={loading}>
               {loading ? '저장 중...' : '저장'}
             </Button>
-          </Flex>
+          </Box>
         </Dialog.Content>
       </Dialog.Root>
 

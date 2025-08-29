@@ -5,6 +5,8 @@ import type { BracketMatch } from '@/types/tournament';
 interface MatchUpdateData {
   team1Score?: number;
   team2Score?: number;
+  team1Name?: string;
+  team2Name?: string;
   status?: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
   court?: string;
 }
@@ -41,19 +43,28 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ mat
       updateData.court = matchData.court;
     }
 
-    // 팀 점수 업데이트
-    if (matchData.team1Score !== undefined || matchData.team2Score !== undefined) {
+    // 팀 정보 업데이트 (점수 또는 팀명)
+    if (
+      matchData.team1Score !== undefined ||
+      matchData.team2Score !== undefined ||
+      matchData.team1Name !== undefined ||
+      matchData.team2Name !== undefined
+    ) {
       const currentMatch = bracket.matches.find((m) => m._key === matchKey);
       if (currentMatch) {
         updateData.team1 = {
           teamId: currentMatch.team1.teamId,
-          teamName: currentMatch.team1.teamName,
-          score: matchData.team1Score,
+          teamName:
+            matchData.team1Name !== undefined ? matchData.team1Name : currentMatch.team1.teamName,
+          score:
+            matchData.team1Score !== undefined ? matchData.team1Score : currentMatch.team1.score,
         };
         updateData.team2 = {
           teamId: currentMatch.team2.teamId,
-          teamName: currentMatch.team2.teamName,
-          score: matchData.team2Score,
+          teamName:
+            matchData.team2Name !== undefined ? matchData.team2Name : currentMatch.team2.teamName,
+          score:
+            matchData.team2Score !== undefined ? matchData.team2Score : currentMatch.team2.score,
         };
       }
     }

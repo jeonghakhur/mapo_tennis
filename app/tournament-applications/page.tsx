@@ -207,8 +207,8 @@ export default function TournamentApplicationsPage() {
 
       // 상태 필터
       const activeStatusFilters = Object.entries(advancedFilters.statusFilters)
-        .filter(([_, isActive]) => isActive)
-        .map(([status, _]) => status);
+        .filter(([, isActive]) => isActive)
+        .map(([status]) => status);
 
       if (activeStatusFilters.length > 0) {
         list = list.filter((app) => activeStatusFilters.includes(app.status));

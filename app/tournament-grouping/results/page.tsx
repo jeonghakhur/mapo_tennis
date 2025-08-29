@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Box, Text, Button, Flex, Card, Heading, Badge, Separator } from '@radix-ui/themes';
+import { useState, useEffect, useCallback } from 'react';
+import { Box, Text, Button, Flex, Card, Badge, Separator } from '@radix-ui/themes';
 import { useLoading } from '@/hooks/useLoading';
 import { useRouter } from 'next/navigation';
 import { mutate } from 'swr';
@@ -64,7 +64,7 @@ export default function TournamentGroupingResultsPage() {
   };
 
   // 조편성 결과 조회
-  const fetchGroupingResults = async () => {
+  const fetchGroupingResults = useCallback(async () => {
     if (!selectedTournament || !selectedDivision) return;
 
     return withLoading(async () => {
@@ -81,7 +81,7 @@ export default function TournamentGroupingResultsPage() {
       // 경기 정보 조회
       await fetchMatchesInfo();
     });
-  };
+  }, [selectedTournament, selectedDivision, withLoading]);
 
   // 대진표 삭제 실행
   const handleDeleteAll = async () => {
@@ -117,7 +117,7 @@ export default function TournamentGroupingResultsPage() {
     if (selectedTournament && selectedDivision) {
       fetchGroupingResults();
     }
-  }, [selectedTournament, selectedDivision]);
+  }, [selectedTournament, selectedDivision, fetchGroupingResults]);
 
   // 예선 경기 생성
   const handleCreateMatches = async () => {

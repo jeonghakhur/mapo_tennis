@@ -33,7 +33,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     // 시드 삭제인 경우 (seedNumber가 0)
     if (seedNumber === 0) {
-      const updatedApplication = await client.patch(id).unset(['seed']).commit();
+      await client.patch(id).unset(['seed']).commit();
 
       // 업데이트된 전체 데이터 조회
       const fullApplication = await client.fetch(
@@ -98,7 +98,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     // 시드 번호 업데이트
-    const updatedApplication = await client.patch(id).set({ seed: seedNumber }).commit();
+    await client.patch(id).set({ seed: seedNumber }).commit();
 
     // 업데이트된 전체 데이터 조회
     const fullApplication = await client.fetch(

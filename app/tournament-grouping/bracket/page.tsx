@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 
 import { useLoading } from '@/hooks/useLoading';
 import { useTournament } from '@/hooks/useTournaments';
-import type { Match } from '@/types/tournament';
 
 interface GroupStanding {
   teamId: string;
@@ -37,12 +36,6 @@ interface BracketMatch {
   status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
   court?: string;
   winner?: string;
-}
-
-interface BracketData {
-  tournamentId: string;
-  division: string;
-  matches: BracketMatch[];
 }
 
 export default function TournamentBracketPage() {

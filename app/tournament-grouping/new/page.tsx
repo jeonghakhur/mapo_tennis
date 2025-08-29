@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Box, Text, Button, Flex, Card, Heading, Select, Badge, TextField } from '@radix-ui/themes';
+import { Box, Text, Button, Flex, Heading, Select, Badge, TextField } from '@radix-ui/themes';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useLoading } from '@/hooks/useLoading';

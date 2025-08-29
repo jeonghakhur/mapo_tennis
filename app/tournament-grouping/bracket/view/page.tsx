@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { Box, Text, Button, Flex, Card, Heading, Badge } from '@radix-ui/themes';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLoading } from '@/hooks/useLoading';
@@ -27,7 +27,7 @@ interface BracketMatch {
   winner?: string;
 }
 
-export default function TournamentBracketViewPage() {
+function TournamentBracketViewContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { withLoading } = useLoading();
@@ -102,498 +102,108 @@ export default function TournamentBracketViewPage() {
             </Text>
           </Box>
           <Flex gap="2">
-            <Button size="3" color="blue" onClick={handleManageBracket}>
-              대진표 관리
+            <Button size="3" variant="soft" onClick={handleManageBracket}>
+              관리
             </Button>
           </Flex>
         </Flex>
       </Box>
 
-      {/* 라운드별 이동 버튼 */}
-      {bracketMatches.length > 0 && (
-        <Card mb="6">
-          <Box p="4">
-            <Heading size="4" weight="bold" mb="4">
-              라운드별 보기
-            </Heading>
-            <Flex gap="2" wrap="wrap">
-              {bracketMatches.some((m) => m.round === 'round32') && (
-                <Button
-                  size="3"
-                  variant="soft"
-                  onClick={() =>
-                    (window.location.href = `/tournament-grouping/bracket/view/round32?tournamentId=${selectedTournament}&division=${selectedDivision}`)
-                  }
-                >
-                  32강
-                </Button>
-              )}
-              {bracketMatches.some((m) => m.round === 'round16') && (
-                <Button
-                  size="3"
-                  variant="soft"
-                  onClick={() =>
-                    (window.location.href = `/tournament-grouping/bracket/view/round16?tournamentId=${selectedTournament}&division=${selectedDivision}`)
-                  }
-                >
-                  16강
-                </Button>
-              )}
-              {bracketMatches.some((m) => m.round === 'quarterfinal') && (
-                <Button
-                  size="3"
-                  variant="soft"
-                  onClick={() =>
-                    (window.location.href = `/tournament-grouping/bracket/view/quarterfinal?tournamentId=${selectedTournament}&division=${selectedDivision}`)
-                  }
-                >
-                  8강
-                </Button>
-              )}
-              {bracketMatches.some((m) => m.round === 'semifinal') && (
-                <Button
-                  size="3"
-                  variant="soft"
-                  onClick={() =>
-                    (window.location.href = `/tournament-grouping/bracket/view/semifinal?tournamentId=${selectedTournament}&division=${selectedDivision}`)
-                  }
-                >
-                  4강
-                </Button>
-              )}
-              {bracketMatches.some((m) => m.round === 'final') && (
-                <Button
-                  size="3"
-                  variant="soft"
-                  onClick={() =>
-                    (window.location.href = `/tournament-grouping/bracket/view/final?tournamentId=${selectedTournament}&division=${selectedDivision}`)
-                  }
-                >
-                  결승
-                </Button>
-              )}
-            </Flex>
-          </Box>
-        </Card>
-      )}
-
-      {/* 본선 대진표 */}
-      {bracketMatches.length > 0 && (
-        <Card mb="6">
-          <Box p="4">
-            <Heading size="4" weight="bold" mb="4">
-              본선 대진표
-            </Heading>
-
-            {/* 32강 */}
-            {bracketMatches.filter((m) => m.round === 'round32').length > 0 && (
-              <Box mb="6">
-                <Heading size="3" weight="bold" mb="3">
-                  32강
-                </Heading>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {bracketMatches
-                    .filter((m) => m.round === 'round32')
-                    .sort((a, b) => a.matchNumber - b.matchNumber)
-                    .map((match) => (
-                      <Card key={match._key}>
-                        <Box p="3">
-                          <Text size="2" weight="bold" mb="2">
-                            {match.matchNumber}경기
-                          </Text>
-                          <Box mb="2">
-                            <Text
-                              size="2"
-                              className={
-                                match.winner === match.team1.teamId
-                                  ? 'font-bold text-green-600'
-                                  : ''
-                              }
-                            >
-                              {match.team1.teamName}
-                            </Text>
-                            {match.team1.score !== undefined && (
-                              <Text size="1" color="gray">
-                                {match.team1.score}점
-                              </Text>
-                            )}
-                          </Box>
-                          <Box mb="2">
-                            <Text
-                              size="2"
-                              className={
-                                match.winner === match.team2.teamId
-                                  ? 'font-bold text-green-600'
-                                  : ''
-                              }
-                            >
-                              {match.team2.teamName}
-                            </Text>
-                            {match.team2.score !== undefined && (
-                              <Text size="1" color="gray">
-                                {match.team2.score}점
-                              </Text>
-                            )}
-                          </Box>
-                          <Badge
-                            color={
-                              match.status === 'completed'
-                                ? 'green'
-                                : match.status === 'in_progress'
-                                  ? 'yellow'
-                                  : match.status === 'cancelled'
-                                    ? 'red'
-                                    : 'gray'
-                            }
-                            size="1"
-                          >
-                            {match.status === 'completed'
-                              ? '완료'
-                              : match.status === 'in_progress'
-                                ? '진행중'
-                                : match.status === 'cancelled'
-                                  ? '취소'
-                                  : '예정'}
-                          </Badge>
-                        </Box>
-                      </Card>
-                    ))}
-                </div>
-              </Box>
-            )}
-
-            {/* 16강 */}
-            {bracketMatches.filter((m) => m.round === 'round16').length > 0 && (
-              <Box mb="6">
-                <Heading size="3" weight="bold" mb="3">
-                  16강
-                </Heading>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {bracketMatches
-                    .filter((m) => m.round === 'round16')
-                    .sort((a, b) => a.matchNumber - b.matchNumber)
-                    .map((match) => (
-                      <Card key={match._key}>
-                        <Box p="3">
-                          <Text size="2" weight="bold" mb="2">
-                            {match.matchNumber}경기
-                          </Text>
-                          <Box mb="2">
-                            <Text
-                              size="2"
-                              className={
-                                match.winner === match.team1.teamId
-                                  ? 'font-bold text-green-600'
-                                  : ''
-                              }
-                            >
-                              {match.team1.teamName}
-                            </Text>
-                            {match.team1.score !== undefined && (
-                              <Text size="1" color="gray">
-                                {match.team1.score}점
-                              </Text>
-                            )}
-                          </Box>
-                          <Box mb="2">
-                            <Text
-                              size="2"
-                              className={
-                                match.winner === match.team2.teamId
-                                  ? 'font-bold text-green-600'
-                                  : ''
-                              }
-                            >
-                              {match.team2.teamName}
-                            </Text>
-                            {match.team2.score !== undefined && (
-                              <Text size="1" color="gray">
-                                {match.team2.score}점
-                              </Text>
-                            )}
-                          </Box>
-                          <Badge
-                            color={
-                              match.status === 'completed'
-                                ? 'green'
-                                : match.status === 'in_progress'
-                                  ? 'yellow'
-                                  : match.status === 'cancelled'
-                                    ? 'red'
-                                    : 'gray'
-                            }
-                            size="1"
-                          >
-                            {match.status === 'completed'
-                              ? '완료'
-                              : match.status === 'in_progress'
-                                ? '진행중'
-                                : match.status === 'cancelled'
-                                  ? '취소'
-                                  : '예정'}
-                          </Badge>
-                        </Box>
-                      </Card>
-                    ))}
-                </div>
-              </Box>
-            )}
-
-            {/* 8강 */}
-            {bracketMatches.filter((m) => m.round === 'quarterfinal').length > 0 && (
-              <Box mb="6">
-                <Heading size="3" weight="bold" mb="3">
-                  8강
-                </Heading>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {bracketMatches
-                    .filter((m) => m.round === 'quarterfinal')
-                    .sort((a, b) => a.matchNumber - b.matchNumber)
-                    .map((match) => (
-                      <Card key={match._key}>
-                        <Box p="3">
-                          <Text size="2" weight="bold" mb="2">
-                            {match.matchNumber}경기
-                          </Text>
-                          <Box mb="2">
-                            <Text
-                              size="2"
-                              className={
-                                match.winner === match.team1.teamId
-                                  ? 'font-bold text-green-600'
-                                  : ''
-                              }
-                            >
-                              {match.team1.teamName}
-                            </Text>
-                            {match.team1.score !== undefined && (
-                              <Text size="1" color="gray">
-                                {match.team1.score}점
-                              </Text>
-                            )}
-                          </Box>
-                          <Box mb="2">
-                            <Text
-                              size="2"
-                              className={
-                                match.winner === match.team2.teamId
-                                  ? 'font-bold text-green-600'
-                                  : ''
-                              }
-                            >
-                              {match.team2.teamName}
-                            </Text>
-                            {match.team2.score !== undefined && (
-                              <Text size="1" color="gray">
-                                {match.team2.score}점
-                              </Text>
-                            )}
-                          </Box>
-                          <Badge
-                            color={
-                              match.status === 'completed'
-                                ? 'green'
-                                : match.status === 'in_progress'
-                                  ? 'yellow'
-                                  : match.status === 'cancelled'
-                                    ? 'red'
-                                    : 'gray'
-                            }
-                            size="1"
-                          >
-                            {match.status === 'completed'
-                              ? '완료'
-                              : match.status === 'in_progress'
-                                ? '진행중'
-                                : match.status === 'cancelled'
-                                  ? '취소'
-                                  : '예정'}
-                          </Badge>
-                        </Box>
-                      </Card>
-                    ))}
-                </div>
-              </Box>
-            )}
-
-            {/* 4강 */}
-            {bracketMatches.filter((m) => m.round === 'semifinal').length > 0 && (
-              <Box mb="6">
-                <Heading size="3" weight="bold" mb="3">
-                  4강
-                </Heading>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {bracketMatches
-                    .filter((m) => m.round === 'semifinal')
-                    .sort((a, b) => a.matchNumber - b.matchNumber)
-                    .map((match) => (
-                      <Card key={match._key}>
-                        <Box p="3">
-                          <Text size="2" weight="bold" mb="2">
-                            {match.matchNumber}경기
-                          </Text>
-                          <Box mb="2">
-                            <Text
-                              size="2"
-                              className={
-                                match.winner === match.team1.teamId
-                                  ? 'font-bold text-green-600'
-                                  : ''
-                              }
-                            >
-                              {match.team1.teamName}
-                            </Text>
-                            {match.team1.score !== undefined && (
-                              <Text size="1" color="gray">
-                                {match.team1.score}점
-                              </Text>
-                            )}
-                          </Box>
-                          <Box mb="2">
-                            <Text
-                              size="2"
-                              className={
-                                match.winner === match.team2.teamId
-                                  ? 'font-bold text-green-600'
-                                  : ''
-                              }
-                            >
-                              {match.team2.teamName}
-                            </Text>
-                            {match.team2.score !== undefined && (
-                              <Text size="1" color="gray">
-                                {match.team2.score}점
-                              </Text>
-                            )}
-                          </Box>
-                          <Badge
-                            color={
-                              match.status === 'completed'
-                                ? 'green'
-                                : match.status === 'in_progress'
-                                  ? 'yellow'
-                                  : match.status === 'cancelled'
-                                    ? 'red'
-                                    : 'gray'
-                            }
-                            size="1"
-                          >
-                            {match.status === 'completed'
-                              ? '완료'
-                              : match.status === 'in_progress'
-                                ? '진행중'
-                                : match.status === 'cancelled'
-                                  ? '취소'
-                                  : '예정'}
-                          </Badge>
-                        </Box>
-                      </Card>
-                    ))}
-                </div>
-              </Box>
-            )}
-
-            {/* 결승 */}
-            {bracketMatches.filter((m) => m.round === 'final').length > 0 && (
-              <Box mb="6">
-                <Heading size="3" weight="bold" mb="3">
-                  결승
-                </Heading>
-                <div className="grid grid-cols-1 gap-4">
-                  {bracketMatches
-                    .filter((m) => m.round === 'final')
-                    .sort((a, b) => a.matchNumber - b.matchNumber)
-                    .map((match) => (
-                      <Card key={match._key}>
-                        <Box p="3">
-                          <Text size="2" weight="bold" mb="2">
-                            {match.matchNumber}경기
-                          </Text>
-                          <Box mb="2">
-                            <Text
-                              size="2"
-                              className={
-                                match.winner === match.team1.teamId
-                                  ? 'font-bold text-green-600'
-                                  : ''
-                              }
-                            >
-                              {match.team1.teamName}
-                            </Text>
-                            {match.team1.score !== undefined && (
-                              <Text size="1" color="gray">
-                                {match.team1.score}점
-                              </Text>
-                            )}
-                          </Box>
-                          <Box mb="2">
-                            <Text
-                              size="2"
-                              className={
-                                match.winner === match.team2.teamId
-                                  ? 'font-bold text-green-600'
-                                  : ''
-                              }
-                            >
-                              {match.team2.teamName}
-                            </Text>
-                            {match.team2.score !== undefined && (
-                              <Text size="1" color="gray">
-                                {match.team2.score}점
-                              </Text>
-                            )}
-                          </Box>
-                          <Badge
-                            color={
-                              match.status === 'completed'
-                                ? 'green'
-                                : match.status === 'in_progress'
-                                  ? 'yellow'
-                                  : match.status === 'cancelled'
-                                    ? 'red'
-                                    : 'gray'
-                            }
-                            size="1"
-                          >
-                            {match.status === 'completed'
-                              ? '완료'
-                              : match.status === 'in_progress'
-                                ? '진행중'
-                                : match.status === 'cancelled'
-                                  ? '취소'
-                                  : '예정'}
-                          </Badge>
-                        </Box>
-                      </Card>
-                    ))}
-                </div>
-              </Box>
-            )}
-          </Box>
-        </Card>
-      )}
-
-      {/* 파라미터가 없을 때 */}
-      {(!selectedTournament || !selectedDivision) && (
-        <Card>
-          <Box p="4">
-            <Text size="3" color="gray" align="center">
-              대회 ID와 부서 정보가 필요합니다. 올바른 URL로 접근해주세요.
-            </Text>
-          </Box>
-        </Card>
-      )}
-
-      {/* 대진표가 없을 때 */}
+      {/* 본선 대진표가 없을 때 */}
       {selectedTournament && selectedDivision && bracketMatches.length === 0 && (
         <Card>
-          <Box p="4">
-            <Text size="3" color="gray" align="center">
-              아직 본선 대진표가 생성되지 않았습니다.
+          <Box p="6" style={{ textAlign: 'center' }}>
+            <Text size="3" color="gray" mb="4">
+              본선 대진표가 생성되지 않았습니다.
             </Text>
+            <Button size="3" onClick={handleManageBracket}>
+              대진표 생성하기
+            </Button>
           </Box>
         </Card>
       )}
+
+      {/* 본선 대진표 표시 */}
+      {bracketMatches.length > 0 && (
+        <Box>
+          <Text size="3" weight="bold" mb="4">
+            본선 대진표
+          </Text>
+          <Flex direction="column" gap="3">
+            {bracketMatches.map((match) => (
+              <Card key={match._key}>
+                <Box p="4">
+                  <Flex align="center" justify="between" mb="2">
+                    <Text size="2" color="gray">
+                      {match.round === 'final' && '결승'}
+                      {match.round === 'semifinal' && '준결승'}
+                      {match.round === 'quarterfinal' && '8강'}
+                      {match.round === 'round16' && '16강'}
+                      {match.round === 'round32' && '32강'} • {match.matchNumber}경기
+                    </Text>
+                    <Badge
+                      color={
+                        match.status === 'completed'
+                          ? 'green'
+                          : match.status === 'in_progress'
+                            ? 'orange'
+                            : 'gray'
+                      }
+                      size="2"
+                    >
+                      {match.status === 'completed' && '완료'}
+                      {match.status === 'in_progress' && '진행중'}
+                      {match.status === 'scheduled' && '예정'}
+                      {match.status === 'cancelled' && '취소'}
+                    </Badge>
+                  </Flex>
+
+                  <Flex direction="column" gap="2">
+                    <Flex align="center" justify="between">
+                      <Text weight="bold" style={{ wordBreak: 'break-word', flex: '1' }}>
+                        {match.team1.teamName}
+                      </Text>
+                      <Text
+                        size="4"
+                        weight="bold"
+                        style={{ minWidth: '40px', textAlign: 'center' }}
+                      >
+                        {match.team1.score !== undefined ? match.team1.score : '-'}
+                      </Text>
+                    </Flex>
+                    <Flex align="center" justify="between">
+                      <Text weight="bold" style={{ wordBreak: 'break-word', flex: '1' }}>
+                        {match.team2.teamName}
+                      </Text>
+                      <Text
+                        size="4"
+                        weight="bold"
+                        style={{ minWidth: '40px', textAlign: 'center' }}
+                      >
+                        {match.team2.score !== undefined ? match.team2.score : '-'}
+                      </Text>
+                    </Flex>
+                  </Flex>
+
+                  {match.court && (
+                    <Text size="2" color="gray" mt="2">
+                      코트: {match.court}
+                    </Text>
+                  )}
+                </Box>
+              </Card>
+            ))}
+          </Flex>
+        </Box>
+      )}
     </Container>
+  );
+}
+
+export default function TournamentBracketViewPage() {
+  return (
+    <Suspense fallback={<div>로딩 중...</div>}>
+      <TournamentBracketViewContent />
+    </Suspense>
   );
 }

@@ -18,15 +18,21 @@ async function deleteAllHandler(req: NextRequest) {
       params: { tournamentId, division },
     });
 
-    // 경기 정보 삭제
+    // 예선 경기 정보 삭제
     await client.delete({
       query: `*[_type == "tournamentMatch" && tournamentId == $tournamentId && division == $division]`,
       params: { tournamentId, division },
     });
 
+    // 본선 대진표 정보 삭제
+    await client.delete({
+      query: `*[_type == "tournamentBracket" && tournamentId == $tournamentId && division == $division]`,
+      params: { tournamentId, division },
+    });
+
     return NextResponse.json({
       success: true,
-      message: '조편성과 경기 정보가 모두 삭제되었습니다.',
+      message: '조편성, 예선 경기, 본선 대진표 정보가 모두 삭제되었습니다.',
     });
   } catch (error) {
     console.error('조편성 및 경기 삭제 오류:', error);

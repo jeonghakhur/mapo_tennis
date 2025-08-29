@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { Box, Text, Button, Flex, Card, Badge, Separator } from '@radix-ui/themes';
 import { useLoading } from '@/hooks/useLoading';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -21,7 +21,7 @@ interface GroupingResult {
   };
 }
 
-export default function TournamentGroupingResultsPage() {
+function TournamentGroupingResultsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { loading, withLoading } = useLoading();
@@ -249,5 +249,13 @@ export default function TournamentGroupingResultsPage() {
         confirmColor="green"
       />
     </Container>
+  );
+}
+
+export default function TournamentGroupingResultsPage() {
+  return (
+    <Suspense fallback={<div>로딩 중...</div>}>
+      <TournamentGroupingResultsContent />
+    </Suspense>
   );
 }

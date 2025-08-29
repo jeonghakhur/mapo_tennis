@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Box,
@@ -30,7 +30,7 @@ interface MatchUpdateData {
   court?: string;
 }
 
-export default function TournamentMatchesPage() {
+function TournamentMatchesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { withLoading } = useLoading();
@@ -682,5 +682,13 @@ export default function TournamentMatchesPage() {
         onConfirm={() => setShowSuccessDialog(false)}
       />
     </Container>
+  );
+}
+
+export default function TournamentMatchesPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <TournamentMatchesContent />
+    </Suspense>
   );
 }

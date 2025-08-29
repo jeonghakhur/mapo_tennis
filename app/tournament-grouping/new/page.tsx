@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { Box, Text, Button, Flex, Heading, Select, Badge, TextField } from '@radix-ui/themes';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -15,7 +15,7 @@ import ManualGrouping from '@/components/ManualGrouping';
 import { wrapTextWithSpans } from '@/lib/utils';
 import { mutate } from 'swr';
 
-export default function NewTournamentGroupingPage() {
+function NewTournamentGroupingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { status, data: session } = useSession();
@@ -490,5 +490,13 @@ export default function NewTournamentGroupingPage() {
         onCancel={() => setShowWarningDialog(false)}
       />
     </Container>
+  );
+}
+
+export default function NewTournamentGroupingPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <NewTournamentGroupingContent />
+    </Suspense>
   );
 }

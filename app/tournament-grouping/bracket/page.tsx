@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { Box, Text, Button, Flex, Card, Heading, Badge } from '@radix-ui/themes';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -38,7 +38,7 @@ interface BracketMatch {
   winner?: string;
 }
 
-export default function TournamentBracketPage() {
+function TournamentBracketContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { withLoading } = useLoading();
@@ -307,5 +307,13 @@ export default function TournamentBracketPage() {
         onConfirm={() => setShowSuccessDialog(false)}
       />
     </Container>
+  );
+}
+
+export default function TournamentBracketPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <TournamentBracketContent />
+    </Suspense>
   );
 }

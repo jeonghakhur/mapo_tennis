@@ -71,6 +71,11 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="마포구 테니스 협회" />
         <meta name="mobile-web-app-capable" content="yes" />
+        <meta
+          name="google-site-verification"
+          content="KShi2d_qfkhUSwi7fqfNUCMRDJGOg6CQoHmNpv45f60"
+        />
+        <meta name="naver-site-verification" content="c8bbe3e3a87354960b16428fb69e63ede252589a" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Theme scaling="100%">

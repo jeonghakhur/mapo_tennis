@@ -28,17 +28,16 @@ export default function MarkdownEditor({ value, onChange }: MarkdownEditorProps)
   useEffect(() => {
     setIsClient(true);
 
-    // CSS를 동적으로 로드
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://uicdn.toast.com/editor/latest/toastui-editor.css';
-    document.head.appendChild(link);
-
-    return () => {
-      if (document.head.contains(link)) {
-        document.head.removeChild(link);
-      }
-    };
+    // CSS를 동적으로 로드 (중복 방지)
+    const existingLink = document.querySelector(
+      'link[href="https://uicdn.toast.com/editor/latest/toastui-editor.css"]',
+    );
+    if (!existingLink) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://uicdn.toast.com/editor/latest/toastui-editor.css';
+      document.head.appendChild(link);
+    }
   }, []);
 
   const handleImageUpload = async (file: File) => {

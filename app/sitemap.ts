@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 import { client } from '@/sanity/lib/client';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const site = 'https://mapo-tennis.vercel.app';
+  const site = 'https://mapo-tennis.com';
   const baseDate = new Date();
 
   // 정적 경로들 (NavBar.tsx의 NAV_ITEMS 기반) - 관리자 페이지 제외

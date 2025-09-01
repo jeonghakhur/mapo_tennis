@@ -147,7 +147,7 @@ function HomePageContent() {
         title: '마포구 테니스 협회',
         description:
           '마포구 테니스 협회 공식 웹사이트입니다. 대회 정보, 클럽 관리, 소식 등을 확인하세요.',
-        imageUrl: 'https://mapo-tennis.vercel.app/icon_512x512.png', // 800x400 사이즈 권장
+        imageUrl: 'https://mapo-tennis.com/icon_512x512.png', // 800x400 사이즈 권장
         link: {
           mobileWebUrl: window.location.href,
           webUrl: window.location.href,

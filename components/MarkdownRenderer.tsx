@@ -5,6 +5,7 @@ import { Box } from '@radix-ui/themes';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Navigation } from 'swiper/modules';
 import Image from 'next/image';
+import { loadToastUIViewerCSS } from '@/lib/toastui-utils';
 import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/navigation';
@@ -53,18 +54,7 @@ export default function MarkdownRenderer({ content, onImageClick }: MarkdownRend
 
   useEffect(() => {
     setIsClient(true);
-
-    // CSS를 동적으로 로드
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://uicdn.toast.com/editor/latest/toastui-editor-viewer.css';
-    document.head.appendChild(link);
-
-    return () => {
-      if (document.head.contains(link)) {
-        document.head.removeChild(link);
-      }
-    };
+    loadToastUIViewerCSS();
   }, []);
 
   // content가 변경될 때 Viewer 업데이트 (이미지 제거된 내용만)

@@ -15,13 +15,19 @@ async function getUsersHandler(req: NextRequest) {
     // 검색 조건 구성
     let query = `*[_type == "user"`;
     if (search) {
+      // 검색어 정규화 (공백 제거 및 소문자 변환)
+      const normalizedSearch = search.trim().toLowerCase();
+
+      // 숫자인지 확인
+      const isNumeric = !isNaN(parseInt(normalizedSearch)) && normalizedSearch !== '';
+
       // 이름, 클럽명, 점수로 검색
       query += ` && (
-        name match "*${search}*" || 
-        email match "*${search}*" || 
-        phone match "*${search}*" ||
-        score == ${parseInt(search) || 0} ||
-        clubs[]->name match "*${search}*"
+        lower(name) match "*${normalizedSearch}*" || 
+        lower(email) match "*${normalizedSearch}*" || 
+        phone match "*${normalizedSearch}*" ||
+        ${isNumeric ? `score == ${parseInt(normalizedSearch)} ||` : ''}
+        lower(clubs[]->name) match "*${normalizedSearch}*"
       )`;
     }
     query += `]`;
@@ -59,13 +65,19 @@ async function getUsersHandler(req: NextRequest) {
     // 전체 개수 조회
     let countQuery = `count(*[_type == "user"`;
     if (search) {
+      // 검색어 정규화 (공백 제거 및 소문자 변환)
+      const normalizedSearch = search.trim().toLowerCase();
+
+      // 숫자인지 확인
+      const isNumeric = !isNaN(parseInt(normalizedSearch)) && normalizedSearch !== '';
+
       // 이름, 클럽명, 점수로 검색
       countQuery += ` && (
-        name match "*${search}*" || 
-        email match "*${search}*" || 
-        phone match "*${search}*" ||
-        score == ${parseInt(search) || 0} ||
-        clubs[]->name match "*${search}*"
+        lower(name) match "*${normalizedSearch}*" || 
+        lower(email) match "*${normalizedSearch}*" || 
+        phone match "*${normalizedSearch}*" ||
+        ${isNumeric ? `score == ${parseInt(normalizedSearch)} ||` : ''}
+        lower(clubs[]->name) match "*${normalizedSearch}*"
       )`;
     }
     countQuery += `])`;

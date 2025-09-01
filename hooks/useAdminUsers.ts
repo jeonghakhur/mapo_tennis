@@ -20,18 +20,26 @@ export function useAdminUsers({ page, limit, search, sortBy, sortOrder }: UseAdm
   const params = new URLSearchParams({
     page: page.toString(),
     limit: limit.toString(),
-    search,
+    search: search.trim(), // 공백 제거
     sortBy,
     sortOrder,
   });
-  const { data, error, isLoading, mutate } = useSWR(
-    `/api/users?${params.toString()}`,
-    async (url: string) => {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('회원 목록을 불러올 수 없습니다.');
-      return res.json();
-    },
-  );
+
+  // 검색어가 있을 때만 캐시 키에 포함
+  const cacheKey = search.trim()
+    ? `/api/users?${params.toString()}`
+    : `/api/users?${new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        sortBy,
+        sortOrder,
+      }).toString()}`;
+
+  const { data, error, isLoading, mutate } = useSWR(cacheKey, async (url: string) => {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('회원 목록을 불러올 수 없습니다.');
+    return res.json();
+  });
 
   return {
     users: (data?.users as User[]) || [],

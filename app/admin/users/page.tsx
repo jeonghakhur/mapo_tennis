@@ -38,7 +38,6 @@ export default function AdminUsersPage() {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
     }, 500); // 500ms 지연
-
     return () => clearTimeout(timer);
   }, [search]);
 
@@ -64,11 +63,12 @@ export default function AdminUsersPage() {
   }, [session, status, router]);
 
   const handleSearch = () => {
+    setSearch(search.trim()); // 검색어 정리
     setPage(1);
   };
 
   const handleSearchInputChange = (value: string) => {
-    setSearch(value);
+    setSearch(value.trim()); // 공백 제거
     setPage(1);
   };
 

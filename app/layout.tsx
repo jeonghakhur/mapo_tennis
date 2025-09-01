@@ -73,9 +73,9 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta
           name="google-site-verification"
-          content="KShi2d_qfkhUSwi7fqfNUCMRDJGOg6CQoHmNpv45f60"
+          content="XzyojaZ4j0vNOpdcbYzJdQBJnFBd_pI6I_6zUcWjA0w"
         />
-        <meta name="naver-site-verification" content="c8bbe3e3a87354960b16428fb69e63ede252589a" />
+        <meta name="naver-site-verification" content="ab50281eeee1fe21a17133f7aaa2a38f5f9bdc11" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Theme scaling="100%">

@@ -1,8 +1,22 @@
 import useSWR, { mutate as globalMutate } from 'swr';
 import type { Post, PostInput } from '@/model/post';
 
-export function usePosts(showAll = true) {
-  const { data, error, isLoading, mutate } = useSWR(`/api/posts?all=${showAll}`, null);
+interface UsePostsOptions {
+  showAll?: boolean;
+  page?: number;
+  limit?: number;
+}
+
+export function usePosts(options: UsePostsOptions = {}) {
+  const { showAll = true, page = 1, limit = 5 } = options;
+
+  const params = new URLSearchParams({
+    all: showAll.toString(),
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+
+  const { data, error, isLoading, mutate } = useSWR(`/api/posts?${params.toString()}`, null);
 
   // 생성
   const createPost = async (newPost: PostInput) => {
@@ -84,6 +98,7 @@ export function usePosts(showAll = true) {
 
   return {
     posts: data?.posts || [],
+    pagination: data?.pagination || { page: 1, limit: 5, total: 0, totalPages: 0 },
     isLoading,
     error,
     mutate,

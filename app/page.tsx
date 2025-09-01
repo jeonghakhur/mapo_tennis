@@ -2,7 +2,7 @@
 import Container from '@/components/Container';
 import '@radix-ui/themes/styles.css';
 import { getUpcomingTournaments, getUpcomingTournamentsForAdmin } from '@/service/tournament';
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useCallback } from 'react';
 import { Box, Text, Flex, Badge, Button } from '@radix-ui/themes';
 import type { Post } from '@/model/post';
 import type { Tournament } from '@/model/tournament';
@@ -51,10 +51,23 @@ function HomePageContent() {
   const [selectedPostTitle, setSelectedPostTitle] = useState<string>('');
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [initialComments, setInitialComments] = useState<Comment[]>([]);
-  const { posts: allPosts, isLoading: postsLoading } = usePosts();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [allPosts, setAllPosts] = useState<Post[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // 회원 레벨 4 이상인지 확인
   const canManagePosts = session?.user?.level >= 4;
+
+  const {
+    posts,
+    pagination,
+    isLoading: postsLoading,
+  } = usePosts({
+    showAll: canManagePosts,
+    page: currentPage,
+    limit: 5,
+  });
 
   // 목록 전체에서 Lightbox 상태 관리
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -190,6 +203,23 @@ function HomePageContent() {
     }
   }, [searchParams]);
 
+  // 포스트 데이터 관리
+  useEffect(() => {
+    if (currentPage === 1) {
+      setAllPosts(posts);
+    } else {
+      setAllPosts((prev) => [...prev, ...posts]);
+    }
+    setHasMore(currentPage < pagination.totalPages);
+  }, [posts, currentPage, pagination.totalPages]);
+
+  // 검색어 변경 시 페이지 초기화
+  useEffect(() => {
+    setCurrentPage(1);
+    setAllPosts([]);
+    setHasMore(true);
+  }, [searchKeyword]);
+
   // 상대적 시간 포맷 함수
   function formatRelativeTime(dateString: string) {
     const now = new Date();
@@ -265,6 +295,75 @@ function HomePageContent() {
     }
     return true;
   });
+
+  // 인피니트 스크롤 처리
+  const handleScroll = useCallback(() => {
+    if (isLoadingMore || !hasMore || searchKeyword.trim()) return;
+
+    const scrollTop = window.scrollY;
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight;
+
+    // 스크롤 위치를 sessionStorage에 저장
+    sessionStorage.setItem('homePageScrollPosition', scrollTop.toString());
+
+    if (scrollTop + windowHeight >= documentHeight - 100) {
+      setIsLoadingMore(true);
+      setCurrentPage((prev) => prev + 1);
+    }
+  }, [isLoadingMore, hasMore, searchKeyword]);
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
+
+  // 페이지 로드 시 스크롤 위치 복원
+  useEffect(() => {
+    const savedScrollPosition = sessionStorage.getItem('homePageScrollPosition');
+    if (savedScrollPosition && !searchKeyword.trim()) {
+      const scrollPosition = parseInt(savedScrollPosition, 10);
+      // 다음 프레임에서 스크롤 위치 복원
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollPosition);
+      });
+    }
+  }, [searchKeyword]);
+
+  // 페이지 언마운트 시 스크롤 위치 저장
+  useEffect(() => {
+    return () => {
+      const currentScrollPosition = window.scrollY;
+      sessionStorage.setItem('homePageScrollPosition', currentScrollPosition.toString());
+    };
+  }, []);
+
+  // 페이지 변경 시 로딩 상태 관리
+  useEffect(() => {
+    if (currentPage > 1) {
+      setIsLoadingMore(false);
+    }
+  }, [posts, currentPage]);
+
+  // 페이지 로드 시 스크롤 위치 복원
+  useEffect(() => {
+    const savedScrollPosition = sessionStorage.getItem('homePageScrollPosition');
+    if (savedScrollPosition && !searchKeyword.trim()) {
+      const scrollPosition = parseInt(savedScrollPosition, 10);
+      // 다음 프레임에서 스크롤 위치 복원
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollPosition);
+      });
+    }
+  }, [searchKeyword]);
+
+  // 페이지 언마운트 시 스크롤 위치 저장
+  useEffect(() => {
+    return () => {
+      const currentScrollPosition = window.scrollY;
+      sessionStorage.setItem('homePageScrollPosition', currentScrollPosition.toString());
+    };
+  }, []);
 
   return (
     <Container>

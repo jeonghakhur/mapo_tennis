@@ -4,37 +4,81 @@ import { extractImageUrls, extractAssetIdFromUrl, isSanityAssetUrl } from '@/lib
 import { deleteFromSanityAssets } from '@/lib/sanityAssets';
 
 // 포스트 목록 조회 (발행된 것만)
-export async function getPublishedPosts(): Promise<Post[]> {
-  return await client.fetch(`
-    *[_type == "post" && isPublished == true]
-    | order(publishedAt desc){
-      ...,
-      author->{
-          _id,
-          name
-        },
-      "likeCount": coalesce(likeCount, 0),
-      "likedBy": coalesce(likedBy, []),
-      "commentCount": count(*[_type == "comment" && references(^._id)])
-      }
-  `);
+export async function getPublishedPosts(
+  page: number = 1,
+  limit: number = 5,
+): Promise<{
+  posts: Post[];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+}> {
+  const start = (page - 1) * limit;
+  const end = start + limit;
+
+  const [posts, total] = await Promise.all([
+    client.fetch(`
+      *[_type == "post" && isPublished == true]
+      | order(publishedAt desc) [${start}...${end}] {
+        ...,
+        author->{
+            _id,
+            name
+          },
+        "likeCount": coalesce(likeCount, 0),
+        "likedBy": coalesce(likedBy, []),
+        "commentCount": count(*[_type == "comment" && references(^._id)])
+        }
+    `),
+    client.fetch(`count(*[_type == "post" && isPublished == true])`),
+  ]);
+
+  return {
+    posts,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 }
 
 // 포스트 목록 조회 (모든 것)
-export async function getAllPosts(): Promise<Post[]> {
-  return await client.fetch(`
-    *[_type == "post"]
-    | order(createdAt desc){
-      ...,
-      author->{
-          _id,
-          name
-        },
-      "likeCount": coalesce(likeCount, 0),
-      "likedBy": coalesce(likedBy, []),
-      "commentCount": count(*[_type == "comment" && references(^._id)])
-      }
-  `);
+export async function getAllPosts(
+  page: number = 1,
+  limit: number = 5,
+): Promise<{
+  posts: Post[];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+}> {
+  const start = (page - 1) * limit;
+  const end = start + limit;
+
+  const [posts, total] = await Promise.all([
+    client.fetch(`
+      *[_type == "post"]
+      | order(createdAt desc) [${start}...${end}] {
+        ...,
+        author->{
+            _id,
+            name
+          },
+        "likeCount": coalesce(likeCount, 0),
+        "likedBy": coalesce(likedBy, []),
+        "commentCount": count(*[_type == "comment" && references(^._id)])
+        }
+    `),
+    client.fetch(`count(*[_type == "post"])`),
+  ]);
+
+  return {
+    posts,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 }
 
 // 포스트 상세 조회

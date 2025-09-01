@@ -17,6 +17,8 @@ export async function GET(req: NextRequest) {
   const id = searchParams.get('id');
   const all = searchParams.get('all');
   const category = searchParams.get('category');
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = parseInt(searchParams.get('limit') || '5');
 
   if (id) {
     const post = await getPost(id);
@@ -33,8 +35,10 @@ export async function GET(req: NextRequest) {
   }
 
   // all 파라미터가 있으면 모든 포스트, 없으면 발행된 포스트만
-  const posts = all === 'true' ? await getAllPosts() : await getPublishedPosts();
-  return NextResponse.json({ posts });
+  const result =
+    all === 'true' ? await getAllPosts(page, limit) : await getPublishedPosts(page, limit);
+
+  return NextResponse.json(result);
 }
 
 export async function POST(req: NextRequest) {

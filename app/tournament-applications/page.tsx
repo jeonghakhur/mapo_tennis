@@ -703,108 +703,109 @@ export default function TournamentApplicationsPage() {
           <Box>
             <Heading size="4">전체참가신청목록</Heading>
             {moderator && (
-            <Box className="table-view" mb="4">
-              <table className="text-center">
-                <thead>
-                  <tr>
-                    <th>참가부서</th>
-                    <th>총 참가팀</th>
-                    <th>회비납부</th>
-                    <th>회비미납</th>
-                    <th>승인대기</th>
-                    <th>승인완료</th>
-                    <th>거절</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* 전체 통계 행 */}
-                  <tr style={{ backgroundColor: '#f8f9fa', fontWeight: 'bold' }}>
-                    <td>
-                      <Text weight="bold" color="gray">
-                        전체
-                      </Text>
-                    </td>
-                    <td>
-                      <Text weight="bold" color="gray">
-                        {totalStats.totalTeams}팀
-                      </Text>
-                    </td>
-                    <td>
-                      <Text color="green" weight="bold">
-                        {totalStats.paidTeams}팀
-                      </Text>
-                    </td>
-                    <td>
-                      <Text
-                        color="red"
-                        weight="bold"
-                        style={{ cursor: totalStats.unpaidTeams > 0 ? 'pointer' : 'default' }}
-                        onClick={() => totalStats.unpaidTeams > 0 && openUnpaidModal('all')}
-                      >
-                        {totalStats.unpaidTeams}팀
-                      </Text>
-                    </td>
-                    <td>
-                      <Text color="blue" weight="bold">
-                        {totalStats.pendingTeams}팀
-                      </Text>
-                    </td>
-                    <td>
-                      <Text color="green" weight="bold">
-                        {totalStats.approvedTeams}팀
-                      </Text>
-                    </td>
-                    <td>
-                      <Text color="red" weight="bold">
-                        {totalStats.rejectedTeams}팀
-                      </Text>
-                    </td>
-                  </tr>
-                  {/* 부서별 통계 행들 */}
-                  {Object.entries(divisionStats)
-                    .sort(([a], [b]) => a.localeCompare(b))
-                    .map(([division, stats]) => (
-                      <tr key={division}>
-                        <td>{DIVISION_LABEL[division] || division}</td>
-                        <td>
-                          <Text weight="bold">{stats.totalTeams}팀</Text>
-                        </td>
-                        <td>
-                          <Text color="green" weight="bold">
-                            {stats.paidTeams}팀
-                          </Text>
-                        </td>
-                        <td>
-                          <Text
-                            color="red"
-                            weight="bold"
-                            style={{ cursor: stats.unpaidTeams > 0 ? 'pointer' : 'default' }}
-                            onClick={() => stats.unpaidTeams > 0 && openUnpaidModal(division)}
-                          >
-                            {stats.unpaidTeams}팀
-                          </Text>
-                        </td>
-                        <td>
-                          <Text color="blue" weight="bold">
-                            {stats.pendingTeams}팀
-                          </Text>
-                        </td>
-                        <td>
-                          <Text color="green" weight="bold">
-                            {stats.approvedTeams}팀
-                          </Text>
-                        </td>
-                        <td>
-                          <Text color="red" weight="bold">
-                            {stats.rejectedTeams}팀
-                          </Text>
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </Box>);
-
+              <Box className="table-view" mb="4">
+                <table className="text-center">
+                  <thead>
+                    <tr>
+                      <th>참가부서</th>
+                      <th>총 참가팀</th>
+                      <th>회비납부</th>
+                      <th>회비미납</th>
+                      <th>승인대기</th>
+                      <th>승인완료</th>
+                      <th>거절</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {/* 전체 통계 행 */}
+                    <tr style={{ backgroundColor: '#f8f9fa', fontWeight: 'bold' }}>
+                      <td>
+                        <Text weight="bold" color="gray">
+                          전체
+                        </Text>
+                      </td>
+                      <td>
+                        <Text weight="bold" color="gray">
+                          {totalStats.totalTeams}팀
+                        </Text>
+                      </td>
+                      <td>
+                        <Text color="green" weight="bold">
+                          {totalStats.paidTeams}팀
+                        </Text>
+                      </td>
+                      <td>
+                        <Text
+                          color="red"
+                          weight="bold"
+                          style={{ cursor: totalStats.unpaidTeams > 0 ? 'pointer' : 'default' }}
+                          onClick={() => totalStats.unpaidTeams > 0 && openUnpaidModal('all')}
+                        >
+                          {totalStats.unpaidTeams}팀
+                        </Text>
+                      </td>
+                      <td>
+                        <Text color="blue" weight="bold">
+                          {totalStats.pendingTeams}팀
+                        </Text>
+                      </td>
+                      <td>
+                        <Text color="green" weight="bold">
+                          {totalStats.approvedTeams}팀
+                        </Text>
+                      </td>
+                      <td>
+                        <Text color="red" weight="bold">
+                          {totalStats.rejectedTeams}팀
+                        </Text>
+                      </td>
+                    </tr>
+                    {/* 부서별 통계 행들 */}
+                    {Object.entries(divisionStats)
+                      .sort(([a], [b]) => a.localeCompare(b))
+                      .map(([division, stats]) => (
+                        <tr key={division}>
+                          <td>{DIVISION_LABEL[division] || division}</td>
+                          <td>
+                            <Text weight="bold">{stats.totalTeams}팀</Text>
+                          </td>
+                          <td>
+                            <Text color="green" weight="bold">
+                              {stats.paidTeams}팀
+                            </Text>
+                          </td>
+                          <td>
+                            <Text
+                              color="red"
+                              weight="bold"
+                              style={{ cursor: stats.unpaidTeams > 0 ? 'pointer' : 'default' }}
+                              onClick={() => stats.unpaidTeams > 0 && openUnpaidModal(division)}
+                            >
+                              {stats.unpaidTeams}팀
+                            </Text>
+                          </td>
+                          <td>
+                            <Text color="blue" weight="bold">
+                              {stats.pendingTeams}팀
+                            </Text>
+                          </td>
+                          <td>
+                            <Text color="green" weight="bold">
+                              {stats.approvedTeams}팀
+                            </Text>
+                          </td>
+                          <td>
+                            <Text color="red" weight="bold">
+                              {stats.rejectedTeams}팀
+                            </Text>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </Box>
+            )}
+            ;
             {filteredApplications.length === 0 ? (
               <Card className="p-6 text-center">참가 신청 내역이 없습니다.</Card>
             ) : (

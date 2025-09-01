@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
       tournamentType,
       teamMembers,
 
-      memo: memo || undefined,
+      memo: memo,
       isFeePaid,
     };
 

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withPermission, type UserWithLevel } from '@/lib/apiUtils';
+import { withPermission } from '@/lib/apiUtils';
 import { client } from '@/sanity/lib/client';
 
 // 조편성 결과 조회 핸들러
-async function getGroupsHandler(req: NextRequest, _user: UserWithLevel) {
+async function getGroupsHandler(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const tournamentId = searchParams.get('tournamentId');

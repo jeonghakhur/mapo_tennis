@@ -123,7 +123,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       tournamentType,
       teamMembers,
 
-      memo: memo || undefined,
+      memo: memo,
       isFeePaid,
     };
 

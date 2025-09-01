@@ -140,7 +140,7 @@ export async function PUT(request: NextRequest) {
     const updatedMatches = [...bracket.matches, ...nextRoundMatches];
 
     // 대진표 업데이트
-    const updatedBracket = await client
+    await client
       .patch(bracket._id)
       .set({
         matches: updatedMatches,

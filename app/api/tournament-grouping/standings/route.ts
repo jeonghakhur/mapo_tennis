@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withPermission, type UserWithLevel } from '@/lib/apiUtils';
+import { withPermission } from '@/lib/apiUtils';
 import { calculateGroupStandings } from '@/service/tournamentGrouping';
 
 // 조별 순위 계산 핸들러
-async function getStandingsHandler(req: NextRequest, _user: UserWithLevel) {
+async function getStandingsHandler(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const tournamentId = searchParams.get('tournamentId');

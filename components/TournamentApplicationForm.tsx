@@ -9,14 +9,11 @@ import LoadingOverlay from '@/components/LoadingOverlay';
 import { useLoading } from '@/hooks/useLoading';
 import { useParticipant } from '@/hooks/useParticipant';
 import { useClubs } from '@/hooks/useClubs';
-import { useUser } from '@/hooks/useUser';
-import { useSession } from 'next-auth/react';
 import { createValidationFunction } from '@/lib/tournamentValidation';
 import { ParticipantForm } from '@/components/tournament/ParticipantForm';
 import { TeamParticipantForm } from '@/components/tournament/TeamParticipantForm';
 import { TournamentParticipationForm } from '@/components/tournament/TournamentParticipationForm';
 import type { ClubMember } from '@/types/tournament';
-import { isModerator } from '@/lib/authUtils';
 import { useTournamentApplications } from '@/hooks/useTournamentApplications';
 
 // 상수 정의
@@ -39,8 +36,6 @@ export default function TournamentApplicationForm({
 }: TournamentApplicationFormProps) {
   const router = useRouter();
   const { loading, withLoading } = useLoading();
-  const { data: session } = useSession();
-  const { user } = useUser(session?.user?.email);
   const { clubs, isLoading: clubsLoading } = useClubs();
 
   // 전체 클럽 회원 데이터 상태

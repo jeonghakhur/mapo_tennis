@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import { Box, Text, Button, Flex, Card, Heading, Badge } from '@radix-ui/themes';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLoading } from '@/hooks/useLoading';
-import { useTournament } from '@/hooks/useTournaments';
 import Container from '@/components/Container';
 import LoadingOverlay from '@/components/LoadingOverlay';
 
@@ -38,17 +37,7 @@ function TournamentBracketViewContent() {
   const [bracketMatches, setBracketMatches] = useState<BracketMatch[]>([]);
 
   // SWR 훅 사용
-  const { tournament } = useTournament(selectedTournament || '');
   const [loading, setLoading] = useState(true);
-
-  // 부서 이름 매핑
-  const divisionNameMap: Record<string, string> = {
-    master: '마스터부',
-    challenger: '챌린저부',
-    futures: '퓨처스부',
-    forsythia: '개나리부',
-    chrysanthemum: '국화부',
-  };
 
   // 라운드 이름 매핑
   const roundNameMap: Record<string, string> = {

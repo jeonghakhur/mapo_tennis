@@ -400,72 +400,6 @@ export function getNextRound(currentRound: BracketMatch['round']): BracketMatch[
   return roundOrder[currentIndex + 1];
 }
 
-/** 바이를 배정할 위치를 결정하는 함수 */
-function getByePositions(size: number, byeCount: number): number[] {
-  // 32강에서 바이 배정 위치 (표준 토너먼트 방식)
-  if (size === 32) {
-    if (byeCount === 22)
-      return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]; // 10팀일 때
-    if (byeCount === 21)
-      return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]; // 11팀일 때
-    if (byeCount === 20)
-      return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]; // 12팀일 때
-    if (byeCount === 19) return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]; // 13팀일 때
-    if (byeCount === 18) return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]; // 14팀일 때
-    if (byeCount === 17) return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]; // 15팀일 때
-    if (byeCount === 16) return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]; // 16팀일 때
-    if (byeCount === 15) return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]; // 17팀일 때
-    if (byeCount === 14) return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]; // 18팀일 때
-    if (byeCount === 13) return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]; // 19팀일 때
-    if (byeCount === 12) return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]; // 20팀일 때
-    if (byeCount === 11) return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]; // 21팀일 때
-    if (byeCount === 10) return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // 22팀일 때
-    if (byeCount === 9) return [1, 2, 3, 4, 5, 6, 7, 8, 9]; // 23팀일 때
-    if (byeCount === 8) return [1, 2, 3, 4, 5, 6, 7, 8]; // 24팀일 때
-    if (byeCount === 7) return [1, 2, 3, 4, 5, 6, 7]; // 25팀일 때
-    if (byeCount === 6) return [1, 2, 3, 4, 5, 6]; // 26팀일 때
-    if (byeCount === 5) return [1, 2, 3, 4, 5]; // 27팀일 때
-    if (byeCount === 4) return [1, 2, 3, 4]; // 28팀일 때
-    if (byeCount === 3) return [1, 2, 3]; // 29팀일 때
-    if (byeCount === 2) return [1, 2]; // 30팀일 때
-    if (byeCount === 1) return [1]; // 31팀일 때
-    if (byeCount === 0) return []; // 32팀일 때 (바이 없음)
-  }
-
-  // 16강에서 바이 배정 위치 (표준 토너먼트 방식)
-  if (size === 16) {
-    if (byeCount === 6) return [1, 2, 3, 4, 5, 6]; // 10팀일 때
-    if (byeCount === 5) return [1, 2, 3, 4, 5]; // 11팀일 때
-    if (byeCount === 4) return [1, 2, 3, 4]; // 12팀일 때
-    if (byeCount === 3) return [1, 2, 3]; // 13팀일 때
-    if (byeCount === 2) return [1, 2]; // 14팀일 때
-    if (byeCount === 1) return [1]; // 15팀일 때
-    if (byeCount === 0) return []; // 16팀일 때 (바이 없음)
-  }
-
-  // 8강에서 바이 배정 위치
-  if (size === 8) {
-    if (byeCount === 3) return [1, 2, 3]; // 5팀일 때
-    if (byeCount === 2) return [1, 2]; // 6팀일 때
-    if (byeCount === 1) return [1]; // 7팀일 때
-    if (byeCount === 0) return []; // 8팀일 때 (바이 없음)
-  }
-
-  // 4강에서 바이 배정 위치
-  if (size === 4) {
-    if (byeCount === 1) return [1]; // 3팀일 때
-    if (byeCount === 0) return []; // 4팀일 때 (바이 없음)
-  }
-
-  // 기본: 뒤쪽부터 바이 배정
-  const positions = [];
-  for (let i = size - byeCount; i < size; i++) {
-    positions.push(i);
-  }
-  return positions;
-}
-
-/** 표준 시드 포지션 생성 (1,2 / 1,4,3,2 / 1,8,5,4,3,6,7,2 ... 식) */
 function generateSeedOrder(size: number): number[] {
   // 16강 시드 순서 (표준 토너먼트 시드)
   if (size === 16) {
@@ -574,7 +508,6 @@ export function generateBracketMatches(
 
   // 바이를 적절히 분산해서 배정
   const byes = bracketSize - teamCount;
-  const byePositions = getByePositions(bracketSize, byes);
 
   // 슬롯 초기화
   const slots: SeedSlot[] = Array.from({ length: bracketSize }, () => ({
@@ -620,7 +553,6 @@ export function generateBracketMatches(
     // 한쪽만 BYE면 상대 자동 승리로 완료 처리(원하지 않으면 scheduled로 두고 winner 생략 가능)
     if (a.isBye || b.isBye) {
       const winner = a.isBye ? b : a;
-      const loser = a.isBye ? a : b;
       console.log(`  -> 바이 경기, 승자: ${winner.teamName}`);
       matches.push({
         _key: key,

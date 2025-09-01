@@ -119,6 +119,7 @@ function TournamentBracketContent() {
       fetchStandings();
       fetchBracket();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchStandings, fetchBracket]);
 
   // 본선 대진표 생성

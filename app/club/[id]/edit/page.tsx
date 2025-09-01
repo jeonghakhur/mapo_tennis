@@ -1,7 +1,16 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Text, Button, TextField, Flex, Switch, Separator, Checkbox } from '@radix-ui/themes';
+import {
+  Text,
+  Button,
+  TextField,
+  TextArea,
+  Flex,
+  Switch,
+  Separator,
+  Checkbox,
+} from '@radix-ui/themes';
 import Container from '@/components/Container';
 import Image from 'next/image';
 import { useClub } from '@/hooks/useClubs';
@@ -108,13 +117,14 @@ export default function ClubEditPage({ params }: { params: Promise<{ id: string 
               size="3"
               required
             />
-            <TextField.Root
+            <TextArea
               placeholder="소개글"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               mb="3"
               size="3"
               required
+              rows={4}
             />
             <TextField.Root
               placeholder="운동일 (예: 매주 토요일, 주 2회 등)"

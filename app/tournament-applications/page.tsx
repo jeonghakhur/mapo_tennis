@@ -805,7 +805,6 @@ export default function TournamentApplicationsPage() {
                 </table>
               </Box>
             )}
-            ;
             {filteredApplications.length === 0 ? (
               <Card className="p-6 text-center">참가 신청 내역이 없습니다.</Card>
             ) : (

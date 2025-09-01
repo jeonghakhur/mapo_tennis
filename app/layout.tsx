@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://mapo-tennis.vercel.app'),
+  metadataBase: new URL('https://mapo-tennis.com'),
   title: {
     default: '마포구 테니스협회',
     template: '%s | 마포구 테니스협회',
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   description: '대회 일정·조편성·결과·참가 등록 정보 제공',
   openGraph: {
     type: 'website',
-    url: 'https://mapo-tennis.vercel.app',
+    url: 'https://mapo-tennis.com',
     siteName: '마포구 테니스협회',
     title: '마포구 테니스협회',
     description: '대회 일정·조편성·결과·참가 등록 정보 제공',
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     'apple-mobile-web-app-status-bar-style': 'default',
   },
   robots: { index: true, follow: true },
-  alternates: { canonical: 'https://mapo-tennis.vercel.app/' },
+  alternates: { canonical: 'https://mapo-tennis.com' },
 };
 
 export const viewport: Viewport = {

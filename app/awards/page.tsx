@@ -61,11 +61,6 @@ export default function AwardsPage() {
     });
   };
 
-  // 요약 데이터(예시: 대회/년도/부서/수상구분별 그룹핑)
-  // 실제 요약 로직은 SummaryTable 내부에서 처리하는 것이 더 깔끔할 수 있습니다.
-  // 아래는 awards를 그대로 넘기는 예시입니다.
-  const summaryAwards = useMemo(() => awards, [awards]);
-
   // 필터링 로직
   const filteredAwards = useMemo(() => {
     return awards.filter((award) => {
@@ -114,40 +109,30 @@ export default function AwardsPage() {
             요약 보기
           </Tabs.Trigger>
         </Tabs.List>
-        <Tabs.Content value="all" className="pt-4">
-          <Flex direction="row" gap="2" mb="4">
-            <TextField.Root
-              placeholder="대회명, 부서명, 클럽명 검색"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              size="3"
-              radius="large"
-              style={{ minWidth: 200, fontSize: 16 }}
-            />
-            <Combobox
-              options={categoryOptions}
-              value={category}
-              onValueChange={(v) => {
-                if (!v) return;
-                setCategory(v);
-              }}
-              placeholder="수상구분"
-              className="flex-1"
-            />
-            {/* {canManage && awards.length > 0 && (
-              <Button
-                variant="outline"
-                color="red"
-                size="sm"
-                onClick={() => setDeleteAllOpen(true)}
-                disabled={actionLoading}
-                style={{ marginLeft: 8, height: 40 }}
-              >
-                <Trash2 size={18} style={{ marginRight: 4 }} />
-                {actionLoading ? '삭제 중...' : '전체 삭제'}
-              </Button>
-            )} */}
-          </Flex>
+
+        {/* 검색 필터 - 두 탭 모두에서 공통으로 사용 */}
+        <Flex direction="row" gap="2" mb="4" className="pt-4">
+          <TextField.Root
+            placeholder="대회명, 부서명, 클럽명 검색"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            size="3"
+            radius="large"
+            style={{ minWidth: 200, fontSize: 16 }}
+          />
+          <Combobox
+            options={categoryOptions}
+            value={category}
+            onValueChange={(v) => {
+              if (!v) return;
+              setCategory(v);
+            }}
+            placeholder="수상구분"
+            className="flex-1"
+          />
+        </Flex>
+
+        <Tabs.Content value="all" className="pt-2">
           <AwardList
             awards={filteredAwards}
             onEdit={handleEdit}
@@ -155,8 +140,8 @@ export default function AwardsPage() {
             canManage={canManage}
           />
         </Tabs.Content>
-        <Tabs.Content value="summary" className="pt-4">
-          <SummaryTable awards={summaryAwards} />
+        <Tabs.Content value="summary" className="pt-2">
+          <SummaryTable awards={filteredAwards} />
         </Tabs.Content>
       </Tabs.Root>
 

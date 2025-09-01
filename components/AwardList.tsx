@@ -67,6 +67,88 @@ export default function AwardList({
   // awards가 배열이 아닌 경우 빈 배열로 처리
   const safeAwards = Array.isArray(awards) ? awards : [];
 
+  // 대회별, 부서별로 그룹화하고 순위별로 정렬하는 함수
+  const groupAndSortAwards = (awards: Award[]) => {
+    // 대회별로 그룹화
+    const groupedAwards = awards.reduce(
+      (groups, award) => {
+        const key = `${award.competition}-${award.year}`;
+        if (!groups[key]) {
+          groups[key] = [];
+        }
+        groups[key].push(award);
+        return groups;
+      },
+      {} as Record<string, Award[]>,
+    );
+
+    // 각 대회 그룹 내에서 부서별로 다시 그룹화하고 순위별로 정렬
+    const processedGroups = Object.entries(groupedAwards).map(
+      ([competitionKey, competitionAwards]) => {
+        // 부서별로 그룹화
+        const divisionGroups = competitionAwards.reduce(
+          (groups, award) => {
+            if (!groups[award.division]) {
+              groups[award.division] = [];
+            }
+            groups[award.division].push(award);
+            return groups;
+          },
+          {} as Record<string, Award[]>,
+        );
+
+        // 각 부서 그룹 내에서 순위별로 정렬
+        Object.keys(divisionGroups).forEach((division) => {
+          divisionGroups[division].sort((a, b) => {
+            const getRankOrder = (category: string) => {
+              switch (category) {
+                case '우승':
+                  return 1;
+                case '준우승':
+                  return 2;
+                case '3위':
+                  return 3;
+                case '공동3위':
+                  return 4;
+                default:
+                  return 5;
+              }
+            };
+
+            return getRankOrder(a.awardCategory) - getRankOrder(b.awardCategory);
+          });
+        });
+
+        // 부서명으로 정렬 (알파벳 순)
+        const sortedDivisionGroups = Object.entries(divisionGroups).sort(
+          ([divisionA], [divisionB]) => {
+            return divisionA.localeCompare(divisionB);
+          },
+        );
+
+        return [competitionKey, sortedDivisionGroups] as [string, [string, Award[]][]];
+      },
+    );
+
+    // 대회명과 연도로 정렬 (최신 연도 우선, 같은 연도면 대회명 알파벳 순)
+    const sortedGroups = processedGroups.sort(([keyA], [keyB]) => {
+      const [, yearA] = keyA.split('-');
+      const [, yearB] = keyB.split('-');
+
+      // 연도 비교 (내림차순)
+      if (yearA !== yearB) {
+        return parseInt(yearB) - parseInt(yearA);
+      }
+
+      // 같은 연도면 대회명 비교 (오름차순)
+      const competitionA = keyA.split('-')[0];
+      const competitionB = keyB.split('-')[0];
+      return competitionA.localeCompare(competitionB);
+    });
+
+    return sortedGroups;
+  };
+
   if (safeAwards.length === 0) {
     return (
       <Card className="p-8 text-center">
@@ -75,51 +157,74 @@ export default function AwardList({
     );
   }
 
+  const groupedAwards = groupAndSortAwards(safeAwards);
+
   return (
-    <div className="space-y-4">
-      {safeAwards.map((award) => {
-        const categoryInfo = getAwardCategoryInfo(award.awardCategory);
+    <div className="space-y-8">
+      {groupedAwards.map(([competitionKey, divisionGroups]) => {
+        const [competition, year] = competitionKey.split('-');
 
         return (
-          <Card key={award._id} className="p-4">
-            <Flex justify="between" align="start">
-              <div className="flex-1">
-                <Flex align="center" gap="2" mb="2">
-                  <h3 className="font-semibold text-lg">
-                    {award.competition} ({award.year})
+          <div key={competitionKey} className="space-y-4">
+            <h2 className="text-xl font-bold text-gray-800 border-b pb-2">
+              {competition} ({year})
+            </h2>
+            <div className="space-y-4">
+              {divisionGroups.map(([division, divisionAwards]) => (
+                <div key={division} className="space-y-3">
+                  <h3 className="text-lg font-semibold text-gray-700 pl-2 border-l-4 border-blue-500">
+                    {division}
                   </h3>
-                  <Badge color={categoryInfo.color} variant="solid">
-                    {categoryInfo.label}
-                  </Badge>
-                </Flex>
+                  <div className="space-y-3 pl-4">
+                    {divisionAwards.map((award) => {
+                      const categoryInfo = getAwardCategoryInfo(award.awardCategory);
 
-                <Flex gap="2">
-                  <p>
-                    <strong>부서:</strong> {award.division}
-                  </p>
-                  <p>
-                    <strong>클럽:</strong> {award.club}
-                  </p>
-                  <p>
-                    <strong>선수:</strong> {award.players.join(', ')}
-                  </p>
-                </Flex>
-              </div>
+                      return (
+                        <Card key={award._id} className="p-4">
+                          <Flex justify="between" align="start">
+                            <div className="flex-1">
+                              <Flex align="center" gap="2" mb="2">
+                                <Badge color={categoryInfo.color} variant="solid" size="2">
+                                  {categoryInfo.label}
+                                </Badge>
+                              </Flex>
 
-              {canManage && (
-                <Flex gap="2">
-                  <Button size="2" variant="soft" onClick={() => onEdit(award._id)}>
-                    <Edit size={16} />
-                    수정
-                  </Button>
-                  <Button size="2" variant="soft" color="red" onClick={() => onDelete(award._id)}>
-                    <Trash2 size={16} />
-                    삭제
-                  </Button>
-                </Flex>
-              )}
-            </Flex>
-          </Card>
+                              <Flex gap="4" wrap="wrap">
+                                <p>
+                                  <strong>클럽:</strong> {award.club}
+                                </p>
+                                <p>
+                                  <strong>선수:</strong> {award.players.join(', ')}
+                                </p>
+                              </Flex>
+                            </div>
+
+                            {canManage && (
+                              <Flex gap="2">
+                                <Button size="2" variant="soft" onClick={() => onEdit(award._id)}>
+                                  <Edit size={16} />
+                                  수정
+                                </Button>
+                                <Button
+                                  size="2"
+                                  variant="soft"
+                                  color="red"
+                                  onClick={() => onDelete(award._id)}
+                                >
+                                  <Trash2 size={16} />
+                                  삭제
+                                </Button>
+                              </Flex>
+                            )}
+                          </Flex>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         );
       })}
     </div>

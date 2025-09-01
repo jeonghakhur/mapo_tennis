@@ -414,7 +414,7 @@ export default function TournamentApplicationForm({
             );
           });
 
-          if (memo) formData.append('memo', memo);
+          formData.append('memo', memo);
           formData.append('isFeePaid', isFeePaid.toString());
 
           const url = isEdit

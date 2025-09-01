@@ -66,7 +66,7 @@ function HomePageContent() {
   } = usePosts({
     showAll: canManagePosts,
     page: currentPage,
-    limit: 5,
+    limit: 10,
   });
 
   // 목록 전체에서 Lightbox 상태 관리

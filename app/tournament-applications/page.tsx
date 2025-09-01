@@ -19,7 +19,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useUser } from '@/hooks/useUser';
-import { hasPermissionLevel } from '@/lib/authUtils';
+import { hasPermissionLevel, isAdmin, isModerator } from '@/lib/authUtils';
 import { useTournamentsByUserLevel } from '@/hooks/useTournaments';
 import { useUpdateApplicationStatus } from '@/hooks/useTournamentApplications';
 import type { TournamentApplication } from '@/model/tournamentApplication';
@@ -101,6 +101,10 @@ export default function TournamentApplicationsPage() {
   const [seedNumber, setSeedNumber] = useState<string>('');
   const [isUpdatingSeed, setIsUpdatingSeed] = useState(false);
   const [existingSeeds, setExistingSeeds] = useState<number[]>([]);
+
+  // 미납팀 모달 관련 상태
+  const [showUnpaidModal, setShowUnpaidModal] = useState(false);
+  const [selectedDivision, setSelectedDivision] = useState<string>('');
 
   // 회원목록 토글 상태 - 애플리케이션 ID를 키로 사용
   const [showMemberDetails, setShowMemberDetails] = useState<Set<string>>(new Set());
@@ -270,6 +274,81 @@ export default function TournamentApplicationsPage() {
     return Object.entries(g).sort(([a], [b]) => a.localeCompare(b));
   }, [filteredApplications]);
 
+  // 부서별 통계 계산
+  const divisionStats = useMemo(() => {
+    const stats: Record<
+      string,
+      {
+        totalTeams: number;
+        paidTeams: number;
+        unpaidTeams: number;
+        pendingTeams: number;
+        approvedTeams: number;
+        rejectedTeams: number;
+      }
+    > = {};
+
+    applications.forEach((app) => {
+      if (app.tournamentId !== selectedTournamentId) return;
+
+      if (!stats[app.division]) {
+        stats[app.division] = {
+          totalTeams: 0,
+          paidTeams: 0,
+          unpaidTeams: 0,
+          pendingTeams: 0,
+          approvedTeams: 0,
+          rejectedTeams: 0,
+        };
+      }
+
+      stats[app.division].totalTeams++;
+
+      if (app.isFeePaid) {
+        stats[app.division].paidTeams++;
+      } else {
+        stats[app.division].unpaidTeams++;
+      }
+
+      switch (app.status) {
+        case 'pending':
+          stats[app.division].pendingTeams++;
+          break;
+        case 'approved':
+          stats[app.division].approvedTeams++;
+          break;
+        case 'rejected':
+          stats[app.division].rejectedTeams++;
+          break;
+      }
+    });
+
+    return stats;
+  }, [applications, selectedTournamentId]);
+
+  // 전체 통계 계산
+  const totalStats = useMemo(() => {
+    const total = {
+      totalTeams: 0,
+      paidTeams: 0,
+      unpaidTeams: 0,
+      pendingTeams: 0,
+      approvedTeams: 0,
+      rejectedTeams: 0,
+    };
+
+    Object.values(divisionStats).forEach((stats) => {
+      total.totalTeams += stats.totalTeams;
+      total.paidTeams += stats.paidTeams;
+      total.unpaidTeams += stats.unpaidTeams;
+      total.pendingTeams += stats.pendingTeams;
+      total.approvedTeams += stats.approvedTeams;
+      total.rejectedTeams += stats.rejectedTeams;
+    });
+
+    return total;
+  }, [divisionStats]);
+
   // mutation hook
   const { trigger: updateStatus } = useUpdateApplicationStatus();
 
@@ -343,6 +422,20 @@ export default function TournamentApplicationsPage() {
     setExistingSeeds(existingSeedsList);
 
     setShowSeedModal(true);
+  };
+
+  // 미납팀 모달 열기
+  const openUnpaidModal = (division: string) => {
+    setSelectedDivision(division);
+    setShowUnpaidModal(true);
+  };
+
+  // 특정 부서의 미납팀 목록 가져오기
+  const getUnpaidTeams = (division: string) => {
+    return applications.filter(
+      (app) =>
+        app.tournamentId === selectedTournamentId && app.division === division && !app.isFeePaid,
+    );
   };
 
   // 시드 등록 처리
@@ -419,7 +512,8 @@ export default function TournamentApplicationsPage() {
   // render
   // ---------------------------------
   const loading = tournamentsLoading || applicationsLoading;
-  const isAdmin = hasPermissionLevel(user, 4);
+  const admin = isAdmin(user);
+  const moderator = isModerator(user);
 
   return (
     <Container>
@@ -608,6 +702,107 @@ export default function TournamentApplicationsPage() {
           {/* 전체 목록 */}
           <Box>
             <Heading size="4">전체참가신청목록</Heading>
+            <Box className="table-view" mb="4">
+              <table className="text-center">
+                <thead>
+                  <tr>
+                    <th>참가부서</th>
+                    <th>총 참가팀</th>
+                    <th>회비납부</th>
+                    <th>회비미납</th>
+                    <th>승인대기</th>
+                    <th>승인완료</th>
+                    <th>거절</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* 전체 통계 행 */}
+                  <tr style={{ backgroundColor: '#f8f9fa', fontWeight: 'bold' }}>
+                    <td>
+                      <Text weight="bold" color="gray">
+                        전체
+                      </Text>
+                    </td>
+                    <td>
+                      <Text weight="bold" color="gray">
+                        {totalStats.totalTeams}팀
+                      </Text>
+                    </td>
+                    <td>
+                      <Text color="green" weight="bold">
+                        {totalStats.paidTeams}팀
+                      </Text>
+                    </td>
+                    <td>
+                      <Text
+                        color="red"
+                        weight="bold"
+                        style={{ cursor: totalStats.unpaidTeams > 0 ? 'pointer' : 'default' }}
+                        onClick={() => totalStats.unpaidTeams > 0 && openUnpaidModal('all')}
+                      >
+                        {totalStats.unpaidTeams}팀
+                      </Text>
+                    </td>
+                    <td>
+                      <Text color="blue" weight="bold">
+                        {totalStats.pendingTeams}팀
+                      </Text>
+                    </td>
+                    <td>
+                      <Text color="green" weight="bold">
+                        {totalStats.approvedTeams}팀
+                      </Text>
+                    </td>
+                    <td>
+                      <Text color="red" weight="bold">
+                        {totalStats.rejectedTeams}팀
+                      </Text>
+                    </td>
+                  </tr>
+                  {/* 부서별 통계 행들 */}
+                  {Object.entries(divisionStats)
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([division, stats]) => (
+                      <tr key={division}>
+                        <td>{DIVISION_LABEL[division] || division}</td>
+                        <td>
+                          <Text weight="bold">{stats.totalTeams}팀</Text>
+                        </td>
+                        <td>
+                          <Text color="green" weight="bold">
+                            {stats.paidTeams}팀
+                          </Text>
+                        </td>
+                        <td>
+                          <Text
+                            color="red"
+                            weight="bold"
+                            style={{ cursor: stats.unpaidTeams > 0 ? 'pointer' : 'default' }}
+                            onClick={() => stats.unpaidTeams > 0 && openUnpaidModal(division)}
+                          >
+                            {stats.unpaidTeams}팀
+                          </Text>
+                        </td>
+                        <td>
+                          <Text color="blue" weight="bold">
+                            {stats.pendingTeams}팀
+                          </Text>
+                        </td>
+                        <td>
+                          <Text color="green" weight="bold">
+                            {stats.approvedTeams}팀
+                          </Text>
+                        </td>
+                        <td>
+                          <Text color="red" weight="bold">
+                            {stats.rejectedTeams}팀
+                          </Text>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </Box>
 
             {filteredApplications.length === 0 ? (
               <Card className="p-6 text-center">참가 신청 내역이 없습니다.</Card>
@@ -620,7 +815,7 @@ export default function TournamentApplicationsPage() {
                         {DIVISION_LABEL[division] || division} ({apps.length}팀 신청)
                       </Heading>
 
-                      {isAdmin &&
+                      {admin &&
                         (groupingStatus[division] ? (
                           <Button
                             variant="soft"
@@ -662,7 +857,7 @@ export default function TournamentApplicationsPage() {
                             <div className="space-y-4">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                  {isAdmin && (
+                                  {moderator && (
                                     <Badge color={STATUS_COLOR[application.status] || 'gray'}>
                                       {STATUS_LABEL[application.status] || application.status}
                                     </Badge>
@@ -675,7 +870,7 @@ export default function TournamentApplicationsPage() {
                                   {application.seed && (
                                     <Badge color="orange">시드 {application.seed}번</Badge>
                                   )}
-                                  {isAdmin && (
+                                  {admin && (
                                     <Button
                                       type="button"
                                       size="1"
@@ -710,7 +905,7 @@ export default function TournamentApplicationsPage() {
                                       </Text>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                      {isAdmin && (
+                                      {moderator && (
                                         <Text
                                           weight="bold"
                                           color={application.isFeePaid ? 'green' : 'red'}
@@ -788,7 +983,7 @@ export default function TournamentApplicationsPage() {
                                         {index + 1}번
                                       </Text>
                                       <Text weight="bold">
-                                        {isAdmin
+                                        {moderator
                                           ? member.name
                                           : member.name.charAt(0) +
                                             '*'.repeat(Math.max(member.name.length - 1, 0))}
@@ -799,7 +994,7 @@ export default function TournamentApplicationsPage() {
                                           </>
                                         )}
                                       </Text>
-                                      {isAdmin && (
+                                      {moderator && (
                                         <>
                                           {member.isRegisteredMember === false && (
                                             <Badge color="red" size="2">
@@ -849,7 +1044,7 @@ export default function TournamentApplicationsPage() {
                                 </div>
                               )}
 
-                              {hasPermissionLevel(user, 4) && (
+                              {admin && (
                                 <div className="btn-wrap border-t pt-4 flex gap-2">
                                   <Button
                                     variant="soft"
@@ -1228,6 +1423,84 @@ export default function TournamentApplicationsPage() {
               {isUpdatingSeed ? '처리중...' : parseInt(seedNumber, 10) === 0 ? '삭제' : '등록'}
             </Button>
           </Flex>
+        </Dialog.Content>
+      </Dialog.Root>
+
+      {/* 미납팀 목록 모달 */}
+      <Dialog.Root open={showUnpaidModal} onOpenChange={setShowUnpaidModal}>
+        <Dialog.Content style={{ maxWidth: 800, maxHeight: '80vh', overflowY: 'auto' }}>
+          <Flex justify="between" align="center" mb="2">
+            <Dialog.Title>
+              회비 미납팀 목록 -{' '}
+              {selectedDivision === 'all'
+                ? '전체'
+                : DIVISION_LABEL[selectedDivision] || selectedDivision}
+            </Dialog.Title>
+            <Dialog.Close>
+              <Button variant="ghost" size="3" style={{ padding: '8px' }}>
+                <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M12 4L4 12M4 4L12 12"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </Button>
+            </Dialog.Close>
+          </Flex>
+          <Dialog.Description size="2" mb="4">
+            회비를 납부하지 않은 팀들의 목록입니다.
+          </Dialog.Description>
+
+          <div className="space-y-4">
+            {(() => {
+              const unpaidTeams =
+                selectedDivision === 'all'
+                  ? applications.filter(
+                      (app) => app.tournamentId === selectedTournamentId && !app.isFeePaid,
+                    )
+                  : getUnpaidTeams(selectedDivision);
+
+              if (unpaidTeams.length === 0) {
+                return (
+                  <Card className="p-6 text-center">
+                    <Text color="green" weight="bold" mb="4">
+                      미납팀이 없습니다.
+                    </Text>
+                  </Card>
+                );
+              }
+
+              return unpaidTeams.map((application) => (
+                <Card key={application._id} className="p-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Text weight="bold" size="3">
+                        {DIVISION_LABEL[application.division] || application.division}/
+                        {application.tournamentType === 'team'
+                          ? `${application.teamMembers[0]?.clubName} ${application.memo ? `(${application.memo})` : ''}`
+                          : application.teamMembers.map((m) => m.name).join(', ')}
+                      </Text>
+
+                      <Button
+                        size="2"
+                        variant="soft"
+                        onClick={() => {
+                          if (canEdit(application)) {
+                            router.push(`/tournament-applications/${application._id}/edit`);
+                          }
+                        }}
+                      >
+                        상세보기
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ));
+            })()}
+          </div>
         </Dialog.Content>
       </Dialog.Root>
     </Container>

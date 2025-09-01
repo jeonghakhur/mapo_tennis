@@ -702,6 +702,7 @@ export default function TournamentApplicationsPage() {
           {/* 전체 목록 */}
           <Box>
             <Heading size="4">전체참가신청목록</Heading>
+            {moderator && (
             <Box className="table-view" mb="4">
               <table className="text-center">
                 <thead>
@@ -802,7 +803,7 @@ export default function TournamentApplicationsPage() {
                     ))}
                 </tbody>
               </table>
-            </Box>
+            </Box>);
 
             {filteredApplications.length === 0 ? (
               <Card className="p-6 text-center">참가 신청 내역이 없습니다.</Card>

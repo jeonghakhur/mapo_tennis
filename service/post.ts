@@ -3,8 +3,25 @@ import type { Post, PostInput } from '@/model/post';
 import { extractImageUrls, extractAssetIdFromUrl, isSanityAssetUrl } from '@/lib/markdownUtils';
 import { deleteFromSanityAssets } from '@/lib/sanityAssets';
 
-// 포스트 목록 조회 (발행된 것만)
-export async function getPublishedPosts(
+// 포스트 목록 조회 (발행된 것만) - 전체 목록
+export async function getPublishedPosts(): Promise<Post[]> {
+  return await client.fetch(`
+    *[_type == "post" && isPublished == true]
+    | order(publishedAt desc) {
+      ...,
+      author->{
+          _id,
+          name
+        },
+      "likeCount": coalesce(likeCount, 0),
+      "likedBy": coalesce(likedBy, []),
+      "commentCount": count(*[_type == "comment" && references(^._id)])
+      }
+  `);
+}
+
+// 포스트 목록 조회 (발행된 것만) - 페이지네이션
+export async function getPublishedPostsPaginated(
   page: number = 1,
   limit: number = 5,
 ): Promise<{
@@ -42,8 +59,25 @@ export async function getPublishedPosts(
   };
 }
 
-// 포스트 목록 조회 (모든 것)
-export async function getAllPosts(
+// 포스트 목록 조회 (모든 것) - 전체 목록
+export async function getAllPosts(): Promise<Post[]> {
+  return await client.fetch(`
+    *[_type == "post"]
+    | order(coalesce(publishedAt, createdAt) desc) {
+      ...,
+      author->{
+          _id,
+          name
+        },
+      "likeCount": coalesce(likeCount, 0),
+      "likedBy": coalesce(likedBy, []),
+      "commentCount": count(*[_type == "comment" && references(^._id)])
+      }
+  `);
+}
+
+// 포스트 목록 조회 (모든 것) - 페이지네이션
+export async function getAllPostsPaginated(
   page: number = 1,
   limit: number = 5,
 ): Promise<{

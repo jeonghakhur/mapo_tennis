@@ -35,10 +35,9 @@ export async function GET(req: NextRequest) {
   }
 
   // all 파라미터가 있으면 모든 포스트, 없으면 발행된 포스트만
-  const result =
-    all === 'true' ? await getAllPosts(page, limit) : await getPublishedPosts(page, limit);
+  const posts = all === 'true' ? await getAllPosts() : await getPublishedPosts();
 
-  return NextResponse.json(result);
+  return NextResponse.json({ posts });
 }
 
 export async function POST(req: NextRequest) {

@@ -23,13 +23,13 @@ export const metadata: Metadata = {
     default: '마포구 테니스협회',
     template: '%s | 마포구 테니스협회',
   },
-  description: '대회 일정·조편성·결과·참가 등록 정보 제공',
+  description: '마포구 테니스 클럽 소개, 가입 문의, 대회 일정 및 대회 결과, 참가 신청 정보 제공',
   openGraph: {
     type: 'website',
     url: 'https://mapo-tennis.com',
     siteName: '마포구 테니스협회',
     title: '마포구 테니스협회',
-    description: '대회 일정·조편성·결과·참가 등록 정보 제공',
+    description: '마포구 테니스 클럽 소개, 가입 문의, 대회 일정 및 대회 결과, 참가 신청 정보 제공',
     images: ['/og.png'], // 퍼블릭 경로 또는 절대경로
     locale: 'ko_KR',
   },

@@ -22,12 +22,24 @@ export async function createNotification(data: NotificationInput): Promise<Notif
 }
 
 // 알림 목록 조회 (새로운 notificationStatus 구조 사용)
-export async function getNotifications(userId?: string): Promise<Notification[]> {
+export async function getNotifications(
+  userId?: string,
+  page: number = 1,
+  limit: number = 30,
+): Promise<{ notifications: Notification[]; total: number; totalPages: number }> {
   if (!userId) {
-    return [];
+    return { notifications: [], total: 0, totalPages: 0 };
   }
 
-  // notificationStatus를 통해 사용자별 알림 상태 조회
+  // 전체 개수 조회
+  const countQuery = `
+    count(*[_type == "notificationStatus" && user._ref == $userId && !isDeleted])
+  `;
+
+  // 페이징된 알림 조회
+  const start = (page - 1) * limit;
+  const end = start + limit;
+
   const query = `
     *[_type == "notificationStatus" && user._ref == $userId && !isDeleted] {
       _id,
@@ -47,13 +59,18 @@ export async function getNotifications(userId?: string): Promise<Notification[]>
         requiredLevel,
         createdAt
       }
-    } | order(notification.createdAt desc)
+    } | order(notification.createdAt desc) [${start}...${end}]
   `;
 
-  const notificationStatuses = await client.fetch(query, { userId });
+  const [notificationStatuses, total] = await Promise.all([
+    client.fetch(query, { userId }),
+    client.fetch(countQuery, { userId }),
+  ]);
 
   console.log('알림 조회 - userId:', userId);
+  console.log('알림 조회 - page:', page, 'limit:', limit);
   console.log('알림 조회 - notificationStatuses 개수:', notificationStatuses.length);
+  console.log('알림 조회 - 전체 개수:', total);
 
   // notification 필드가 있는 항목만 필터링하고 알림 데이터 추출
   const notifications = notificationStatuses
@@ -74,7 +91,12 @@ export async function getNotifications(userId?: string): Promise<Notification[]>
     );
 
   console.log('알림 조회 - 최종 notifications 개수:', notifications.length);
-  return notifications;
+
+  return {
+    notifications,
+    total,
+    totalPages: Math.ceil(total / limit),
+  };
 }
 
 // 읽지 않은 알림 개수 조회 (새로운 notificationStatus 구조 사용)

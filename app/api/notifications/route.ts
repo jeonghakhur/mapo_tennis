@@ -30,6 +30,8 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId') || undefined;
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '30');
 
     // 사용자 정보 조회하여 ID 가져오기
     const user = await getUserByEmail(session.user.email);
@@ -37,12 +39,18 @@ export async function GET(request: NextRequest) {
     // 새로운 구조에서는 userId가 필요하므로 사용자 ID를 사용
     const actualUserId = userId || user?._id;
 
-    const notifications = await getNotifications(actualUserId);
+    const { notifications, total, totalPages } = await getNotifications(actualUserId, page, limit);
     const unreadCount = await getUnreadNotificationCount(actualUserId);
 
     const response = NextResponse.json({
       notifications,
       unreadCount,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+      },
     });
     return setCorsHeaders(response);
   } catch (error) {

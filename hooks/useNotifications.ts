@@ -17,14 +17,22 @@ const fetcher = async (url: string) => {
 export function useNotifications(
   userId?: string,
   userLevel?: number,
-  options?: { pause?: boolean },
+  options?: { pause?: boolean; page?: number; limit?: number },
 ) {
   const { status } = useSession();
-  const { pause } = options || {};
+  const { pause, page = 1, limit = 30 } = options || {};
   const shouldFetch = status === 'authenticated' && !pause;
 
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  if (userId) {
+    params.append('userId', userId);
+  }
+
   const { data, error, isLoading } = useSWR(
-    shouldFetch ? `/api/notifications${userId ? `?userId=${userId}` : ''}` : null,
+    shouldFetch ? `/api/notifications?${params.toString()}` : null,
     fetcher,
     {
       // 자동 새로고침 제거 - 페이지 이동/새로고침 시에만 알림 확인
@@ -38,6 +46,7 @@ export function useNotifications(
 
   const notifications = data?.notifications || [];
   const unreadCount = data?.unreadCount || 0;
+  const pagination = data?.pagination || { page: 1, limit: 30, total: 0, totalPages: 0 };
 
   // 개별 알림 읽음 처리
   const markAsRead = async (notificationStatusId: string) => {
@@ -84,6 +93,7 @@ export function useNotifications(
   return {
     notifications,
     unreadCount,
+    pagination,
     isLoading,
     error,
     markAsRead,

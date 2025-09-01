@@ -17,9 +17,18 @@ export default function NotificationsPage() {
   const admin = isAdmin(user);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
   const [isPermanentlyDeletingAll, setIsPermanentlyDeletingAll] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(30);
 
-  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } =
-    useNotifications(user?._id, user?.level);
+  const {
+    notifications,
+    unreadCount,
+    pagination,
+    isLoading,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+  } = useNotifications(user?._id, user?.level, { page, limit });
 
   // 모든 알림 삭제 함수 (관리자용)
   const deleteAllNotifications = async () => {
@@ -89,6 +98,11 @@ export default function NotificationsPage() {
       router.push('/auth/signin');
     }
   }, [status, router]);
+
+  // 페이지 변경 함수
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+  };
 
   // 로딩 중인 경우
   if (status === 'loading') {
@@ -207,83 +221,110 @@ export default function NotificationsPage() {
             </Text>
           </Box>
         ) : (
-          <div className="space-y-3">
-            {notifications.map((notification: Notification) => (
-              <div
-                key={notification._id}
-                className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                  notification.readAt
-                    ? 'bg-gray-50 border-gray-200'
-                    : 'bg-blue-50 border-blue-200 hover:bg-blue-100'
-                }`}
-                onClick={() => {
-                  // 읽지 않은 알림이면 읽음 처리
-                  if (!notification.readAt) {
-                    markAsRead(notification._id);
-                  }
+          <>
+            <div className="space-y-3">
+              {notifications.map((notification: Notification) => (
+                <div
+                  key={notification._id}
+                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                    notification.readAt
+                      ? 'bg-gray-50 border-gray-200'
+                      : 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+                  }`}
+                  onClick={() => {
+                    // 읽지 않은 알림이면 읽음 처리
+                    if (!notification.readAt) {
+                      markAsRead(notification._id);
+                    }
 
-                  // 링크가 있으면 해당 페이지로 이동
-                  if (notification.link) {
-                    router.push(notification.link);
-                  }
-                }}
-              >
-                <div className="flex justify-between items-start gap-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      {getNotificationIcon(notification.type)}
-                      <Text weight="bold" size="3">
-                        {notification.title}
+                    // 링크가 있으면 해당 페이지로 이동
+                    if (notification.link) {
+                      router.push(notification.link);
+                    }
+                  }}
+                >
+                  <div className="flex justify-between items-start gap-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        {getNotificationIcon(notification.type)}
+                        <Text weight="bold" size="3">
+                          {notification.title}
+                        </Text>
+                        {!notification.readAt && (
+                          <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                        )}
+                        {notification.link && <ExternalLink size={14} className="text-blue-500" />}
+                      </div>
+
+                      <Text size="2" color="gray" className="block mb-2 whitespace-pre-line">
+                        {notification.message}
                       </Text>
-                      {!notification.readAt && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
-                      {notification.link && <ExternalLink size={14} className="text-blue-500" />}
+
+                      {notification.changes && notification.changes.length > 0 && (
+                        <div className="mt-3 p-2 bg-gray-100 rounded text-sm">
+                          <Text weight="bold" size="1" className="block mb-1">
+                            변경사항:
+                          </Text>
+                          {notification.changes.map((change: Change, idx: number) => (
+                            <div key={idx} className="text-xs">
+                              <Text color="gray">{change.field}: </Text>
+                              <Text color="red">{change.oldValue || '없음'} → </Text>
+                              <Text color="green">{change.newValue}</Text>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
-                    <Text size="2" color="gray" className="block mb-2 whitespace-pre-line">
-                      {notification.message}
-                    </Text>
-
-                    {notification.changes && notification.changes.length > 0 && (
-                      <div className="mt-3 p-2 bg-gray-100 rounded text-sm">
-                        <Text weight="bold" size="1" className="block mb-1">
-                          변경사항:
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="flex items-center gap-2">
+                        <Text size="1" color="gray">
+                          {formatDate(notification.createdAt)}
                         </Text>
-                        {notification.changes.map((change: Change, idx: number) => (
-                          <div key={idx} className="text-xs">
-                            <Text color="gray">{change.field}: </Text>
-                            <Text color="red">{change.oldValue || '없음'} → </Text>
-                            <Text color="green">{change.newValue}</Text>
-                          </div>
-                        ))}
+                        {notification.readAt && <Check size={16} className="text-green-500" />}
+                        <Button
+                          size="1"
+                          variant="soft"
+                          color="red"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm('이 알림을 삭제하시겠습니까?')) {
+                              deleteNotification(notification._id);
+                            }
+                          }}
+                        >
+                          <Trash2 size={12} />
+                        </Button>
                       </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col items-end gap-2">
-                    <div className="flex items-center gap-2">
-                      <Text size="1" color="gray">
-                        {formatDate(notification.createdAt)}
-                      </Text>
-                      {notification.readAt && <Check size={16} className="text-green-500" />}
-                      <Button
-                        size="1"
-                        variant="soft"
-                        color="red"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (confirm('이 알림을 삭제하시겠습니까?')) {
-                            deleteNotification(notification._id);
-                          }
-                        }}
-                      >
-                        <Trash2 size={12} />
-                      </Button>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+
+            {/* 페이지네이션 */}
+            {pagination.totalPages > 1 && (
+              <Flex justify="center" mt="4" gap="2">
+                <Button
+                  variant="outline"
+                  disabled={pagination.page === 1}
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                >
+                  이전
+                </Button>
+                <Text size="3" align="center" style={{ minWidth: '100px', lineHeight: '32px' }}>
+                  {pagination.page} / {pagination.totalPages}
+                </Text>
+                <Button
+                  variant="outline"
+                  disabled={pagination.page === pagination.totalPages}
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                >
+                  다음
+                </Button>
+              </Flex>
+            )}
+          </>
         )}
       </Box>
     </Container>

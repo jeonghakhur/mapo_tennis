@@ -135,7 +135,7 @@ export default defineType({
   preview: {
     select: {
       title: 'title',
-      author: 'author',
+      author: 'author.name',
       category: 'category',
       isPublished: 'isPublished',
       createdAt: 'createdAt',

@@ -7,7 +7,7 @@ import { deleteFromSanityAssets } from '@/lib/sanityAssets';
 export async function getPublishedPosts(): Promise<Post[]> {
   return await client.fetch(`
     *[_type == "post" && isPublished == true]
-    | order(publishedAt desc) {
+    | order(createdAt desc) {
       ...,
       author->{
           _id,
@@ -34,7 +34,7 @@ export async function getPublishedPostsPaginated(
   const [posts, total] = await Promise.all([
     client.fetch(`
       *[_type == "post" && isPublished == true]
-      | order(publishedAt desc) [${start}...${end}] {
+      | order(createdAt desc) [${start}...${end}] {
         ...,
         author->{
             _id,

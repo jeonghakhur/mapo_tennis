@@ -17,8 +17,6 @@ export async function GET(req: NextRequest) {
   const id = searchParams.get('id');
   const all = searchParams.get('all');
   const category = searchParams.get('category');
-  const page = parseInt(searchParams.get('page') || '1');
-  const limit = parseInt(searchParams.get('limit') || '5');
 
   if (id) {
     const post = await getPost(id);

@@ -63,6 +63,12 @@ export default function TournamentCard({ tournament, user }: TournamentCardProps
     const startDate = new Date(tournament.registrationStartDate);
     const endDate = new Date(tournament.registrationDeadline);
 
+    // 시작일을 00:00:00 기준으로 설정
+    startDate.setHours(0, 0, 0, 0);
+
+    // 마감일을 23:59:59 기준으로 설정 (해당 날짜 마지막까지)
+    endDate.setHours(23, 59, 59, 999);
+
     return now >= startDate && now <= endDate;
   };
 
@@ -74,6 +80,9 @@ export default function TournamentCard({ tournament, user }: TournamentCardProps
 
     const now = new Date();
     const startDate = new Date(tournament.registrationStartDate);
+
+    // 시작일을 00:00:00 기준으로 설정
+    startDate.setHours(0, 0, 0, 0);
 
     return now >= startDate;
   };
@@ -87,13 +96,10 @@ export default function TournamentCard({ tournament, user }: TournamentCardProps
     const now = new Date();
     const endDate = new Date(tournament.registrationDeadline);
 
-    // 마감일의 다음날 자정(00:00:00)을 기준으로 비교
-    const deadlineEnd = new Date(endDate);
-    deadlineEnd.setDate(deadlineEnd.getDate() + 1);
-    deadlineEnd.setHours(0, 0, 0, 0);
-    console.log(now, deadlineEnd);
+    // 마감일을 23:59:59 기준으로 설정 (해당 날짜 마지막까지)
+    endDate.setHours(23, 59, 59, 999);
 
-    return now >= deadlineEnd;
+    return now > endDate;
   };
 
   // 참가 신청 버튼 클릭 핸들러
@@ -162,7 +168,7 @@ export default function TournamentCard({ tournament, user }: TournamentCardProps
         </div>
       </div>
       <div className="btn-wrap">
-        {hasPermissionLevel(user, 1) && tournament.status === 'upcoming' && !tournament.isDraft && (
+        {hasPermissionLevel(user, 1) && tournament.status === 'upcoming' && (
           <Button variant="solid" color="blue" size="3" onClick={handleApplyClick}>
             {getApplyButtonText()}
           </Button>

@@ -86,6 +86,12 @@ export default function TournamentsPage() {
     const startDate = new Date(tournament.registrationStartDate);
     const endDate = new Date(tournament.registrationDeadline);
 
+    // 시작일을 00:00:00 기준으로 설정
+    startDate.setHours(0, 0, 0, 0);
+
+    // 마감일을 23:59:59 기준으로 설정 (해당 날짜 마지막까지)
+    endDate.setHours(23, 59, 59, 999);
+
     return now >= startDate && now <= endDate;
   };
 
@@ -97,6 +103,9 @@ export default function TournamentsPage() {
 
     const now = new Date();
     const startDate = new Date(tournament.registrationStartDate);
+
+    // 시작일을 00:00:00 기준으로 설정
+    startDate.setHours(0, 0, 0, 0);
 
     return now >= startDate;
   };
@@ -110,12 +119,10 @@ export default function TournamentsPage() {
     const now = new Date();
     const endDate = new Date(tournament.registrationDeadline);
 
-    // 마감일의 다음날 자정(00:00:00)을 기준으로 비교
-    const deadlineEnd = new Date(endDate);
-    deadlineEnd.setDate(deadlineEnd.getDate() + 1);
-    deadlineEnd.setHours(0, 0, 0, 0);
+    // 마감일을 23:59:59 기준으로 설정 (해당 날짜 마지막까지)
+    endDate.setHours(23, 59, 59, 999);
 
-    return now >= deadlineEnd;
+    return now > endDate;
   };
 
   // 참가 신청 버튼 클릭 핸들러

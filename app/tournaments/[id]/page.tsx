@@ -123,6 +123,12 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
     const startDate = new Date(tournament.registrationStartDate);
     const endDate = new Date(tournament.registrationDeadline);
 
+    // 시작일을 00:00:00 기준으로 설정
+    startDate.setHours(0, 0, 0, 0);
+
+    // 마감일을 23:59:59 기준으로 설정 (해당 날짜 마지막까지)
+    endDate.setHours(23, 59, 59, 999);
+
     return now >= startDate && now <= endDate;
   };
 

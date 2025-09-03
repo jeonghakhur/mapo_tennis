@@ -350,7 +350,7 @@ function NavbarContent({ currentSearchKeyword }: { currentSearchKeyword: string 
   }
 
   return (
-    <nav className="navbar">
+    <nav className="navbar print-none">
       <Flex align="center" px="4" justify="between" className="h-[42px]">
         {/* 좌측: 뒤로가기 버튼 또는 홈 링크 */}
         <Flex align="center" gap="3">

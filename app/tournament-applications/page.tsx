@@ -13,6 +13,7 @@ import {
   Checkbox,
   Separator,
   RadioGroup,
+  Switch,
 } from '@radix-ui/themes';
 import Container from '@/components/Container';
 import { useRouter } from 'next/navigation';
@@ -108,6 +109,7 @@ export default function TournamentApplicationsPage() {
 
   // 회원목록 토글 상태 - 애플리케이션 ID를 키로 사용
   const [showMemberDetails, setShowMemberDetails] = useState<Set<string>>(new Set());
+  const [showAllMemberDetails, setShowAllMemberDetails] = useState(false);
 
   // 회원목록 토글 함수
   const toggleMemberDetails = (applicationId: string) => {
@@ -120,6 +122,23 @@ export default function TournamentApplicationsPage() {
       }
       return newSet;
     });
+  };
+
+  // 전체 회원목록 토글 함수
+  const toggleAllMemberDetails = () => {
+    if (showAllMemberDetails) {
+      // 모든 회원목록 닫기
+      setShowMemberDetails(new Set());
+    } else {
+      // 모든 회원목록 열기
+      const allApplicationIds = new Set(
+        applications
+          .filter((app) => app.tournamentId === selectedTournamentId && app._id)
+          .map((app) => app._id!),
+      );
+      setShowMemberDetails(allApplicationIds);
+    }
+    setShowAllMemberDetails(!showAllMemberDetails);
   };
 
   // choose first tournament automatically
@@ -505,8 +524,38 @@ export default function TournamentApplicationsPage() {
     setDivisionFilter('all');
   };
 
-  const canEdit = (app: TournamentApplication | undefined | null) =>
-    !!app && (app.createdBy === user?._id || hasPermissionLevel(user, 4));
+  const canEdit = (app: TournamentApplication | undefined | null) => {
+    if (!app) return false;
+    console.log(app);
+
+    // 관리자(레벨 5 이상)는 항상 수정 가능
+    if (hasPermissionLevel(user, 5)) return true;
+
+    // 본인이 작성한 신청이 아니면 수정 불가
+    if (app.createdBy !== user?._id) return false;
+
+    // 승인된 신청은 수정 불가
+    if (app.status === 'approved') return false;
+
+    // 대회 정보가 없으면 수정 불가
+    if (!app.tournament) return false;
+
+    // 참가 신청 마감일이 지났는지 확인
+    if (app.tournament.registrationDeadline) {
+      const now = new Date();
+      const endDate = new Date(app.tournament.registrationDeadline);
+
+      // 마감일의 다음날 자정(00:00:00)을 기준으로 비교
+      const deadlineEnd = new Date(endDate);
+      deadlineEnd.setDate(deadlineEnd.getDate() + 1);
+      deadlineEnd.setHours(0, 0, 0, 0);
+
+      // 마감일이 지났으면 수정 불가
+      if (now >= deadlineEnd) return false;
+    }
+
+    return true;
+  };
 
   // ---------------------------------
   // render
@@ -522,7 +571,7 @@ export default function TournamentApplicationsPage() {
       ) : (
         <Box>
           {/* Filters */}
-          <Box mb="6">
+          <Box mb="6" className="print-none">
             <Flex gap="3" mb="4" align="center" wrap="wrap">
               <Select.Root value={selectedTournamentId} onValueChange={onTournamentChange} size="3">
                 <Select.Trigger placeholder={tournaments?.[0]?.title || '대회를 선택하세요'} />
@@ -701,7 +750,21 @@ export default function TournamentApplicationsPage() {
 
           {/* 전체 목록 */}
           <Box>
-            <Heading size="4">전체참가신청목록</Heading>
+            <Flex justify="between" align="center" mb="2">
+              <Heading size="4">전체참가신청목록</Heading>
+              {moderator && (
+                <Flex align="center" gap="2">
+                  <Text size="3" color="gray">
+                    전체회원목록표시
+                  </Text>
+                  <Switch
+                    size="3"
+                    checked={showAllMemberDetails}
+                    onCheckedChange={toggleAllMemberDetails}
+                  />
+                </Flex>
+              )}
+            </Flex>
             {moderator && (
               <Box className="table-view" mb="4">
                 <table className="text-center">
@@ -970,7 +1033,10 @@ export default function TournamentApplicationsPage() {
                               {(() => {
                                 if (application.tournamentType === 'individual') return true;
                                 if (application.tournamentType === 'team') {
-                                  return application._id && showMemberDetails.has(application._id);
+                                  return (
+                                    application._id &&
+                                    (showAllMemberDetails || showMemberDetails.has(application._id))
+                                  );
                                 }
                                 return false;
                               })() && (
@@ -1046,7 +1112,7 @@ export default function TournamentApplicationsPage() {
                               )}
 
                               {admin && (
-                                <div className="btn-wrap border-t pt-4 flex gap-2">
+                                <div className="btn-wrap border-t pt-4 flex gap-2 print-none">
                                   <Button
                                     variant="soft"
                                     color="red"
@@ -1071,6 +1137,20 @@ export default function TournamentApplicationsPage() {
                                   >
                                     승인
                                   </Button>
+                                </div>
+                              )}
+
+                              {/* 승인된 신청에 대한 안내 메시지 */}
+                              {!canEdit(application) && application.status === 'approved' && (
+                                <div className="border-t pt-4">
+                                  <Text
+                                    size="2"
+                                    color="red"
+                                    weight="bold"
+                                    className="text-center block"
+                                  >
+                                    승인된 게임은 수정할 수 없습니다
+                                  </Text>
                                 </div>
                               )}
                             </div>

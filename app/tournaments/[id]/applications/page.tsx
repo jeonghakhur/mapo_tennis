@@ -17,6 +17,7 @@ interface TournamentApplicationWithDetails extends TournamentApplication {
     location: string;
     startDate: string;
     endDate: string;
+    registrationDeadline: string;
   };
   applicant?: {
     _id: string;

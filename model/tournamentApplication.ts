@@ -51,6 +51,7 @@ export interface TournamentApplication {
     location: string;
     startDate: string;
     endDate: string;
+    registrationDeadline: string;
   };
 
   // 신청자 정보 (API에서 조인된 데이터)

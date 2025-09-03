@@ -80,7 +80,8 @@ export async function getTournamentApplications(
           title,
           location,
           startDate,
-          endDate
+          endDate,
+          registrationDeadline
         },
         // 신청자 정보를 직접 조인
         "applicant": *[_type == "user" && _id == ^.createdBy][0] {
@@ -145,7 +146,8 @@ export async function getTournamentApplications(
         title,
         location,
         startDate,
-        endDate
+        endDate,
+        registrationDeadline
       },
       // 신청자 정보를 직접 조인
       "applicant": *[_type == "user" && _id == ^.createdBy][0] {
@@ -330,7 +332,8 @@ export async function getUserTournamentApplications(
         title,
         location,
         startDate,
-        endDate
+        endDate,
+        registrationDeadline
       },
       // 신청자 정보를 직접 조인
       "applicant": *[_type == "user" && _id == ^.createdBy][0] {

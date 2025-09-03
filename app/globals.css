@@ -309,3 +309,9 @@ main .toastui-editor-contents {
   font-weight: bold;
   text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
 }
+
+@media print {
+  .print-none {
+    display: none !important;
+  }
+}

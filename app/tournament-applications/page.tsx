@@ -753,7 +753,7 @@ export default function TournamentApplicationsPage() {
             <Flex justify="between" align="center" mb="2">
               <Heading size="4">전체참가신청목록</Heading>
               {moderator && (
-                <Flex align="center" gap="2">
+                <Flex align="center" gap="2" className="print-none">
                   <Text size="3" color="gray">
                     전체회원목록표시
                   </Text>
@@ -890,6 +890,7 @@ export default function TournamentApplicationsPage() {
                                 `/tournament-grouping/${selectedTournamentId}/${division}`,
                               );
                             }}
+                            className="print-none"
                           >
                             조편성 보기
                           </Button>
@@ -902,6 +903,7 @@ export default function TournamentApplicationsPage() {
                                 `/tournament-grouping/new?tournamentId=${selectedTournamentId}&division=${division}`,
                               );
                             }}
+                            className="print-none"
                           >
                             조편성
                           </Button>

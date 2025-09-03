@@ -110,7 +110,12 @@ export default function TournamentsPage() {
     const now = new Date();
     const endDate = new Date(tournament.registrationDeadline);
 
-    return now > endDate;
+    // 마감일의 다음날 자정(00:00:00)을 기준으로 비교
+    const deadlineEnd = new Date(endDate);
+    deadlineEnd.setDate(deadlineEnd.getDate() + 1);
+    deadlineEnd.setHours(0, 0, 0, 0);
+
+    return now >= deadlineEnd;
   };
 
   // 참가 신청 버튼 클릭 핸들러

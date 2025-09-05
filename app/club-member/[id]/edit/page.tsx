@@ -137,7 +137,7 @@ export default function ClubMemberEditPage({ params }: { params: Promise<{ id: s
                         placeholder="이름"
                         value={form.user}
                         onChange={(e) => handleChange('user', e.target.value)}
-                        readOnly
+                        // readOnly
                         required
                       />
                     </td>

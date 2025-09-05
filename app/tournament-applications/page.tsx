@@ -562,7 +562,7 @@ export default function TournamentApplicationsPage() {
   // ---------------------------------
   const loading = tournamentsLoading || applicationsLoading;
   const admin = isAdmin(user);
-  const moderator = isModerator(user);
+  const moderator = hasPermissionLevel(user, 3);
 
   return (
     <Container>

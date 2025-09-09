@@ -76,6 +76,7 @@ export default function RootLayout({
           content="XzyojaZ4j0vNOpdcbYzJdQBJnFBd_pI6I_6zUcWjA0w"
         />
         <meta name="naver-site-verification" content="ab50281eeee1fe21a17133f7aaa2a38f5f9bdc11" />
+        <meta name="naver-site-verification" content="1e8a36f1f04501bc79a2334afa858d43ba65b560" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Theme scaling="100%">

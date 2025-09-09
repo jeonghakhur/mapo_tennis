@@ -8,6 +8,8 @@ import Container from '@/components/Container';
 import { useTournamentGroupings } from '@/hooks/useTournamentGroupings';
 import { useUser } from '@/hooks/useUser';
 import { isAdmin } from '@/lib/authUtils';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import SkeletonCard from '@/components/SkeletonCard';
 
 export default function TournamentGroupingListPage() {
   const router = useRouter();
@@ -130,13 +132,7 @@ export default function TournamentGroupingListPage() {
       </Box>
 
       {isLoading ? (
-        <Card>
-          <Box p="6" style={{ textAlign: 'center' }}>
-            <Text size="3" color="gray">
-              조편성 목록을 불러오는 중...
-            </Text>
-          </Box>
-        </Card>
+        <SkeletonCard />
       ) : error ? (
         <Card>
           <Box p="6" style={{ textAlign: 'center' }}>

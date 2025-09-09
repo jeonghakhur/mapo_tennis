@@ -40,6 +40,14 @@ export interface Group {
   division: string;
 }
 
+export interface SetScore {
+  _key?: string; // Sanity 배열 항목의 고유 키
+  setNumber: number;
+  games: number;
+  tiebreak?: number;
+  players?: string[]; // 해당 세트에 참여한 선수명 배열 (최대 2명)
+}
+
 export interface Match {
   _id: string;
   tournamentId: string;
@@ -50,12 +58,16 @@ export interface Match {
   team1: {
     teamId: string;
     teamName: string;
-    score?: number;
+    score?: number; // 기존 호환성을 위해 유지
+    sets?: SetScore[]; // 새로운 세트별 점수 구조
+    totalSetsWon?: number; // 승리한 세트 수
   };
   team2: {
     teamId: string;
     teamName: string;
-    score?: number;
+    score?: number; // 기존 호환성을 위해 유지
+    sets?: SetScore[]; // 새로운 세트별 점수 구조
+    totalSetsWon?: number; // 승리한 세트 수
   };
   winner?: string; // 승자 팀 ID
   status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
@@ -211,4 +223,16 @@ export interface ParticipantHookReturn {
   birthRef: React.RefObject<HTMLInputElement | null>;
   scoreRef: React.RefObject<HTMLInputElement | null>;
   handleNameBlur: () => Promise<void>;
+}
+
+export interface MatchUpdateData {
+  team1Score?: number;
+  team2Score?: number;
+  team1Sets?: SetScore[];
+  team2Sets?: SetScore[];
+  team1TotalSetsWon?: number; // 팀1 승리 세트 수
+  team2TotalSetsWon?: number; // 팀2 승리 세트 수
+  winner?: string; // 승자 팀 ID
+  status?: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+  court?: string;
 }

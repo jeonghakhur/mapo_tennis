@@ -52,7 +52,18 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
   try {
     const { id } = await context.params;
     const body = await req.json();
-    const { team1Score, team2Score, status, court, scheduledTime } = body;
+    const {
+      team1Score,
+      team2Score,
+      team1Sets,
+      team2Sets,
+      team1TotalSetsWon,
+      team2TotalSetsWon,
+      winner,
+      status,
+      court,
+      scheduledTime,
+    } = body;
 
     console.log('경기 결과 업데이트 요청:', { id, body });
 
@@ -64,16 +75,6 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
       return NextResponse.json({ error: '경기를 찾을 수 없습니다.' }, { status: 404 });
     }
 
-    // 승자 결정
-    let winner = undefined;
-    if (team1Score !== undefined && team2Score !== undefined) {
-      if (team1Score > team2Score) {
-        winner = match.team1.teamId;
-      } else if (team2Score > team1Score) {
-        winner = match.team2.teamId;
-      }
-    }
-
     // 경기 정보 업데이트
     const updatedMatch = {
       _id: match._id,
@@ -82,13 +83,19 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
       ...match,
       team1: {
         ...match.team1,
-        score: team1Score,
+        score: team1Score, // 기존 호환성 유지
+        sets: team1Sets || match.team1.sets,
+        totalSetsWon:
+          team1TotalSetsWon !== undefined ? team1TotalSetsWon : match.team1.totalSetsWon,
       },
       team2: {
         ...match.team2,
-        score: team2Score,
+        score: team2Score, // 기존 호환성 유지
+        sets: team2Sets || match.team2.sets,
+        totalSetsWon:
+          team2TotalSetsWon !== undefined ? team2TotalSetsWon : match.team2.totalSetsWon,
       },
-      winner,
+      winner, // 프론트엔드에서 계산된 승자
       status: status || match.status,
       court: court || match.court,
       scheduledTime: scheduledTime || match.scheduledTime,

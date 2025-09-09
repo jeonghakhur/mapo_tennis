@@ -173,11 +173,7 @@ export class TournamentGroupingService {
 
     // 경기 결과 반영
     groupMatches.forEach((match) => {
-      if (
-        match.status === 'completed' &&
-        match.team1.score !== undefined &&
-        match.team2.score !== undefined
-      ) {
+      if (match.status === 'completed') {
         const team1Standing = standings.get(match.team1.teamId);
         const team2Standing = standings.get(match.team2.teamId);
 
@@ -186,18 +182,71 @@ export class TournamentGroupingService {
           team1Standing.played++;
           team2Standing.played++;
 
-          // 득점/실점 기록
-          team1Standing.goalsFor += match.team1.score;
-          team1Standing.goalsAgainst += match.team2.score;
-          team2Standing.goalsFor += match.team2.score;
-          team2Standing.goalsAgainst += match.team1.score;
+          // 세트별 점수로 승부 결정
+          let team1SetsWon = 0;
+          let team2SetsWon = 0;
+          let team1TotalGames = 0;
+          let team2TotalGames = 0;
 
-          // 승패 결정
-          if (match.team1.score > match.team2.score) {
+          if (match.team1.sets && match.team2.sets) {
+            const maxSets = Math.max(match.team1.sets.length, match.team2.sets.length);
+
+            for (let i = 0; i < maxSets; i++) {
+              const team1Games = match.team1.sets[i]?.games || 0;
+              const team2Games = match.team2.sets[i]?.games || 0;
+              const team1Tiebreak = match.team1.sets[i]?.tiebreak;
+              const team2Tiebreak = match.team2.sets[i]?.tiebreak;
+
+              // 총 게임 수 계산
+              team1TotalGames += team1Games;
+              team2TotalGames += team2Games;
+
+              // 세트 승부 결정
+              if (team1Games > team2Games) {
+                team1SetsWon++;
+              } else if (team2Games > team1Games) {
+                team2SetsWon++;
+              } else {
+                // 게임 수가 동일한 경우 타이브레이크로 승부 결정
+                if (team1Tiebreak !== undefined && team2Tiebreak !== undefined) {
+                  if (team1Tiebreak > team2Tiebreak) {
+                    team1SetsWon++;
+                  } else if (team2Tiebreak > team1Tiebreak) {
+                    team2SetsWon++;
+                  }
+                  // 타이브레이크도 동일하면 무승부 (둘 다 승리하지 않음)
+                }
+                // 타이브레이크 점수가 없으면 무승부 (둘 다 승리하지 않음)
+              }
+            }
+          } else {
+            // 기존 호환성을 위해 score 필드도 확인
+            if (match.team1.score !== undefined && match.team2.score !== undefined) {
+              team1TotalGames = match.team1.score;
+              team2TotalGames = match.team2.score;
+
+              if (match.team1.score > match.team2.score) {
+                team1SetsWon = 1;
+                team2SetsWon = 0;
+              } else if (match.team2.score > match.team1.score) {
+                team1SetsWon = 0;
+                team2SetsWon = 1;
+              }
+            }
+          }
+
+          // 득점/실점 기록 (총 게임 수 사용)
+          team1Standing.goalsFor += team1TotalGames;
+          team1Standing.goalsAgainst += team2TotalGames;
+          team2Standing.goalsFor += team2TotalGames;
+          team2Standing.goalsAgainst += team1TotalGames;
+
+          // 승패 결정 (세트 승부 기준)
+          if (team1SetsWon > team2SetsWon) {
             team1Standing.won++;
             team2Standing.lost++;
             team1Standing.points += 3;
-          } else if (match.team1.score < match.team2.score) {
+          } else if (team2SetsWon > team1SetsWon) {
             team1Standing.lost++;
             team2Standing.won++;
             team2Standing.points += 3;
@@ -241,15 +290,57 @@ export class TournamentGroupingService {
             (match.team1.teamId === b.teamId && match.team2.teamId === a.teamId)),
       );
 
-      if (
-        headToHeadMatch &&
-        headToHeadMatch.team1.score !== undefined &&
-        headToHeadMatch.team2.score !== undefined
-      ) {
-        if (headToHeadMatch.team1.teamId === a.teamId) {
-          return headToHeadMatch.team1.score > headToHeadMatch.team2.score ? -1 : 1;
+      if (headToHeadMatch) {
+        // 세트별 점수로 승자승 판정
+        let team1SetsWon = 0;
+        let team2SetsWon = 0;
+
+        if (headToHeadMatch.team1.sets && headToHeadMatch.team2.sets) {
+          const maxSets = Math.max(
+            headToHeadMatch.team1.sets.length,
+            headToHeadMatch.team2.sets.length,
+          );
+
+          for (let i = 0; i < maxSets; i++) {
+            const team1Games = headToHeadMatch.team1.sets[i]?.games || 0;
+            const team2Games = headToHeadMatch.team2.sets[i]?.games || 0;
+            const team1Tiebreak = headToHeadMatch.team1.sets[i]?.tiebreak;
+            const team2Tiebreak = headToHeadMatch.team2.sets[i]?.tiebreak;
+
+            if (team1Games > team2Games) {
+              team1SetsWon++;
+            } else if (team2Games > team1Games) {
+              team2SetsWon++;
+            } else {
+              if (team1Tiebreak !== undefined && team2Tiebreak !== undefined) {
+                if (team1Tiebreak > team2Tiebreak) {
+                  team1SetsWon++;
+                } else if (team2Tiebreak > team1Tiebreak) {
+                  team2SetsWon++;
+                }
+              }
+            }
+          }
         } else {
-          return headToHeadMatch.team2.score > headToHeadMatch.team1.score ? -1 : 1;
+          // 기존 호환성
+          if (
+            headToHeadMatch.team1.score !== undefined &&
+            headToHeadMatch.team2.score !== undefined
+          ) {
+            if (headToHeadMatch.team1.score > headToHeadMatch.team2.score) {
+              team1SetsWon = 1;
+              team2SetsWon = 0;
+            } else if (headToHeadMatch.team2.score > headToHeadMatch.team1.score) {
+              team1SetsWon = 0;
+              team2SetsWon = 1;
+            }
+          }
+        }
+
+        if (headToHeadMatch.team1.teamId === a.teamId) {
+          return team1SetsWon > team2SetsWon ? -1 : 1;
+        } else {
+          return team2SetsWon > team1SetsWon ? -1 : 1;
         }
       }
 

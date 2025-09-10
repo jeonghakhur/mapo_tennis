@@ -68,6 +68,9 @@ function TournamentMatchesContent() {
 
   // 본선 대진표 존재 여부 확인
   const [hasBracket, setHasBracket] = useState(false);
+  
+  // 모든 예선 경기 완료 여부 확인
+  const allMatchesCompleted = matches.length > 0 && matches.every(match => match.status === 'completed');
 
   // 본선 대진표 확인
   const checkBracket = useCallback(async () => {
@@ -504,11 +507,11 @@ function TournamentMatchesContent() {
             본선대진표보기
           </Button>
           {/* )} */}
-          {/* {hasBracket && ( */}
-          <Button size="3" color="purple" onClick={handleCreateBracket}>
-            예선결과보기
-          </Button>
-          {/* )} */}
+          {allMatchesCompleted && (
+            <Button size="3" color="purple" onClick={handleCreateBracket}>
+              예선결과보기
+            </Button>
+          )}
         </Flex>
       </Box>
       {/* 조별 순위 */}

@@ -13,16 +13,13 @@ import {
   Select,
   Badge,
   TextField,
-  Separator,
   Dialog,
 } from '@radix-ui/themes';
 import { useLoading } from '@/hooks/useLoading';
 import { useTournament } from '@/hooks/useTournaments';
 import { useMatches } from '@/hooks/useMatches';
-import { useStandings } from '@/hooks/useStandings';
-import { useGroups } from '@/hooks/useGroups';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import type { Match, GroupStanding, SetScore, MatchUpdateData } from '@/types/tournament';
+import type { Match, SetScore, MatchUpdateData } from '@/types/tournament';
 import Container from '@/components/Container';
 import { useUser } from '@/hooks/useUser';
 import { isAdmin } from '@/lib/authUtils';
@@ -40,7 +37,6 @@ function TournamentMatchesContent() {
   const [showScoreDialog, setShowScoreDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const [showStandings, setShowStandings] = useState(true);
   const [scoreForm, setScoreForm] = useState({
     team1Sets: [] as SetScore[],
     team2Sets: [] as SetScore[],
@@ -53,57 +49,18 @@ function TournamentMatchesContent() {
 
   // SWR 훅들 사용
   const { tournament } = useTournament(selectedTournament || '');
+
   const { matches, mutate: mutateMatches } = useMatches(
     selectedTournament || null,
     selectedDivision || null,
   );
-  const { standings, mutate: mutateStandings } = useStandings(
-    selectedTournament || null,
-    selectedDivision || null,
-  );
-  const { groupNameMap } = useGroups(selectedTournament || null, selectedDivision || null);
 
   // 대회 유형 확인 (개인전/단체전)
   const isTeamTournament = tournament?.tournamentType === 'team';
 
-  // 본선 대진표 존재 여부 확인
-  const [hasBracket, setHasBracket] = useState(false);
-
-  // 본선 대진표 확인
-  const checkBracket = useCallback(async () => {
-    if (!selectedTournament || !selectedDivision) return;
-
-    try {
-      console.log('본선 대진표 확인 중:', { selectedTournament, selectedDivision });
-      const response = await fetch(
-        `/api/tournament-grouping/bracket?tournamentId=${selectedTournament}&division=${selectedDivision}`,
-      );
-
-      console.log('본선 대진표 API 응답 상태:', response.status);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('본선 대진표 API 응답 데이터:', data);
-
-        // 응답 구조에 따라 수정
-        const hasMatches = data.matches && Array.isArray(data.matches) && data.matches.length > 0;
-        console.log('본선 대진표 존재 여부:', hasMatches);
-
-        setHasBracket(hasMatches);
-      } else {
-        console.log('본선 대진표 API 오류:', response.status);
-        setHasBracket(false);
-      }
-    } catch (error) {
-      console.error('본선 대진표 확인 오류:', error);
-      setHasBracket(false);
-    }
-  }, [selectedTournament, selectedDivision]);
-
-  // 대회 또는 부서 변경 시 본선 대진표 확인
-  useEffect(() => {
-    checkBracket();
-  }, [checkBracket]);
+  // 모든 경기가 완료되었는지 확인
+  const allMatchesCompleted =
+    matches.length > 0 && matches.every((match) => match.status === 'completed');
 
   // URL 파라미터에서 대회 ID와 부서 가져오기
   useEffect(() => {
@@ -161,7 +118,7 @@ function TournamentMatchesContent() {
         ? ['', ''] // 단체전: 빈 문자열 2개
         : [selectedMatch?.team2.teamName || '', ''], // 개인전: 팀명과 빈 문자열
     };
-
+    console.log('newSet', scoreForm);
     setScoreForm((prev) => ({
       ...prev,
       team1Sets: [...prev.team1Sets, newSet],
@@ -276,13 +233,9 @@ function TournamentMatchesContent() {
 
         // SWR 캐시 무효화
         await mutateMatches();
-        await mutateStandings();
-
-        // 본선 대진표 존재 여부 다시 확인
-        await checkBracket();
       });
     },
-    [withLoading, mutateMatches, mutateStandings, checkBracket],
+    [withLoading, mutateMatches],
   );
 
   // 모든 경기에 랜덤 점수 자동 입력
@@ -362,7 +315,6 @@ function TournamentMatchesContent() {
 
         // SWR 캐시 무효화
         await mutateMatches();
-        await mutateStandings();
       } catch (error) {
         console.error('자동 점수 입력 오류:', error);
         setSuccessMessage(
@@ -371,7 +323,7 @@ function TournamentMatchesContent() {
         setShowSuccessDialog(true);
       }
     });
-  }, [withLoading, matches, mutateMatches, mutateStandings]);
+  }, [withLoading, matches, mutateMatches]);
 
   // 본선 대진표 생성 페이지로 이동
   const handleCreateBracket = () => {
@@ -499,99 +451,13 @@ function TournamentMatchesContent() {
               점수자동입력
             </Button>
           )}
-          {/* {hasBracket && ( */}
-          <Button size="3" color="blue" onClick={handleViewBracket}>
-            본선대진표보기
-          </Button>
-          {/* )} */}
-          {/* {hasBracket && ( */}
-          <Button size="3" color="purple" onClick={handleCreateBracket}>
-            예선결과보기
-          </Button>
-          {/* )} */}
+          {allMatchesCompleted && (
+            <Button size="3" color="purple" onClick={handleCreateBracket}>
+              예선결과보기
+            </Button>
+          )}
         </Flex>
       </Box>
-      {/* 조별 순위 */}
-      {standings.length > 0 && (
-        <Box>
-          <Flex align="center" justify="between" mb="4">
-            <Heading size="4" weight="bold">
-              조별 순위
-            </Heading>
-            <Button size="2" variant="soft" onClick={() => setShowStandings(!showStandings)}>
-              {showStandings ? '숨기기' : '보기'}
-            </Button>
-          </Flex>
-
-          {/* 조별로 그룹화하여 표시 */}
-          {showStandings &&
-            (() => {
-              const standingsByGroup = new Map<string, GroupStanding[]>();
-
-              standings.forEach((standing) => {
-                // 조 정보를 가져오기 위해 경기 정보에서 조 찾기
-                const match = matches.find(
-                  (m) => m.team1.teamId === standing.teamId || m.team2.teamId === standing.teamId,
-                );
-                const groupId = match?.groupId || 'unknown';
-
-                if (!standingsByGroup.has(groupId)) {
-                  standingsByGroup.set(groupId, []);
-                }
-                standingsByGroup.get(groupId)!.push(standing);
-              });
-
-              return Array.from(standingsByGroup.entries())
-                .sort(([a], [b]) => {
-                  const aName = groupNameMap[a] || a;
-                  const bName = groupNameMap[b] || b;
-                  return aName.localeCompare(bName);
-                })
-                .map(([groupId, groupStandings]) => (
-                  <Box key={groupId} mb="4">
-                    <Text size="3" weight="bold" mb="2">
-                      {groupNameMap[groupId] || groupId}
-                    </Text>
-                    <div className="table-view">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>순위</th>
-                            <th>팀명</th>
-                            <th>경기</th>
-                            <th>승</th>
-                            <th>무</th>
-                            <th>패</th>
-                            <th>득점</th>
-                            <th>실점</th>
-                            <th>득실차</th>
-                            <th>승점</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {groupStandings.map((standing) => (
-                            <tr key={standing.teamId} className="border-b hover:bg-gray-50">
-                              <td>{standing.position}</td>
-                              <td>{standing.teamName}</td>
-                              <td>{standing.played}</td>
-                              <td>{standing.won}</td>
-                              <td>{standing.drawn}</td>
-                              <td>{standing.lost}</td>
-                              <td>{standing.goalsFor}</td>
-                              <td>{standing.goalsAgainst}</td>
-                              <td>{standing.goalDifference}</td>
-                              <td>{standing.points}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </Box>
-                ));
-            })()}
-        </Box>
-      )}
-      <Separator size="4" my="4" />
 
       {/* 경기 목록 */}
       {matches.length > 0 && (
@@ -619,8 +485,8 @@ function TournamentMatchesContent() {
               <tbody>
                 {matches
                   .sort((a, b) => {
-                    const aGroupName = groupNameMap[a.groupId || ''] || a.groupId || '';
-                    const bGroupName = groupNameMap[b.groupId || ''] || b.groupId || '';
+                    const aGroupName = a.groupId || '';
+                    const bGroupName = b.groupId || '';
                     if (aGroupName !== bGroupName) {
                       return aGroupName.localeCompare(bGroupName);
                     }
@@ -637,9 +503,7 @@ function TournamentMatchesContent() {
                         className="border-b hover:bg-gray-50"
                       >
                         <td className="p-3">{match.matchNumber}경기</td>
-                        <td className="p-3">
-                          {groupNameMap[match.groupId || ''] || match.groupId || '-'}
-                        </td>
+                        <td className="p-3">{match.groupId || '-'}</td>
                         <td className="p-3">
                           <span
                             className={
@@ -709,8 +573,7 @@ function TournamentMatchesContent() {
           <Dialog.Title>
             {selectedMatch && (
               <>
-                {groupNameMap[selectedMatch.groupId || ''] || selectedMatch.groupId || '-'} •{' '}
-                {selectedMatch.matchNumber}경기
+                {selectedMatch.groupId || '-'} • {selectedMatch.matchNumber}경기
               </>
             )}
           </Dialog.Title>

@@ -86,11 +86,15 @@ export interface BracketMatch {
     teamId: string;
     teamName: string;
     score?: number;
+    sets?: SetScore[];
+    totalSetsWon?: number;
   };
   team2: {
     teamId: string;
     teamName: string;
     score?: number;
+    sets?: SetScore[];
+    totalSetsWon?: number;
   };
   status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
   court?: string;

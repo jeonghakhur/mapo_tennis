@@ -1,5 +1,13 @@
 import { client } from '@/sanity/lib/client';
 
+export interface SetScore {
+  _key: string;
+  setNumber: number;
+  games: number;
+  tiebreak?: number;
+  players: string[];
+}
+
 export interface BracketMatch {
   _key: string;
   round: 'round32' | 'round16' | 'quarterfinal' | 'semifinal' | 'final';
@@ -8,11 +16,15 @@ export interface BracketMatch {
     teamId: string;
     teamName: string;
     score?: number;
+    sets?: SetScore[];
+    totalSetsWon?: number;
   };
   team2: {
     teamId: string;
     teamName: string;
     score?: number;
+    sets?: SetScore[];
+    totalSetsWon?: number;
   };
   status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
   court?: string;
@@ -119,8 +131,6 @@ export async function updateBracketMatch(
       return false;
     }
 
-    console.log('현재 대진표:', bracket);
-
     const updatedMatches = bracket.matches.map((match: BracketMatch) => {
       if (match._key === matchKey) {
         // 팀명 업데이트 처리
@@ -145,13 +155,10 @@ export async function updateBracketMatch(
         // team1Name, team2Name은 제거 (BracketMatch 타입에 없음)
         const { ...finalMatch } = updatedMatch;
 
-        console.log('매치 업데이트:', { before: match, after: finalMatch });
         return finalMatch;
       }
       return match;
     });
-
-    console.log('업데이트된 매치들:', updatedMatches);
 
     await client
       .patch(bracketId)
@@ -161,7 +168,6 @@ export async function updateBracketMatch(
       })
       .commit();
 
-    console.log('대진표 업데이트 완료');
     return true;
   } catch (error) {
     console.error('경기 결과 업데이트 오류:', error);

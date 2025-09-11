@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, Fragment } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import {
@@ -24,6 +24,14 @@ import { getNextRound } from '@/lib/tournamentBracketUtils';
 import { useUser } from '@/hooks/useUser';
 import { isAdmin } from '@/lib/authUtils';
 
+interface SetScore {
+  _key: string;
+  setNumber: number;
+  games: number;
+  tiebreak?: number;
+  players: string[];
+}
+
 interface BracketMatch {
   _key: string;
   _id: string;
@@ -33,11 +41,15 @@ interface BracketMatch {
     teamId: string;
     teamName: string;
     score?: number;
+    sets?: SetScore[];
+    totalSetsWon?: number;
   };
   team2: {
     teamId: string;
     teamName: string;
     score?: number;
+    sets?: SetScore[];
+    totalSetsWon?: number;
   };
   status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
   court?: string;
@@ -83,10 +95,8 @@ export default function RoundPage() {
   const [selectedMatch, setSelectedMatch] = useState<BracketMatch | null>(null);
   const [showScoreDialog, setShowScoreDialog] = useState(false);
   const [scoreForm, setScoreForm] = useState({
-    team1Score: '',
-    team2Score: '',
-    team1Name: '',
-    team2Name: '',
+    team1Sets: [] as SetScore[],
+    team2Sets: [] as SetScore[],
     status: 'scheduled' as 'scheduled' | 'in_progress' | 'completed' | 'cancelled',
     court: '',
   });
@@ -182,14 +192,158 @@ export default function RoundPage() {
     [router, selectedTournament, selectedDivision],
   );
 
+  // 세트 점수 추가
+  const addSet = () => {
+    const currentTeam1Sets = scoreForm.team1Sets;
+    const currentTeam2Sets = scoreForm.team2Sets;
+    const newSetNumber = Math.max(currentTeam1Sets.length, currentTeam2Sets.length) + 1;
+
+    if (newSetNumber > 5) return; // 최대 5세트
+
+    // 고유한 _key 생성
+    const setKey = `set-${newSetNumber}-${Date.now()}`;
+
+    const newSet: SetScore = {
+      _key: setKey,
+      setNumber: newSetNumber,
+      games: 0,
+      players: ['', ''], // 빈 문자열 2개
+    };
+
+    const newSet2: SetScore = {
+      _key: setKey,
+      setNumber: newSetNumber,
+      games: 0,
+      players: ['', ''], // 빈 문자열 2개
+    };
+
+    setScoreForm((prev) => ({
+      ...prev,
+      team1Sets: [...prev.team1Sets, newSet],
+      team2Sets: [...prev.team2Sets, newSet2],
+    }));
+  };
+
+  // 세트 점수 제거
+  const removeSet = (setIndex: number) => {
+    setScoreForm((prev) => ({
+      ...prev,
+      team1Sets: prev.team1Sets.filter((_, index) => index !== setIndex),
+      team2Sets: prev.team2Sets.filter((_, index) => index !== setIndex),
+    }));
+  };
+
+  // 세트 점수 업데이트
+  const updateSetScore = (
+    team: 'team1' | 'team2',
+    setIndex: number,
+    field: 'games' | 'tiebreak' | 'players',
+    value: number | string[],
+  ) => {
+    setScoreForm((prev) => {
+      const sets = [...prev[team === 'team1' ? 'team1Sets' : 'team2Sets']];
+      sets[setIndex] = { ...sets[setIndex], [field]: value };
+      return {
+        ...prev,
+        [team === 'team1' ? 'team1Sets' : 'team2Sets']: sets,
+      };
+    });
+  };
+
+  // 세트별 선수명 업데이트
+  const updatePlayerName = (
+    team: 'team1' | 'team2',
+    setIndex: number,
+    playerIndex: number,
+    name: string,
+  ) => {
+    const currentSet = scoreForm[team === 'team1' ? 'team1Sets' : 'team2Sets'][setIndex];
+    const currentPlayers = currentSet.players || [];
+    const newPlayers = [...currentPlayers];
+    newPlayers[playerIndex] = name;
+    updateSetScore(team, setIndex, 'players', newPlayers);
+  };
+
+  // 승리한 세트 수 계산
+  const calculateSetsWon = (
+    team1Sets: SetScore[],
+    team2Sets: SetScore[],
+  ): { team1: number; team2: number } => {
+    let team1Won = 0;
+    let team2Won = 0;
+
+    const maxSets = Math.max(team1Sets.length, team2Sets.length);
+
+    for (let i = 0; i < maxSets; i++) {
+      const team1Games = team1Sets[i]?.games || 0;
+      const team2Games = team2Sets[i]?.games || 0;
+      const team1Tiebreak = team1Sets[i]?.tiebreak;
+      const team2Tiebreak = team2Sets[i]?.tiebreak;
+
+      // 게임 수로 승부 결정
+      if (team1Games > team2Games) {
+        team1Won++;
+      } else if (team2Games > team1Games) {
+        team2Won++;
+      } else {
+        // 게임 수가 동일한 경우 타이브레이크로 승부 결정
+        if (team1Tiebreak !== undefined && team2Tiebreak !== undefined) {
+          if (team1Tiebreak > team2Tiebreak) {
+            team1Won++;
+          } else if (team2Tiebreak > team1Tiebreak) {
+            team2Won++;
+          }
+          // 타이브레이크도 동일하면 무승부 (둘 다 승리하지 않음)
+        }
+        // 타이브레이크 점수가 없으면 무승부 (둘 다 승리하지 않음)
+      }
+    }
+
+    return { team1: team1Won, team2: team2Won };
+  };
+
   // 점수 입력 다이얼로그 열기
   const openScoreDialog = useCallback((match: BracketMatch) => {
     setSelectedMatch(match);
+
+    // 기본적으로 1세트가 있도록 설정
+    const team1Sets =
+      match.team1.sets && match.team1.sets.length > 0
+        ? match.team1.sets.map((set, index) => ({
+            ...set,
+            _key: set._key || `existing-set-${index}-${Date.now()}`,
+            // 선수명이 없으면 기본값 설정
+            players: set.players && set.players.length > 0 ? set.players : ['', ''],
+          }))
+        : [
+            {
+              _key: `set-1-${Date.now()}`,
+              setNumber: 1,
+              games: 0,
+              players: ['', ''],
+            },
+          ];
+
+    const team2Sets =
+      match.team2.sets && match.team2.sets.length > 0
+        ? match.team2.sets.map((set, index) => ({
+            ...set,
+            _key: set._key || `existing-set-${index}-${Date.now()}`,
+            // 선수명이 없으면 기본값 설정
+            players: set.players && set.players.length > 0 ? set.players : ['', ''],
+          }))
+        : [
+            {
+              _key: `set-1-${Date.now()}`,
+              setNumber: 1,
+              games: 0,
+              players: ['', ''],
+            },
+          ];
+
     setScoreForm({
-      team1Score: match.team1.score?.toString() || '',
-      team2Score: match.team2.score?.toString() || '',
-      team1Name: match.team1.teamName || '',
-      team2Name: match.team2.teamName || '',
+      team1Sets,
+      team2Sets,
       status: match.status,
       court: match.court || '',
     });
@@ -201,9 +355,15 @@ export default function RoundPage() {
     if (!selectedMatch) return;
 
     return withLoading(async () => {
-      // 입력값 방어코드
-      const team1Score = Math.max(0, parseInt(scoreForm.team1Score) || 0);
-      const team2Score = Math.max(0, parseInt(scoreForm.team2Score) || 0);
+      const setsWon = calculateSetsWon(scoreForm.team1Sets, scoreForm.team2Sets);
+
+      // 승자 결정
+      let winner = undefined;
+      if (setsWon.team1 > setsWon.team2) {
+        winner = selectedMatch.team1.teamId;
+      } else if (setsWon.team2 > setsWon.team1) {
+        winner = selectedMatch.team2.teamId;
+      }
 
       const response = await fetch(
         `/api/tournament-grouping/bracket/${selectedMatch._key}?tournamentId=${selectedTournament}&division=${selectedDivision}`,
@@ -211,10 +371,11 @@ export default function RoundPage() {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            team1Score,
-            team2Score,
-            team1Name: scoreForm.team1Name,
-            team2Name: scoreForm.team2Name,
+            team1Sets: scoreForm.team1Sets,
+            team2Sets: scoreForm.team2Sets,
+            team1TotalSetsWon: setsWon.team1,
+            team2TotalSetsWon: setsWon.team2,
+            winner,
             status: scoreForm.status,
             court: scoreForm.court,
           }),
@@ -619,7 +780,7 @@ export default function RoundPage() {
           <div
             className={`grid grid-cols-1 gap-4 ${
               round === 'round32' || round === 'round16'
-                ? 'md:grid-cols-2 lg:grid-cols-4'
+                ? 'md:grid-cols-2 lg:grid-cols-3'
                 : round === 'quarterfinal' || round === 'semifinal'
                   ? 'md:grid-cols-2'
                   : ''
@@ -629,7 +790,7 @@ export default function RoundPage() {
               .sort((a, b) => a.matchNumber - b.matchNumber)
               .map((match) => (
                 <Card key={match._key}>
-                  <Box p="1">
+                  <Box p="3">
                     <Text size="2" weight="bold" mb="2">
                       {match.matchNumber}경기 {match.court ? `(${match.court}코트)` : ''}
                     </Text>
@@ -642,11 +803,6 @@ export default function RoundPage() {
                       >
                         {match.team1.teamName}
                       </Text>
-                      {match.team1.score !== undefined && (
-                        <Text size="2" color="gray">
-                          {match.team1.score}점
-                        </Text>
-                      )}
                     </Flex>
                     <Flex align="center" justify="between" mb="2">
                       <Text
@@ -657,12 +813,71 @@ export default function RoundPage() {
                       >
                         {match.team2.teamName}
                       </Text>
-                      {match.team2.score !== undefined && (
-                        <Text size="2" color="gray">
-                          {match.team2.score}점
-                        </Text>
-                      )}
                     </Flex>
+                    {/* 세트별 상세 정보 */}
+                    {match.team1.sets && match.team1.sets.length > 0 && (
+                      <Box mb="2">
+                        <div className="table-view">
+                          <table>
+                            <thead>
+                              <tr>
+                                <td>세트</td>
+                                <td>클럽명</td>
+                                <td>선수</td>
+                                <td>점수</td>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {match.team1.sets.map((_, setIndex) => {
+                                const team1Set = match.team1.sets?.[setIndex];
+                                const team2Set = match.team2.sets?.[setIndex];
+
+                                if (!team1Set || !team2Set) return null;
+                                const team1Players =
+                                  team1Set.players?.filter((p) => p.trim()) || [];
+                                const team2Players =
+                                  team2Set.players?.filter((p) => p.trim()) || [];
+
+                                if (!team1Set || !team2Set) return null;
+
+                                return (
+                                  <Fragment key={setIndex}>
+                                    <tr>
+                                      <td rowSpan={2}>{setIndex + 1}세트</td>
+                                      <td className="text-blue-600">
+                                        {match.team1.teamName.split(' - ')[0]}
+                                      </td>
+                                      <td>{team1Players.join(', ')}</td>
+                                      <td className="text-blue-600">
+                                        {team1Set.games}
+                                        {team1Set.tiebreak !== undefined && (
+                                          <>({team1Set.tiebreak})</>
+                                        )}
+                                      </td>
+                                    </tr>
+                                    <tr>
+                                      <td className="text-green-600">
+                                        {match.team2.teamName.split(' - ')[0]}
+                                      </td>
+                                      <td>{team2Players.join(', ')}</td>
+                                      <td className="text-green-600">
+                                        {team2Set.games}
+                                        {team2Set.tiebreak !== undefined && (
+                                          <>({team2Set.tiebreak})</>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  </Fragment>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </Box>
+                    )}
+
+                    {/* 세트별 선수 정보 */}
+
                     <Flex align="center" justify="between" gap="2">
                       <Badge
                         color={
@@ -750,113 +965,189 @@ export default function RoundPage() {
 
       {/* 점수 입력 다이얼로그 */}
       <Dialog.Root open={showScoreDialog} onOpenChange={setShowScoreDialog}>
-        <Dialog.Content>
-          <Dialog.Title>{selectedMatch?.matchNumber} 경기 점수 입력</Dialog.Title>
-          <div className="table-form">
-            <table>
-              <tbody>
-                <tr>
-                  <th style={{ width: '80px' }}>팀1 이름</th>
-                  <td>
-                    <TextField.Root
-                      size="3"
-                      value={scoreForm.team1Name}
-                      onChange={(e) =>
-                        setScoreForm((prev) => ({ ...prev, team1Name: e.target.value }))
-                      }
-                      placeholder="팀1 이름"
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <th>팀1 점수</th>
-                  <td>
-                    <TextField.Root
-                      size="3"
-                      type="text"
-                      value={scoreForm.team1Score}
-                      onChange={(e) =>
-                        setScoreForm((prev) => ({ ...prev, team1Score: e.target.value }))
-                      }
-                      placeholder="0"
-                      style={{ width: '40px' }}
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <th>팀2 이름</th>
-                  <td>
-                    <TextField.Root
-                      size="3"
-                      value={scoreForm.team2Name}
-                      onChange={(e) =>
-                        setScoreForm((prev) => ({ ...prev, team2Name: e.target.value }))
-                      }
-                      placeholder="팀2 이름"
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <th>팀2 점수</th>
-                  <td className="text-center">
-                    <TextField.Root
-                      size="3"
-                      type="number"
-                      value={scoreForm.team2Score}
-                      onChange={(e) =>
-                        setScoreForm((prev) => ({ ...prev, team2Score: e.target.value }))
-                      }
-                      placeholder="0"
-                      style={{ width: '40px' }}
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <th>경기 상태</th>
-                  <td>
-                    <Select.Root
-                      size="3"
-                      value={scoreForm.status}
-                      onValueChange={(
-                        value: 'scheduled' | 'in_progress' | 'completed' | 'cancelled',
-                      ) => setScoreForm((prev) => ({ ...prev, status: value }))}
-                    >
-                      <Select.Trigger />
-                      <Select.Content>
-                        {STATUS_OPTIONS.map((option) => (
-                          <Select.Item key={option.value} value={option.value}>
-                            {option.label}
-                          </Select.Item>
-                        ))}
-                      </Select.Content>
-                    </Select.Root>
-                  </td>
-                </tr>
-                <tr>
-                  <th>코트</th>
-                  <td>
-                    <TextField.Root
-                      size="3"
-                      value={scoreForm.court}
-                      onChange={(e) => setScoreForm((prev) => ({ ...prev, court: e.target.value }))}
-                      placeholder="코트 번호"
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+        <Dialog.Content style={{ width: '100%' }}>
+          <Dialog.Title>
+            {selectedMatch && (
+              <>
+                {ROUND_NAME_MAP[selectedMatch.round] || selectedMatch.round} •{' '}
+                {selectedMatch.matchNumber}경기
+              </>
+            )}
+          </Dialog.Title>
+          <Dialog.Description mb="4">
+            {selectedMatch?.team1.teamName}
+            <br />
+            {selectedMatch?.team2.teamName}
+          </Dialog.Description>
 
-          <Box className="btn-wrap mt-3">
+          <Flex direction="column" gap="4" style={{ overflowY: 'auto', maxHeight: '70vh' }}>
+            {/* 세트별 점수 입력 */}
+            {scoreForm.team1Sets.map((_, setIndex) => (
+              <Box key={setIndex}>
+                <Text size="3" weight="bold" mb="3" as="div">
+                  {setIndex + 1}세트
+                </Text>
+
+                {/* 팀 점수 입력 컴포넌트 */}
+                {[
+                  {
+                    teamKey: 'team1' as const,
+                    teamName: selectedMatch?.team1.teamName.split(' - ')[0] || '',
+                    color: 'blue' as const,
+                  },
+                  {
+                    teamKey: 'team2' as const,
+                    teamName: selectedMatch?.team2.teamName.split(' - ')[0] || '',
+                    color: 'green' as const,
+                  },
+                ].map(({ teamKey, teamName, color }) => (
+                  <Box key={teamKey}>
+                    <Text size="2" weight="bold" my="2" color={color} as="div">
+                      {teamName}
+                    </Text>
+                    <div className="table-form">
+                      <table>
+                        <tbody>
+                          <tr>
+                            <th style={{ width: '60px' }}>점수</th>
+                            <td>
+                              <Flex gap="2">
+                                <TextField.Root
+                                  type="number"
+                                  placeholder="게임"
+                                  value={scoreForm[`${teamKey}Sets`][setIndex]?.games || 0}
+                                  onChange={(e) =>
+                                    updateSetScore(
+                                      teamKey,
+                                      setIndex,
+                                      'games',
+                                      parseInt(e.target.value) || 0,
+                                    )
+                                  }
+                                  style={{ width: '50px' }}
+                                  size="3"
+                                />
+                                <TextField.Root
+                                  size="3"
+                                  placeholder="타이"
+                                  value={scoreForm[`${teamKey}Sets`][setIndex]?.tiebreak || ''}
+                                  onChange={(e) =>
+                                    updateSetScore(
+                                      teamKey,
+                                      setIndex,
+                                      'tiebreak',
+                                      parseInt(e.target.value) || 0,
+                                    )
+                                  }
+                                  style={{ width: '50px' }}
+                                />
+                              </Flex>
+                            </td>
+                          </tr>
+                          <tr>
+                            <th>선수명</th>
+                            <td>
+                              <Flex gap="2">
+                                {[0, 1].map((playerIndex) => (
+                                  <TextField.Root
+                                    key={playerIndex}
+                                    size="3"
+                                    placeholder={`선수 ${playerIndex + 1}명`}
+                                    value={
+                                      scoreForm[`${teamKey}Sets`][setIndex]?.players?.[
+                                        playerIndex
+                                      ] || ''
+                                    }
+                                    onChange={(e) =>
+                                      updatePlayerName(
+                                        teamKey,
+                                        setIndex,
+                                        playerIndex,
+                                        e.target.value,
+                                      )
+                                    }
+                                    style={{ flex: 1 }}
+                                  />
+                                ))}
+                              </Flex>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </Box>
+                ))}
+
+                {/* 세트 삭제 버튼 (1세트가 아닌 경우에만) */}
+                {setIndex > 0 && (
+                  <Flex justify="end" mt="3">
+                    <Button size="2" variant="soft" color="red" onClick={() => removeSet(setIndex)}>
+                      세트 삭제
+                    </Button>
+                  </Flex>
+                )}
+              </Box>
+            ))}
+
+            {/* 세트 추가 버튼 */}
+            {scoreForm.team1Sets.length < 5 && (
+              <Flex justify="center">
+                <Button size="2" variant="soft" onClick={addSet}>
+                  세트 추가
+                </Button>
+              </Flex>
+            )}
+
+            {/* 경기 상태 및 코트 */}
+            <Flex align="center" gap="3">
+              <Text size="3">경기상태</Text>
+              <Select.Root
+                size="3"
+                value={scoreForm.status}
+                onValueChange={(value) =>
+                  setScoreForm((prev) => ({
+                    ...prev,
+                    status: value as 'scheduled' | 'in_progress' | 'completed' | 'cancelled',
+                  }))
+                }
+              >
+                <Select.Trigger style={{ width: '120px' }} />
+                <Select.Content>
+                  {STATUS_OPTIONS.map((option) => (
+                    <Select.Item key={option.value} value={option.value}>
+                      {option.label}
+                    </Select.Item>
+                  ))}
+                </Select.Content>
+              </Select.Root>
+              <Text>코트</Text>
+              <TextField.Root
+                size="3"
+                placeholder="코트 번호"
+                value={scoreForm.court}
+                onChange={(e) => setScoreForm((prev) => ({ ...prev, court: e.target.value }))}
+                style={{ width: '120px' }}
+              />
+            </Flex>
+          </Flex>
+
+          <Flex gap="3" mt="4" justify="end">
             <Dialog.Close>
               <Button size="3" variant="soft">
                 취소
               </Button>
             </Dialog.Close>
-            <Button size="3" color="green" onClick={handleSaveScore} disabled={loading}>
-              {loading ? '저장 중...' : '저장'}
+            <Button
+              size="3"
+              onClick={() => {
+                if (selectedMatch) {
+                  handleSaveScore();
+                }
+              }}
+            >
+              저장
             </Button>
-          </Box>
+          </Flex>
         </Dialog.Content>
       </Dialog.Root>
 

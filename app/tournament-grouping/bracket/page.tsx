@@ -9,6 +9,9 @@ import { useLoading } from '@/hooks/useLoading';
 import { useTournament } from '@/hooks/useTournaments';
 import { useUser } from '@/hooks/useUser';
 import { isAdmin } from '@/lib/authUtils';
+import { useStandings } from '@/hooks/useStandings';
+import { useGroups } from '@/hooks/useGroups';
+import { useMatches } from '@/hooks/useMatches';
 
 interface GroupStanding {
   teamId: string;
@@ -17,6 +20,12 @@ interface GroupStanding {
   position: number;
   points: number;
   goalDifference: number;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
 }
 import ConfirmDialog from '@/components/ConfirmDialog';
 import Container from '@/components/Container';
@@ -50,16 +59,20 @@ function TournamentBracketContent() {
 
   const [selectedTournament, setSelectedTournament] = useState<string>('');
   const [selectedDivision, setSelectedDivision] = useState<string>('');
-  const [standings, setStandings] = useState<GroupStanding[]>([]);
   const [bracketMatches, setBracketMatches] = useState<BracketMatch[]>([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showStandings, setShowStandings] = useState(true);
 
   // 관리자 권한 확인
   const admin = isAdmin(user);
 
   // SWR 훅 사용
   const { tournament } = useTournament(selectedTournament || '');
+  const { standings } = useStandings(selectedTournament || null, selectedDivision || null);
+  const { groupNameMap } = useGroups(selectedTournament || null, selectedDivision || null);
+  const { matches } = useMatches(selectedTournament || null, selectedDivision || null);
 
   // 부서 이름 매핑
   const divisionNameMap: Record<string, string> = {
@@ -81,22 +94,6 @@ function TournamentBracketContent() {
     }
   }, [searchParams]);
 
-  // 순위 정보 조회
-  const fetchStandings = useCallback(async () => {
-    if (!selectedTournament || !selectedDivision) return;
-
-    return withLoading(async () => {
-      const response = await fetch(
-        `/api/tournament-grouping/standings?tournamentId=${selectedTournament}&division=${selectedDivision}`,
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setStandings(data.data || []);
-      }
-    });
-  }, [selectedTournament, selectedDivision, withLoading]);
-
   // 본선 대진표 조회
   const fetchBracket = useCallback(async () => {
     if (!selectedTournament || !selectedDivision) return;
@@ -116,11 +113,10 @@ function TournamentBracketContent() {
   // 대회 또는 부서 변경 시 데이터 조회
   useEffect(() => {
     if (selectedTournament && selectedDivision) {
-      fetchStandings();
       fetchBracket();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchStandings, fetchBracket]);
+  }, [fetchBracket]);
 
   // 본선 대진표 생성
   const createBracket = async () => {
@@ -201,6 +197,30 @@ function TournamentBracketContent() {
 
   const qualifiedTeams = getQualifiedTeams();
 
+  // 본선 대진표 삭제
+  const deleteBracket = async () => {
+    await withLoading(async () => {
+      const response = await fetch('/api/tournament-grouping/bracket/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tournamentId: selectedTournament,
+          division: selectedDivision,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '본선 대진표 삭제에 실패했습니다.');
+      }
+
+      // 데이터 새로고침
+      await fetchBracket();
+      setShowDeleteDialog(false);
+      setShowSuccessDialog(true);
+    });
+  };
+
   // 보기 페이지로 이동
   const handleViewBracket = () => {
     router.push(
@@ -225,59 +245,151 @@ function TournamentBracketContent() {
               대진표보기
             </Button>
           )}
-          {qualifiedTeams.length > 0 && admin && (
+          {bracketMatches.length === 0 && qualifiedTeams.length > 0 && admin && (
             <Button size="3" onClick={() => setShowCreateDialog(true)}>
-              본선 대진표 생성
+              본선대진표생성
+            </Button>
+          )}
+          {bracketMatches.length > 0 && admin && (
+            <Button size="3" color="red" onClick={() => setShowDeleteDialog(true)}>
+              본선대진표삭제
             </Button>
           )}
         </Flex>
       </Box>
 
-      {/* 진출팀 목록 */}
-      {qualifiedTeams.length > 0 && (
-        <Card mb="6">
-          <Box p="4">
-            <Heading size="4" weight="bold" mb="4">
-              진출팀 목록 ({qualifiedTeams.length}팀)
+      {/* 조별 순위 */}
+      {standings.length > 0 && (
+        <Box mb="6">
+          <Flex align="center" justify="between" mb="4">
+            <Heading size="4" weight="bold">
+              조별 순위
             </Heading>
+            <Button size="2" variant="soft" onClick={() => setShowStandings(!showStandings)}>
+              {showStandings ? '숨기기' : '보기'}
+            </Button>
+          </Flex>
 
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="p-3 text-left border-b">조</th>
-                    <th className="p-3 text-left border-b">순위</th>
-                    <th className="p-3 text-left border-b">팀명</th>
-                    <th className="p-3 text-left border-b">승점</th>
-                    <th className="p-3 text-left border-b">득실차</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {qualifiedTeams.map((team) => (
-                    <tr key={team.teamId} className="border-b hover:bg-gray-50">
-                      <td className="p-3">
-                        {team.groupId
-                          ? team.groupId.replace('group_', '').toUpperCase() + '조'
-                          : '-'}
-                      </td>
-                      <td className="p-3">
-                        <Badge color="blue" size="1">
-                          {team.position}위
-                        </Badge>
-                      </td>
-                      <td className="p-3 font-medium">{team.teamName}</td>
-                      <td className="p-3">{team.points}</td>
-                      <td className="p-3">{team.goalDifference}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Box>
-        </Card>
+          {/* 조별로 그룹화하여 표시 */}
+          {showStandings &&
+            (() => {
+              const standingsByGroup = new Map<string, GroupStanding[]>();
+
+              standings.forEach((standing) => {
+                // 조 정보를 가져오기 위해 경기 정보에서 조 찾기
+                const match = matches.find(
+                  (m) => m.team1.teamId === standing.teamId || m.team2.teamId === standing.teamId,
+                );
+                const groupId = match?.groupId || 'unknown';
+
+                if (!standingsByGroup.has(groupId)) {
+                  standingsByGroup.set(groupId, []);
+                }
+                standingsByGroup.get(groupId)!.push(standing);
+              });
+
+              return Array.from(standingsByGroup.entries())
+                .sort(([a], [b]) => {
+                  const aName = groupNameMap[a] || a;
+                  const bName = groupNameMap[b] || b;
+                  return aName.localeCompare(bName);
+                })
+                .map(([groupId, groupStandings]) => (
+                  <Box key={groupId} mb="4">
+                    <Text size="3" weight="bold" mb="2">
+                      {groupNameMap[groupId] || groupId}
+                    </Text>
+                    <div className="table-view">
+                      <table className="text-center">
+                        <colgroup>
+                          <col style={{ width: '50px' }} />
+                          <col />
+                          <col style={{ width: '50px' }} />
+                          <col style={{ width: '50px' }} />
+                          <col style={{ width: '50px' }} />
+                          <col style={{ width: '50px' }} />
+                          <col style={{ width: '50px' }} />
+                          <col style={{ width: '50px' }} />
+                          <col style={{ width: '50px' }} />
+                          <col style={{ width: '50px' }} />
+                        </colgroup>
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th>순위</th>
+                            <th>팀명</th>
+                            <th>경기</th>
+                            <th>승</th>
+                            <th>무</th>
+                            <th>패</th>
+                            <th>득점</th>
+                            <th>실점</th>
+                            <th>득실차</th>
+                            <th>승점</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {groupStandings.map((standing) => (
+                            <tr key={standing.teamId} className="border-b hover:bg-gray-50">
+                              <td>{standing.position}</td>
+                              <td className="text-left">{standing.teamName}</td>
+                              <td>{standing.played}</td>
+                              <td>{standing.won}</td>
+                              <td>{standing.drawn}</td>
+                              <td>{standing.lost}</td>
+                              <td>{standing.goalsFor}</td>
+                              <td>{standing.goalsAgainst}</td>
+                              <td>{standing.goalDifference}</td>
+                              <td>{standing.points}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Box>
+                ));
+            })()}
+        </Box>
       )}
 
-      {/* 본선 대진표 생성 버튼 */}
+      {/* 진출팀 목록 */}
+      {qualifiedTeams.length > 0 && (
+        <Box>
+          <Heading size="4" weight="bold" mb="4">
+            진출팀 목록 ({qualifiedTeams.length}팀)
+          </Heading>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="p-3 text-left border-b">조</th>
+                  <th className="p-3 text-left border-b">순위</th>
+                  <th className="p-3 text-left border-b">팀명</th>
+                  <th className="p-3 text-left border-b">승점</th>
+                  <th className="p-3 text-left border-b">득실차</th>
+                </tr>
+              </thead>
+              <tbody>
+                {qualifiedTeams.map((team) => (
+                  <tr key={team.teamId} className="border-b hover:bg-gray-50">
+                    <td className="p-3">
+                      {team.groupId ? team.groupId.replace('group_', '').toUpperCase() + '조' : '-'}
+                    </td>
+                    <td className="p-3">
+                      <Badge color="blue" size="1">
+                        {team.position}위
+                      </Badge>
+                    </td>
+                    <td className="p-3 font-medium">{team.teamName}</td>
+                    <td className="p-3">{team.points}</td>
+                    <td className="p-3">{team.goalDifference}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Box>
+      )}
 
       {/* 본선 대진표 생성 확인 다이얼로그 */}
       <ConfirmDialog
@@ -289,6 +401,18 @@ function TournamentBracketContent() {
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
         onConfirm={createBracket}
+      />
+
+      {/* 본선 대진표 삭제 확인 다이얼로그 */}
+      <ConfirmDialog
+        title="본선 대진표 삭제"
+        description="본선 대진표를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        confirmText="삭제"
+        cancelText="취소"
+        confirmColor="red"
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={deleteBracket}
       />
 
       {/* 파라미터가 없을 때 */}
@@ -304,8 +428,8 @@ function TournamentBracketContent() {
 
       {/* 성공 다이얼로그 */}
       <ConfirmDialog
-        title="생성 완료"
-        description="본선 대진표가 성공적으로 생성되었습니다."
+        title="작업 완료"
+        description="본선 대진표 작업이 성공적으로 완료되었습니다."
         confirmText="확인"
         confirmColor="green"
         open={showSuccessDialog}

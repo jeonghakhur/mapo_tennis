@@ -206,24 +206,24 @@
     th {
       padding: 8px;
       border-bottom: 1px solid #e0e0e0;
-      border-left: 1px solid #e0e0e0;
+      border-right: 1px solid #e0e0e0;
       text-align: left;
       white-space: nowrap;
       text-align: center;
 
-      &:first-child {
-        border-left: none;
+      &:last-child {
+        border-right: none;
       }
     }
 
     td {
       padding: 8px;
       border-bottom: 1px solid #e0e0e0;
-      border-left: 1px solid #e0e0e0;
+      border-right: 1px solid #e0e0e0;
       white-space: nowrap;
 
-      &:first-child {
-        border-left: none;
+      &:last-child {
+        border-right: none;
       }
     }
   }

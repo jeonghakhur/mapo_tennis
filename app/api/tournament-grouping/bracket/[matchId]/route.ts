@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTournamentBracket, updateBracketMatch } from '@/lib/tournamentBracketUtils';
-import type { BracketMatch } from '@/types/tournament';
+import {
+  getTournamentBracket,
+  updateBracketMatch,
+  type BracketMatch,
+  type SetScore,
+} from '@/lib/tournamentBracketUtils';
 
 interface MatchUpdateData {
   team1Score?: number;
   team2Score?: number;
   team1Name?: string;
   team2Name?: string;
+  team1Sets?: SetScore[];
+  team2Sets?: SetScore[];
+  team1TotalSetsWon?: number;
+  team2TotalSetsWon?: number;
+  winner?: string;
   status?: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
   court?: string;
 }
@@ -33,8 +42,11 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ mat
       return NextResponse.json({ error: '본선 대진표를 찾을 수 없습니다.' }, { status: 404 });
     }
 
-    // 업데이트할 데이터 준비
-    const updateData: Partial<BracketMatch> = {};
+    // 업데이트할 데이터 준비 - updateBracketMatch 함수가 기대하는 타입에 맞춤
+    const updateData: Partial<BracketMatch> & {
+      team1Name?: string;
+      team2Name?: string;
+    } = {};
 
     if (matchData.status) {
       updateData.status = matchData.status;
@@ -42,47 +54,60 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ mat
     if (matchData.court !== undefined) {
       updateData.court = matchData.court;
     }
-
-    // 팀 정보 업데이트 (점수 또는 팀명)
-    if (
-      matchData.team1Score !== undefined ||
-      matchData.team2Score !== undefined ||
-      matchData.team1Name !== undefined ||
-      matchData.team2Name !== undefined
-    ) {
-      const currentMatch = bracket.matches.find((m) => m._key === matchKey);
-      if (currentMatch) {
-        updateData.team1 = {
-          teamId: currentMatch.team1.teamId,
-          teamName:
-            matchData.team1Name !== undefined ? matchData.team1Name : currentMatch.team1.teamName,
-          score:
-            matchData.team1Score !== undefined ? matchData.team1Score : currentMatch.team1.score,
-        };
-        updateData.team2 = {
-          teamId: currentMatch.team2.teamId,
-          teamName:
-            matchData.team2Name !== undefined ? matchData.team2Name : currentMatch.team2.teamName,
-          score:
-            matchData.team2Score !== undefined ? matchData.team2Score : currentMatch.team2.score,
-        };
-      }
+    if (matchData.winner !== undefined) {
+      updateData.winner = matchData.winner;
     }
 
-    // 경기가 완료된 경우 승자 결정
-    if (
-      matchData.status === 'completed' &&
-      matchData.team1Score !== undefined &&
-      matchData.team2Score !== undefined
-    ) {
-      if (matchData.team1Score > matchData.team2Score) {
-        updateData.winner = 'team1';
-      } else if (matchData.team2Score > matchData.team1Score) {
-        updateData.winner = 'team2';
-      }
+    // 팀명 업데이트 (updateBracketMatch 함수에서 처리)
+    if (matchData.team1Name !== undefined) {
+      updateData.team1Name = matchData.team1Name;
+    }
+    if (matchData.team2Name !== undefined) {
+      updateData.team2Name = matchData.team2Name;
     }
 
-    console.log('업데이트할 데이터:', { bracketId: bracket._id, matchKey, updateData });
+    // 팀 정보 업데이트 (점수, 세트별 점수)
+    const currentMatch = bracket.matches.find((m) => m._key === matchKey);
+    if (currentMatch) {
+      updateData.team1 = {
+        teamId: currentMatch.team1.teamId,
+        teamName: currentMatch.team1.teamName,
+        score: currentMatch.team1.score,
+        sets: currentMatch.team1.sets || [],
+        totalSetsWon: currentMatch.team1.totalSetsWon || 0,
+      };
+      updateData.team2 = {
+        teamId: currentMatch.team2.teamId,
+        teamName: currentMatch.team2.teamName,
+        score: currentMatch.team2.score,
+        sets: currentMatch.team2.sets || [],
+        totalSetsWon: currentMatch.team2.totalSetsWon || 0,
+      };
+
+      // 세트별 점수 업데이트
+      if (matchData.team1Sets) {
+        updateData.team1.sets = matchData.team1Sets;
+      }
+      if (matchData.team2Sets) {
+        updateData.team2.sets = matchData.team2Sets;
+      }
+
+      // 총 세트 승수 업데이트
+      if (matchData.team1TotalSetsWon !== undefined) {
+        updateData.team1.totalSetsWon = matchData.team1TotalSetsWon;
+      }
+      if (matchData.team2TotalSetsWon !== undefined) {
+        updateData.team2.totalSetsWon = matchData.team2TotalSetsWon;
+      }
+
+      // 기존 점수 업데이트 (하위 호환성)
+      if (matchData.team1Score !== undefined) {
+        updateData.team1.score = matchData.team1Score;
+      }
+      if (matchData.team2Score !== undefined) {
+        updateData.team2.score = matchData.team2Score;
+      }
+    }
 
     // 경기 결과 업데이트
     const success = await updateBracketMatch(bracket._id, matchKey, updateData);

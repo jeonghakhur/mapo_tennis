@@ -58,9 +58,48 @@ function TournamentMatchesContent() {
   // 대회 유형 확인 (개인전/단체전)
   const isTeamTournament = tournament?.tournamentType === 'team';
 
-  // 모든 경기가 완료되었는지 확인
+  // 본선 대진표 존재 여부 확인
+  const [hasBracket, setHasBracket] = useState(false);
+
+  // 모든 예선 경기 완료 여부 확인
   const allMatchesCompleted =
     matches.length > 0 && matches.every((match) => match.status === 'completed');
+
+  // 본선 대진표 확인
+  const checkBracket = useCallback(async () => {
+    if (!selectedTournament || !selectedDivision) return;
+
+    try {
+      console.log('본선 대진표 확인 중:', { selectedTournament, selectedDivision });
+      const response = await fetch(
+        `/api/tournament-grouping/bracket?tournamentId=${selectedTournament}&division=${selectedDivision}`,
+      );
+
+      console.log('본선 대진표 API 응답 상태:', response.status);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('본선 대진표 API 응답 데이터:', data);
+
+        // 응답 구조에 따라 수정
+        const hasMatches = data.matches && Array.isArray(data.matches) && data.matches.length > 0;
+        console.log('본선 대진표 존재 여부:', hasMatches);
+
+        setHasBracket(hasMatches);
+      } else {
+        console.log('본선 대진표 API 오류:', response.status);
+        setHasBracket(false);
+      }
+    } catch (error) {
+      console.error('본선 대진표 확인 오류:', error);
+      setHasBracket(false);
+    }
+  }, [selectedTournament, selectedDivision]);
+
+  // 대회 또는 부서 변경 시 본선 대진표 확인
+  useEffect(() => {
+    checkBracket();
+  }, [checkBracket]);
 
   // URL 파라미터에서 대회 ID와 부서 가져오기
   useEffect(() => {
@@ -449,6 +488,11 @@ function TournamentMatchesContent() {
           {admin && (
             <Button size="3" color="orange" onClick={handleAutoScoreAllMatches}>
               점수자동입력
+            </Button>
+          )}
+          {hasBracket && (
+            <Button size="3" color="blue" onClick={handleViewBracket}>
+              본선대진표보기
             </Button>
           )}
           {allMatchesCompleted && (

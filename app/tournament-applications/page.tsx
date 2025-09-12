@@ -1052,10 +1052,12 @@ export default function TournamentApplicationsPage() {
                                         {index + 1}번
                                       </Text>
                                       <Text weight="bold">
-                                        {moderator
+                                        {/* {moderator
                                           ? member.name
                                           : member.name.charAt(0) +
-                                            '*'.repeat(Math.max(member.name.length - 1, 0))}
+                                            '*'.repeat(Math.max(member.name.length - 1, 0))} */}
+                                        {/* 대회진행시에는 이름을 모두 보여줌 */}
+                                        {member.name}
                                         {application.tournamentType === 'individual' && (
                                           <>
                                             {' / '}

@@ -129,6 +129,20 @@ function TournamentMatchesContent() {
     { value: 'cancelled', label: '취소' },
   ];
 
+  // 팀명에서 선수 이름 추출하는 공통 함수
+  const extractPlayerNames = useCallback((teamName: string): [string, string] => {
+    try {
+      const parts = teamName.split('-');
+      if (parts.length >= 3) {
+        return [parts[1].split(',')[0].trim(), parts[2].trim()];
+      }
+      return [teamName, ''];
+    } catch (error) {
+      console.error('선수 이름 추출 오류:', error);
+      return [teamName, ''];
+    }
+  }, []);
+
   // 세트 점수 추가
   const addSet = () => {
     const currentTeam1Sets = scoreForm.team1Sets;
@@ -140,13 +154,21 @@ function TournamentMatchesContent() {
     // 고유한 _key 생성
     const setKey = `set-${newSetNumber}-${Date.now()}`;
 
+    // 선수 이름 추출
+    const team1Players = selectedMatch
+      ? extractPlayerNames(selectedMatch.team1.teamName)
+      : ['', ''];
+    const team2Players = selectedMatch
+      ? extractPlayerNames(selectedMatch.team2.teamName)
+      : ['', ''];
+
     const newSet: SetScore = {
       _key: setKey,
       setNumber: newSetNumber,
       games: 0,
       players: isTeamTournament
         ? ['', ''] // 단체전: 빈 문자열 2개
-        : [selectedMatch?.team1.teamName || '', ''], // 개인전: 팀명과 빈 문자열
+        : team1Players, // 개인전: 추출된 선수 이름
     };
 
     const newSet2: SetScore = {
@@ -155,7 +177,7 @@ function TournamentMatchesContent() {
       games: 0,
       players: isTeamTournament
         ? ['', ''] // 단체전: 빈 문자열 2개
-        : [selectedMatch?.team2.teamName || '', ''], // 개인전: 팀명과 빈 문자열
+        : team2Players, // 개인전: 추출된 선수 이름
     };
     console.log('newSet', scoreForm);
     setScoreForm((prev) => ({
@@ -304,6 +326,10 @@ function TournamentMatchesContent() {
         const team1Sets: SetScore[] = [];
         const team2Sets: SetScore[] = [];
 
+        // 선수 이름 추출
+        const team1Players = extractPlayerNames(match.team1.teamName);
+        const team2Players = extractPlayerNames(match.team2.teamName);
+
         for (let i = 1; i <= 3; i++) {
           const team1Games = Math.random() < 0.5 ? 6 : Math.floor(Math.random() * 6);
           const team2Games = team1Games === 6 ? Math.floor(Math.random() * 6) : 6;
@@ -314,11 +340,13 @@ function TournamentMatchesContent() {
             _key: setKey,
             setNumber: i,
             games: team1Games,
+            players: isTeamTournament ? ['', ''] : team1Players,
           });
           team2Sets.push({
             _key: setKey,
             setNumber: i,
             games: team2Games,
+            players: isTeamTournament ? ['', ''] : team2Players,
           });
         }
 
@@ -362,7 +390,7 @@ function TournamentMatchesContent() {
         setShowSuccessDialog(true);
       }
     });
-  }, [withLoading, matches, mutateMatches]);
+  }, [withLoading, matches, mutateMatches, isTeamTournament, extractPlayerNames]);
 
   // 본선 대진표 생성 페이지로 이동
   const handleCreateBracket = () => {
@@ -384,6 +412,9 @@ function TournamentMatchesContent() {
     setSelectedMatch(match);
 
     // 기본적으로 1세트가 있도록 설정
+    const team1Players = extractPlayerNames(match.team1.teamName);
+    const team2Players = extractPlayerNames(match.team2.teamName);
+
     const team1Sets =
       match.team1.sets && match.team1.sets.length > 0
         ? match.team1.sets.map((set, index) => ({
@@ -404,7 +435,7 @@ function TournamentMatchesContent() {
               games: 0,
               players: isTeamTournament
                 ? ['', ''] // 단체전: 빈 문자열 2개
-                : [match.team1.teamName, ''], // 개인전: 팀명과 빈 문자열
+                : team1Players, // 개인전: 추출된 선수 이름
             },
           ];
 
@@ -428,7 +459,7 @@ function TournamentMatchesContent() {
               games: 0,
               players: isTeamTournament
                 ? ['', ''] // 단체전: 빈 문자열 2개
-                : [match.team2.teamName, ''], // 개인전: 팀명과 빈 문자열
+                : team2Players, // 개인전: 추출된 선수 이름
             },
           ];
 
@@ -621,11 +652,10 @@ function TournamentMatchesContent() {
               </>
             )}
           </Dialog.Title>
-          <Dialog.Description mb="4">
-            {selectedMatch?.team1.teamName}
-            <br />
-            {selectedMatch?.team2.teamName}
-          </Dialog.Description>
+          <Flex mb="4" gap="2" direction="column">
+            <Text className="text-blue-600">팀1: {selectedMatch?.team1?.teamName}</Text>
+            <Text className="text-green-600">팀2: {selectedMatch?.team2?.teamName}</Text>
+          </Flex>
 
           <Flex direction="column" gap="4" style={{ overflowY: 'auto', maxHeight: '70vh' }}>
             {/* 세트별 점수 입력 */}
@@ -650,7 +680,7 @@ function TournamentMatchesContent() {
                 ].map(({ teamKey, teamName, color }) => (
                   <Box key={teamKey}>
                     <Text size="2" weight="bold" my="2" color={color} as="div">
-                      {teamName}
+                      {tournament?.tournamentType === 'team' && teamName}
                     </Text>
                     <div className="table-form">
                       <table>

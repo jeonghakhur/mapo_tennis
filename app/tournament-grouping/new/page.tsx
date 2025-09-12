@@ -146,7 +146,7 @@ function NewTournamentGroupingContent() {
                 (app.teamMembers as { name: string; clubName?: string }[])
                   ?.map(
                     (member: { name: string; clubName?: string }) =>
-                      `${member.name} (${member.clubName || '클럽명 없음'})`,
+                      `${member.clubName || '클럽명 없음'}-${member.name}`,
                   )
                   .join(', ') || '팀원 없음';
               teamName = memberNames;
@@ -156,7 +156,7 @@ function NewTournamentGroupingContent() {
               if (members && members.length > 0) {
                 const clubName = members[0].clubName || '클럽명 없음';
                 const memberNames = members.map((member) => member.name).join(', ');
-                teamName = `${clubName} - ${memberNames}`;
+                teamName = `${clubName}-${memberNames}`;
               } else {
                 teamName = '팀원 없음';
               }
@@ -187,6 +187,7 @@ function NewTournamentGroupingContent() {
       // 조편성 인터페이스 숨기기
       setShowGroupingInterface(false);
     }
+    console.log('승인된 신청서 수:', selectedTournament);
   }, [selectedTournament, selectedDivision, fetchApprovedApplications]);
 
   // 최대 팀 수가 변경될 때 팀 목록 필터링 (자동 적용 제거)

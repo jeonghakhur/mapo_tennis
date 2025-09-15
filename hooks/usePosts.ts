@@ -1,18 +1,60 @@
 import useSWR, { mutate as globalMutate } from 'swr';
+import { useState, useCallback, useMemo } from 'react';
 import type { Post, PostInput } from '@/model/post';
 
 interface UsePostsOptions {
   showAll?: boolean;
+  pageSize?: number;
 }
 
 export function usePosts(options: UsePostsOptions = {}) {
-  const { showAll = true } = options;
+  const { showAll = true, pageSize = 10 } = options;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [allPosts, setAllPosts] = useState<Post[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const params = new URLSearchParams({
     all: showAll.toString(),
+    page: currentPage.toString(),
+    limit: pageSize.toString(),
   });
 
-  const { data, error, isLoading, mutate } = useSWR(`/api/posts?${params.toString()}`, null);
+  const { data, error, isLoading, mutate } = useSWR(`/api/posts?${params.toString()}`, null, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  });
+
+  // 새로운 데이터가 로드되면 allPosts에 추가
+  useMemo(() => {
+    if (data?.posts) {
+      if (currentPage === 1) {
+        // 첫 페이지인 경우 교체
+        setAllPosts(data.posts);
+      } else {
+        // 추가 페이지인 경우 기존 데이터에 추가 (중복 제거)
+        setAllPosts((prev) => {
+          const existingIds = new Set(prev.map((post) => post._id));
+          const newPosts = data.posts.filter((post: Post) => !existingIds.has(post._id));
+          return [...prev, ...newPosts];
+        });
+      }
+      // 페이지 크기와 같으면 더 있을 가능성이 있음, 작으면 마지막 페이지
+      setHasMore(data.posts.length >= pageSize);
+    }
+  }, [data, currentPage, pageSize]);
+
+  // 다음 페이지 로드
+  const loadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return;
+
+    setIsLoadingMore(true);
+    try {
+      setCurrentPage((prev) => prev + 1);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [isLoadingMore, hasMore]);
 
   // 생성
   const createPost = async (newPost: PostInput) => {
@@ -93,13 +135,16 @@ export function usePosts(options: UsePostsOptions = {}) {
   };
 
   return {
-    posts: data?.posts || [],
+    posts: allPosts,
     isLoading,
     error,
     mutate,
     createPost,
     updatePost,
     deletePost,
+    loadMore,
+    hasMore,
+    isLoadingMore,
   };
 }
 

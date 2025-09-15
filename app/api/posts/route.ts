@@ -17,6 +17,8 @@ export async function GET(req: NextRequest) {
   const id = searchParams.get('id');
   const all = searchParams.get('all');
   const category = searchParams.get('category');
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = parseInt(searchParams.get('limit') || '10');
 
   if (id) {
     const post = await getPost(id);
@@ -33,7 +35,12 @@ export async function GET(req: NextRequest) {
   }
 
   // all 파라미터가 있으면 모든 포스트, 없으면 발행된 포스트만
-  const posts = all === 'true' ? await getAllPosts() : await getPublishedPosts();
+  const allPosts = all === 'true' ? await getAllPosts() : await getPublishedPosts();
+
+  // 페이지네이션 적용
+  const startIndex = (page - 1) * limit;
+  const endIndex = startIndex + limit;
+  const posts = allPosts.slice(startIndex, endIndex);
 
   return NextResponse.json({ posts });
 }

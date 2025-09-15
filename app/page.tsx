@@ -2,7 +2,7 @@
 import Container from '@/components/Container';
 import '@radix-ui/themes/styles.css';
 import { getUpcomingTournaments, getUpcomingTournamentsForAdmin } from '@/service/tournament';
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useMemo } from 'react';
 import { Box, Text, Flex, Badge, Button } from '@radix-ui/themes';
 import type { Post } from '@/model/post';
 import type { Tournament } from '@/model/tournament';
@@ -21,6 +21,7 @@ import CommentButton from '@/components/CommentButton';
 import CommentDialog from '@/components/CommentDialog';
 import TournamentCard from '@/components/TournamentCard';
 import Image from 'next/image';
+import InfiniteScroll from 'react-infinite-scroll-component';
 import 'yet-another-react-lightbox/styles.css';
 
 // 카카오 SDK 타입 정의
@@ -55,8 +56,15 @@ function HomePageContent() {
   // 회원 레벨 4 이상인지 확인
   const canManagePosts = session?.user?.level >= 4;
 
-  const { posts, isLoading: postsLoading } = usePosts({
+  const {
+    posts,
+    isLoading: postsLoading,
+    loadMore,
+    hasMore,
+    isLoadingMore,
+  } = usePosts({
     showAll: canManagePosts,
+    pageSize: 10,
   });
 
   // 목록 전체에서 Lightbox 상태 관리
@@ -193,6 +201,13 @@ function HomePageContent() {
     }
   }, [searchParams]);
 
+  // 무한 스크롤 핸들러
+  const handleLoadMore = () => {
+    if (!searchKeyword && hasMore && !isLoadingMore) {
+      loadMore();
+    }
+  };
+
   // 상대적 시간 포맷 함수
   function formatRelativeTime(dateString: string) {
     const now = new Date();
@@ -241,9 +256,20 @@ function HomePageContent() {
     }
   };
 
-  // 필터링된 포스트
-  const filteredPosts =
-    posts?.filter((post: Post) => {
+  // 필터링된 포스트 (중복 제거 포함)
+  const filteredPosts = useMemo(() => {
+    if (!posts) return [];
+
+    // 중복 제거 (같은 _id를 가진 포스트 중 첫 번째만 유지)
+    const uniquePosts = posts.reduce((acc: Post[], post: Post) => {
+      const existingPost = acc.find((p) => p._id === post._id);
+      if (!existingPost) {
+        acc.push(post);
+      }
+      return acc;
+    }, []);
+
+    return uniquePosts.filter((post: Post) => {
       // 회원 레벨 4 미만은 발행된 포스트만 볼 수 있음
       if (!hasPermissionLevel(session?.user, 4) && !post.isPublished) {
         return false;
@@ -256,7 +282,8 @@ function HomePageContent() {
         return titleMatch || contentMatch;
       }
       return true;
-    }) || [];
+    });
+  }, [posts, session?.user, searchKeyword]);
 
   // 필터링된 대회
   const filteredTournaments = tournaments.filter((tournament) => {
@@ -319,92 +346,118 @@ function HomePageContent() {
                 </Text>
               </Box>
             ) : (
-              <Flex direction="column" gap="4">
-                {filteredPosts.map((post: Post) => {
-                  const imageUrls = extractImageUrls(post.content);
-                  // 이미지 클릭 핸들러
-                  const handleImageClick = (idx: number) => {
-                    setLightboxImages(imageUrls);
-                    setLightboxIndex(idx);
-                    setLightboxOpen(true);
-                  };
-                  return (
-                    <Box key={post._id} className="border-b pb-4">
-                      <Flex align="center" gap="2" mb="1">
-                        <Text weight="bold" size="4">
-                          {post.title}
-                        </Text>
-                        <Text size="2" color="gray">
-                          {formatRelativeTime(post.createdAt)}
-                        </Text>
-                        {hasPermissionLevel(session?.user, 4) &&
-                          (post.isPublished ? (
-                            <Badge color="green" size="2">
-                              발행됨
-                            </Badge>
-                          ) : (
-                            <Badge color="gray" size="2">
-                              임시저장
-                            </Badge>
-                          ))}
-                      </Flex>
-                      {/* 본문 전체 */}
-                      <Box mt="4">
-                        <MarkdownRenderer content={post.content} onImageClick={handleImageClick} />
-                      </Box>
-                      {/* 첨부파일(있다면) */}
-                      {post.attachments && post.attachments.length > 0 && (
-                        <Box mt="4">
-                          <Text weight="bold" mb="2" as="div">
-                            첨부파일
-                          </Text>
-                          <Flex gap="2" wrap="wrap">
-                            {post.attachments.map((attachment, idx) => (
-                              <Button
-                                key={idx}
-                                size="2"
-                                variant="soft"
-                                onClick={() => window.open(attachment.url, '_blank')}
-                              >
-                                {attachment.filename}
-                              </Button>
-                            ))}
-                          </Flex>
-                        </Box>
-                      )}
-                      {/* 좋아요, 코멘트 버튼과 관리자 수정 버튼 */}
-                      <Flex justify="between" align="center" mt="4">
-                        <Flex gap="3">
-                          <PostLikeButton
-                            postId={post._id}
-                            initialLikeCount={post.likeCount || 0}
-                            initialIsLiked={
-                              post.likedBy?.some(
-                                (ref: { _key: string; _ref: string }) =>
-                                  ref._ref === session?.user?.id,
-                              ) || false
-                            }
-                          />
-                          <CommentButton
-                            commentCount={post.commentCount || 0}
-                            onClick={() => handleCommentClick(post._id, post.title)}
-                            isLoading={isLoadingComments && selectedPostId === post._id}
-                          />
-                        </Flex>
-                        {hasPermissionLevel(session?.user, 4) && (
-                          <Button
-                            size="3"
-                            variant="soft"
-                            onClick={() => router.push(`/posts/${post._id}/edit`)}
-                          >
-                            수정
-                          </Button>
-                        )}
-                      </Flex>
+              <InfiniteScroll
+                dataLength={filteredPosts.length}
+                next={handleLoadMore}
+                hasMore={!searchKeyword && hasMore}
+                loader={
+                  <Box className="text-center py-4">
+                    <Text size="3" color="gray">
+                      더 많은 포스트를 불러오는 중...
+                    </Text>
+                  </Box>
+                }
+                endMessage={
+                  !searchKeyword && posts.length > 0 ? (
+                    <Box className="text-center py-4">
+                      <Text size="3" color="gray">
+                        모든 포스트를 불러왔습니다.
+                      </Text>
                     </Box>
-                  );
-                })}
-              </Flex>
+                  ) : null
+                }
+                scrollThreshold={0.8}
+              >
+                <Flex direction="column" gap="4">
+                  {filteredPosts.map((post: Post) => {
+                    const imageUrls = extractImageUrls(post.content);
+                    // 이미지 클릭 핸들러
+                    const handleImageClick = (idx: number) => {
+                      setLightboxImages(imageUrls);
+                      setLightboxIndex(idx);
+                      setLightboxOpen(true);
+                    };
+                    return (
+                      <Box key={post._id} className="border-b pb-4">
+                        <Flex align="center" gap="2" mb="1">
+                          <Text weight="bold" size="4">
+                            {post.title}
+                          </Text>
+                          <Text size="2" color="gray">
+                            {formatRelativeTime(post.createdAt)}
+                          </Text>
+                          {hasPermissionLevel(session?.user, 4) &&
+                            (post.isPublished ? (
+                              <Badge color="green" size="2">
+                                발행됨
+                              </Badge>
+                            ) : (
+                              <Badge color="gray" size="2">
+                                임시저장
+                              </Badge>
+                            ))}
+                        </Flex>
+                        {/* 본문 전체 */}
+                        <Box mt="4">
+                          <MarkdownRenderer
+                            content={post.content}
+                            onImageClick={handleImageClick}
+                          />
+                        </Box>
+                        {/* 첨부파일(있다면) */}
+                        {post.attachments && post.attachments.length > 0 && (
+                          <Box mt="4">
+                            <Text weight="bold" mb="2" as="div">
+                              첨부파일
+                            </Text>
+                            <Flex gap="2" wrap="wrap">
+                              {post.attachments.map((attachment, idx) => (
+                                <Button
+                                  key={idx}
+                                  size="2"
+                                  variant="soft"
+                                  onClick={() => window.open(attachment.url, '_blank')}
+                                >
+                                  {attachment.filename}
+                                </Button>
+                              ))}
+                            </Flex>
+                          </Box>
+                        )}
+                        {/* 좋아요, 코멘트 버튼과 관리자 수정 버튼 */}
+                        <Flex justify="between" align="center" mt="4">
+                          <Flex gap="3">
+                            <PostLikeButton
+                              postId={post._id}
+                              initialLikeCount={post.likeCount || 0}
+                              initialIsLiked={
+                                post.likedBy?.some(
+                                  (ref: { _key: string; _ref: string }) =>
+                                    ref._ref === session?.user?.id,
+                                ) || false
+                              }
+                            />
+                            <CommentButton
+                              commentCount={post.commentCount || 0}
+                              onClick={() => handleCommentClick(post._id, post.title)}
+                              isLoading={isLoadingComments && selectedPostId === post._id}
+                            />
+                          </Flex>
+                          {hasPermissionLevel(session?.user, 4) && (
+                            <Button
+                              size="3"
+                              variant="soft"
+                              onClick={() => router.push(`/posts/${post._id}/edit`)}
+                            >
+                              수정
+                            </Button>
+                          )}
+                        </Flex>
+                      </Box>
+                    );
+                  })}
+                </Flex>
+              </InfiniteScroll>
             )}
           </div>
 

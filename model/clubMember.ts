@@ -25,5 +25,8 @@ export interface ClubMemberInput extends ClubMemberBase {
 // 조회용: club은 {_id, name}
 export interface ClubMember extends ClubMemberBase {
   _id: string;
+  _createdAt: string;
+  _updatedAt: string;
+  _rev: string;
   club: { _id: string; name: string };
 }

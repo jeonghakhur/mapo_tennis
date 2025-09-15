@@ -130,8 +130,8 @@ export default function AwardList({
       },
     );
 
-    // 대회명과 연도로 정렬 (최신 연도 우선, 같은 연도면 대회명 알파벳 순)
-    const sortedGroups = processedGroups.sort(([keyA], [keyB]) => {
+    // 연도로 정렬 (최신 연도 우선), 같은 연도면 order 필드로 정렬 (높은 번호가 위로)
+    const sortedGroups = processedGroups.sort(([keyA, awardsA], [keyB, awardsB]) => {
       const [, yearA] = keyA.split('-');
       const [, yearB] = keyB.split('-');
 
@@ -140,10 +140,15 @@ export default function AwardList({
         return parseInt(yearB) - parseInt(yearA);
       }
 
-      // 같은 연도면 대회명 비교 (오름차순)
-      const competitionA = keyA.split('-')[0];
-      const competitionB = keyB.split('-')[0];
-      return competitionA.localeCompare(competitionB);
+      // 같은 연도면 order 필드로 정렬 (내림차순 - 높은 번호가 위로)
+      const maxOrderA = Math.max(
+        ...awardsA.flatMap(([, divisionAwards]) => divisionAwards.map((award) => award.order)),
+      );
+      const maxOrderB = Math.max(
+        ...awardsB.flatMap(([, divisionBwards]) => divisionBwards.map((award) => award.order)),
+      );
+
+      return maxOrderB - maxOrderA;
     });
 
     return sortedGroups;

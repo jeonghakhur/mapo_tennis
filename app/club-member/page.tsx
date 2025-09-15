@@ -139,6 +139,23 @@ export default function ClubMemberListPage() {
     return phone;
   }
 
+  function formatDate(dateString?: string) {
+    if (!dateString) return '-';
+
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+
+      return date.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+    } catch {
+      return '-';
+    }
+  }
+
   // 권한 체크 (레벨 4 이상)
   if (session && !hasPermissionLevel(user, 4)) {
     return (
@@ -330,6 +347,7 @@ export default function ClubMemberListPage() {
                   <th>점수</th>
                   <th>성별</th>
                   <th>회원상태</th>
+                  <th>회원등록일</th>
                   {hasPermissionLevel(user, 5) && <th>전화번호</th>}
                 </tr>
               </thead>
@@ -356,6 +374,7 @@ export default function ClubMemberListPage() {
                         <td>{m.score || '-'}</td>
                         <td>{m.gender || '-'}</td>
                         <td>{m.status || '-'}</td>
+                        <td>{formatDate('_createdAt' in m ? m._createdAt : undefined)}</td>
                         {hasPermissionLevel(user, 5) && <td>{formatPhoneNumber(m.contact)}</td>}
                       </tr>
                     );

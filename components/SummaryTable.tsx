@@ -12,7 +12,41 @@ function groupAwardsByCompetitionAndDivision(awards: Award[]) {
     if (!grouped[compYear][award.division]) grouped[compYear][award.division] = [];
     grouped[compYear][award.division].push(award);
   });
-  return grouped;
+
+  // 연도별 정렬 (최신 연도 우선), 같은 연도면 order 필드로 정렬 (높은 번호가 위로)
+  const sortedEntries = Object.entries(grouped).sort(
+    ([compYearA, divisionsA], [compYearB, divisionsB]) => {
+      const [, yearA] = compYearA.split('||');
+      const [, yearB] = compYearB.split('||');
+
+      // 연도 비교 (내림차순)
+      if (yearA !== yearB) {
+        return parseInt(yearB) - parseInt(yearA);
+      }
+
+      // 같은 연도면 order 필드로 정렬 (내림차순 - 높은 번호가 위로)
+      const maxOrderA = Math.max(
+        ...Object.values(divisionsA)
+          .flat()
+          .map((award) => award.order),
+      );
+      const maxOrderB = Math.max(
+        ...Object.values(divisionsB)
+          .flat()
+          .map((award) => award.order),
+      );
+
+      return maxOrderB - maxOrderA;
+    },
+  );
+
+  // 정렬된 결과를 다시 객체로 변환
+  const sortedGrouped: Record<string, Record<string, Award[]>> = {};
+  sortedEntries.forEach(([compYear, divisions]) => {
+    sortedGrouped[compYear] = divisions;
+  });
+
+  return sortedGrouped;
 }
 
 export default function SummaryTable({ awards }: { awards: Award[] }) {

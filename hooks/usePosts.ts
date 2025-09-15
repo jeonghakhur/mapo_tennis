@@ -13,6 +13,7 @@ export function usePosts(options: UsePostsOptions = {}) {
   const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const params = new URLSearchParams({
     all: showAll.toString(),
@@ -20,7 +21,7 @@ export function usePosts(options: UsePostsOptions = {}) {
     limit: pageSize.toString(),
   });
 
-  const { data, error, isLoading, mutate } = useSWR(`/api/posts?${params.toString()}`, null, {
+  const { data, error, mutate } = useSWR(`/api/posts?${params.toString()}`, null, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
   });
@@ -31,6 +32,7 @@ export function usePosts(options: UsePostsOptions = {}) {
       if (currentPage === 1) {
         // 첫 페이지인 경우 교체
         setAllPosts(data.posts);
+        setIsInitialLoading(false);
       } else {
         // 추가 페이지인 경우 기존 데이터에 추가 (중복 제거)
         setAllPosts((prev) => {
@@ -41,6 +43,7 @@ export function usePosts(options: UsePostsOptions = {}) {
       }
       // 페이지 크기와 같으면 더 있을 가능성이 있음, 작으면 마지막 페이지
       setHasMore(data.posts.length >= pageSize);
+      setIsLoadingMore(false);
     }
   }, [data, currentPage, pageSize]);
 
@@ -136,7 +139,7 @@ export function usePosts(options: UsePostsOptions = {}) {
 
   return {
     posts: allPosts,
-    isLoading,
+    isLoading: isInitialLoading,
     error,
     mutate,
     createPost,

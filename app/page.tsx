@@ -39,7 +39,6 @@ declare global {
 
 function HomePageContent() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
@@ -186,7 +185,6 @@ function HomePageContent() {
         ? await getUpcomingTournamentsForAdmin()
         : await getUpcomingTournaments();
       setTournaments(tournamentResult);
-      setLoading(false);
     })();
   }, [session?.user]);
 
@@ -298,8 +296,15 @@ function HomePageContent() {
 
   return (
     <Container>
-      {loading ? (
-        <SkeletonCard />
+      {postsLoading ? (
+        <Box className="text-center py-8">
+          <div className="flex justify-center items-center space-x-2">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <Text size="4" color="gray">
+              포스트를 불러오는 중...
+            </Text>
+          </div>
+        </Box>
       ) : (
         <>
           {/* 대회 섹션 - 검색어가 없을 때만 예정 대회 표시 */}
@@ -331,9 +336,7 @@ function HomePageContent() {
                 포스트 검색 결과
               </Text>
             )}
-            {postsLoading ? (
-              <SkeletonCard lines={6} />
-            ) : searchKeyword && filteredPosts.length === 0 && filteredTournaments.length === 0 ? (
+            {searchKeyword && filteredPosts.length === 0 && filteredTournaments.length === 0 ? (
               <Box className="text-center py-8">
                 <Text size="4" color="gray">
                   검색 결과가 없습니다.
@@ -351,11 +354,16 @@ function HomePageContent() {
                 next={handleLoadMore}
                 hasMore={!searchKeyword && hasMore}
                 loader={
-                  <Box className="text-center py-4">
-                    <Text size="3" color="gray">
-                      더 많은 포스트를 불러오는 중...
-                    </Text>
-                  </Box>
+                  isLoadingMore ? (
+                    <Box className="text-center py-4">
+                      <div className="flex justify-center items-center space-x-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        <Text size="3" color="gray">
+                          로딩 중...
+                        </Text>
+                      </div>
+                    </Box>
+                  ) : null
                 }
                 endMessage={
                   !searchKeyword && posts.length > 0 ? (
@@ -366,7 +374,7 @@ function HomePageContent() {
                     </Box>
                   ) : null
                 }
-                scrollThreshold={0.8}
+                scrollThreshold={0.9}
               >
                 <Flex direction="column" gap="4">
                   {filteredPosts.map((post: Post) => {

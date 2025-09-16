@@ -741,6 +741,15 @@ export default function TournamentApplicationsPage() {
                           </Button>
                         )}
                       </Flex>
+
+                      {/* 승인된 신청에 대한 안내 메시지 */}
+                      {!canEdit(application) && application.status === 'approved' && (
+                        <div className="border-t pt-4">
+                          <Text size="2" color="red" weight="bold" className="text-center block">
+                            승인된 게임은 수정할 수 없습니다
+                          </Text>
+                        </div>
+                      )}
                     </div>
                   </Card>
                 ))}
@@ -909,12 +918,40 @@ export default function TournamentApplicationsPage() {
                           </Button>
                         ))}
                     </Flex>
+                    <div className="table-form print-only">
+                      <table>
+                        <colgroup>
+                          {/* <col style={{ width: '100px' }} /> */}
+                          {/* <col /> */}
+                        </colgroup>
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th>클럽</th>
+                            <th>참가자</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {apps.map((application) => {
+                            return (
+                              <tr key={application._id}>
+                                <td>{application.teamMembers[0]?.clubName}</td>
+                                <td>
+                                  {application.teamMembers
+                                    ?.map((member) => `${member.name}(${member.score})`)
+                                    .join(', ')}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                     <div className="space-y-4">
                       {apps.map((application) => {
                         return (
                           <Card
                             key={application._id}
-                            className={`p-6 transition-colors ${canEdit(application) ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+                            className={`print-none p-6 transition-colors ${canEdit(application) ? 'cursor-pointer hover:bg-gray-50' : ''}`}
                             onClick={() => {
                               if (canEdit(application))
                                 router.push(`/tournament-applications/${application._id}/edit`);
@@ -1141,20 +1178,6 @@ export default function TournamentApplicationsPage() {
                                   >
                                     승인
                                   </Button>
-                                </div>
-                              )}
-
-                              {/* 승인된 신청에 대한 안내 메시지 */}
-                              {!canEdit(application) && application.status === 'approved' && (
-                                <div className="border-t pt-4">
-                                  <Text
-                                    size="2"
-                                    color="red"
-                                    weight="bold"
-                                    className="text-center block"
-                                  >
-                                    승인된 게임은 수정할 수 없습니다
-                                  </Text>
                                 </div>
                               )}
                             </div>

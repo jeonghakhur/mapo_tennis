@@ -1,11 +1,19 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense, Fragment } from 'react';
 import { Box, Text, Button, Flex, Card, Heading, Badge } from '@radix-ui/themes';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLoading } from '@/hooks/useLoading';
 import Container from '@/components/Container';
 import LoadingOverlay from '@/components/LoadingOverlay';
+
+interface SetScore {
+  _key: string;
+  setNumber: number;
+  games: number;
+  tiebreak?: number;
+  players: string[];
+}
 
 interface BracketMatch {
   _key: string;
@@ -16,11 +24,15 @@ interface BracketMatch {
     teamId: string;
     teamName: string;
     score?: number;
+    sets?: SetScore[];
+    totalSetsWon?: number;
   };
   team2: {
     teamId: string;
     teamName: string;
     score?: number;
+    sets?: SetScore[];
+    totalSetsWon?: number;
   };
   status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
   court?: string;
@@ -158,32 +170,116 @@ function TournamentBracketViewContent() {
                             </Badge>
                           </Flex>
 
-                          <Flex direction="column" gap="2">
-                            <Flex align="center" justify="between">
-                              <Text weight="bold" style={{ wordBreak: 'break-word', flex: '1' }}>
-                                {match.team1.teamName}
-                              </Text>
-                              <Text
-                                size="4"
-                                weight="bold"
-                                style={{ minWidth: '40px', textAlign: 'center' }}
-                              >
-                                {match.team1.score !== undefined ? match.team1.score : '-'}
-                              </Text>
+                          {/* 세트별 상세 점수 표시 */}
+                          {match.team1.sets && match.team1.sets.length > 0 ? (
+                            <Box mb="2">
+                              <div className="table-view">
+                                <table>
+                                  <thead>
+                                    <tr>
+                                      <td>세트</td>
+                                      <td>클럽명</td>
+                                      <td>선수</td>
+                                      <td>점수</td>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {match.team1.sets.map((_, setIndex) => {
+                                      const team1Set = match.team1.sets?.[setIndex];
+                                      const team2Set = match.team2.sets?.[setIndex];
+
+                                      if (!team1Set || !team2Set) return null;
+                                      const team1Players =
+                                        team1Set.players?.filter((p) => p.trim()) || [];
+                                      const team2Players =
+                                        team2Set.players?.filter((p) => p.trim()) || [];
+
+                                      return (
+                                        <Fragment key={setIndex}>
+                                          <tr>
+                                            <td rowSpan={2}>{setIndex + 1}세트</td>
+                                            <td className="text-blue-600">
+                                              {match.team1.teamName.split(' - ')[0]}
+                                            </td>
+                                            <td>{team1Players.join(', ')}</td>
+                                            <td className="text-blue-600">
+                                              {team1Set.games}
+                                              {team1Set.tiebreak !== undefined && (
+                                                <>({team1Set.tiebreak})</>
+                                              )}
+                                            </td>
+                                          </tr>
+                                          <tr>
+                                            <td className="text-green-600">
+                                              {match.team2.teamName.split(' - ')[0]}
+                                            </td>
+                                            <td>{team2Players.join(', ')}</td>
+                                            <td className="text-green-600">
+                                              {team2Set.games}
+                                              {team2Set.tiebreak !== undefined && (
+                                                <>({team2Set.tiebreak})</>
+                                              )}
+                                            </td>
+                                          </tr>
+                                        </Fragment>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+
+                              {/* 승리팀 표시 */}
+                              {match.status === 'completed' && match.winner && (
+                                <Box
+                                  mt="2"
+                                  p="2"
+                                  style={{ backgroundColor: '#f0f9ff', borderRadius: '4px' }}
+                                >
+                                  <Text size="2" weight="bold" color="green">
+                                    🏆 승리:{' '}
+                                    {match.winner === match.team1.teamId
+                                      ? match.team1.teamName
+                                      : match.team2.teamName}
+                                    {match.team1.totalSetsWon !== undefined &&
+                                      match.team2.totalSetsWon !== undefined && (
+                                        <span>
+                                          {' '}
+                                          ({match.team1.totalSetsWon}-{match.team2.totalSetsWon})
+                                        </span>
+                                      )}
+                                  </Text>
+                                </Box>
+                              )}
+                            </Box>
+                          ) : (
+                            /* 세트 정보가 없는 경우 기본 점수 표시 */
+                            <Flex direction="column" gap="2">
+                              <Flex align="center" justify="between">
+                                <Text weight="bold" style={{ wordBreak: 'break-word', flex: '1' }}>
+                                  {match.team1.teamName}
+                                </Text>
+                                <Text
+                                  size="4"
+                                  weight="bold"
+                                  style={{ minWidth: '40px', textAlign: 'center' }}
+                                >
+                                  {match.team1.score !== undefined ? match.team1.score : '-'}
+                                </Text>
+                              </Flex>
+                              <Flex align="center" justify="between">
+                                <Text weight="bold" style={{ wordBreak: 'break-word', flex: '1' }}>
+                                  {match.team2.teamName}
+                                </Text>
+                                <Text
+                                  size="4"
+                                  weight="bold"
+                                  style={{ minWidth: '40px', textAlign: 'center' }}
+                                >
+                                  {match.team2.score !== undefined ? match.team2.score : '-'}
+                                </Text>
+                              </Flex>
                             </Flex>
-                            <Flex align="center" justify="between">
-                              <Text weight="bold" style={{ wordBreak: 'break-word', flex: '1' }}>
-                                {match.team2.teamName}
-                              </Text>
-                              <Text
-                                size="4"
-                                weight="bold"
-                                style={{ minWidth: '40px', textAlign: 'center' }}
-                              >
-                                {match.team2.score !== undefined ? match.team2.score : '-'}
-                              </Text>
-                            </Flex>
-                          </Flex>
+                          )}
 
                           {match.court && (
                             <Text size="2" color="gray" mt="2">

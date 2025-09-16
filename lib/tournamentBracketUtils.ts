@@ -342,7 +342,15 @@ export function isRoundCompleted(matches: BracketMatch[], round: BracketMatch['r
   const roundMatches = matches.filter((m) => m.round === round);
   if (roundMatches.length === 0) return false;
 
-  return roundMatches.every((match) => match.status === 'completed');
+  return roundMatches.every(
+    (match) =>
+      match.status === 'completed' &&
+      match.winner !== undefined &&
+      // Bye팀이 아닌 실제 팀이 승리한 경우만 완료로 간주
+      (match.winner === match.team1.teamId
+        ? match.team1.teamName !== 'BYE'
+        : match.team2.teamName !== 'BYE'),
+  );
 }
 
 /** 현재 라운드에서 승리한 팀들을 반환 */
@@ -369,19 +377,30 @@ export function getWinningTeams(
 
   roundMatches.forEach((match) => {
     if (match.status === 'completed' && match.winner) {
-      const winningTeam = match.winner === 'team1' ? match.team1 : match.team2;
+      // winner는 teamId 값이므로 team1 또는 team2와 비교
+      const winningTeam = match.winner === match.team1.teamId ? match.team1 : match.team2;
 
-      // 바이 경기에서 승리한 팀인지 확인 (teamId가 있고 teamName이 'BYE'가 아닌 경우)
-      const isByeWinner = winningTeam.teamId && winningTeam.teamName !== 'BYE';
-
-      winningTeams.push({
-        teamId: winningTeam.teamId,
-        teamName: winningTeam.teamName,
-        groupId: isByeWinner ? 'bye_winner' : 'unknown',
-        position: 1, // 바이 승리자는 높은 시드
-        points: isByeWinner ? 6 : 0, // 바이 승리자는 6점
-        goalDifference: isByeWinner ? 6 : 0, // 바이 승리자는 +6 득실차
+      console.log(`경기 ${match.matchNumber} 승리팀 확인:`, {
+        winner: match.winner,
+        team1: { teamId: match.team1.teamId, teamName: match.team1.teamName },
+        team2: { teamId: match.team2.teamId, teamName: match.team2.teamName },
+        winningTeam: { teamId: winningTeam.teamId, teamName: winningTeam.teamName },
       });
+
+      // Bye팀이 아닌 실제 팀만 다음 라운드로 진출
+      if (winningTeam.teamName !== 'BYE' && winningTeam.teamName !== 'bye' && winningTeam.teamId) {
+        console.log(`진출팀 추가: ${winningTeam.teamName} (${winningTeam.teamId})`);
+        winningTeams.push({
+          teamId: winningTeam.teamId,
+          teamName: winningTeam.teamName,
+          groupId: 'bracket_winner', // 본선 승리자
+          position: 1,
+          points: 6,
+          goalDifference: 6,
+        });
+      } else {
+        console.log(`Bye팀 필터링됨: ${winningTeam.teamName} (${winningTeam.teamId})`);
+      }
     }
   });
 

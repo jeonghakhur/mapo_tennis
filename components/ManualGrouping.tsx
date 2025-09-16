@@ -35,8 +35,9 @@ export default function ManualGrouping({
     const initialGroups: Group[] = [];
 
     for (let i = 0; i < totalGroups; i++) {
-      const groupId = `group_${String.fromCharCode(65 + i)}`;
-      const groupName = `${String.fromCharCode(65 + i)}조`;
+      // const groupId = `group_${String.fromCharCode(65 + i)}`;
+      const groupId = `group_${String(i + 1)}`;
+      const groupName = `${String(i + 1)}조`;
 
       initialGroups.push({
         groupId,
@@ -90,7 +91,7 @@ export default function ManualGrouping({
           newUnassignedTeams.push(team);
         }
       });
-
+      console.log('newGroups', newGroups);
       setGroups(newGroups);
       setUnassignedTeams(newUnassignedTeams);
     } else {

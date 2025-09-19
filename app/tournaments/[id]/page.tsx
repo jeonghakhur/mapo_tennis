@@ -297,9 +297,16 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
                         </Flex>
                       </th>
                       <td className="!text-left">
-                        {tournament.clubJoinDate ? formatDate(tournament.clubJoinDate) : '-'}
-
-                        <span className="text-red-600 ml-1">이전 가입자만 참가 가능합니다.</span>
+                        {tournament.clubJoinDate ? (
+                          <>
+                            {formatDate(tournament.clubJoinDate)}
+                            <span className="text-red-600 ml-1">
+                              이전 가입자만 참가 가능합니다.
+                            </span>
+                          </>
+                        ) : (
+                          '-'
+                        )}
                       </td>
                     </tr>
                   </tbody>

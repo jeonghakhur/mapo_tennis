@@ -97,7 +97,7 @@ export default function TournamentApplicationForm({
     if (isEdit && initialData) {
       setDivision(initialData.division);
 
-      setMemo(initialData.memo || '');
+      setMemo(initialData.memo || 'none');
       setIsFeePaid(initialData.isFeePaid);
     }
   }, [isEdit, initialData]);
@@ -447,7 +447,7 @@ export default function TournamentApplicationForm({
             );
           });
 
-          formData.append('memo', memo);
+          formData.append('memo', memo === 'none' ? '' : memo);
           formData.append('isFeePaid', isFeePaid.toString());
 
           const url = isEdit
@@ -577,6 +577,7 @@ export default function TournamentApplicationForm({
                 label={`참가자-${index + 1} 정보입력`}
                 participant={participant}
                 clubs={clubs}
+                isIndividual={true}
               />
             ))}
           </>
@@ -605,6 +606,7 @@ export default function TournamentApplicationForm({
           isFeePaid={isFeePaid}
           setIsFeePaid={setIsFeePaid}
           divisionRef={divisionRef}
+          isIndividual={isIndividual}
         />
 
         <Flex gap="3" justify="end" className="btn-wrap">

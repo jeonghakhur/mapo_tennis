@@ -56,6 +56,7 @@ export function TeamParticipantForm({
           clubs={clubs}
           isSharedClub={true}
           sharedClubId={sharedClubId}
+          isIndividual={false}
         />
       ))}
     </>

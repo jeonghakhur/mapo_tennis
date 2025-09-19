@@ -188,11 +188,18 @@ function ClubMemberCreateInner() {
                     </th>
                     <td>
                       <TextField.Root
+                        type="tel"
                         id="contact-input"
                         size="3"
                         placeholder="연락처"
                         value={form.contact}
-                        onChange={(e) => handleChange('contact', e.target.value)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          // 숫자만 입력 허용
+                          if (/^\d*$/.test(value)) {
+                            handleChange('contact', value);
+                          }
+                        }}
                       />
                     </td>
                   </tr>
@@ -204,11 +211,19 @@ function ClubMemberCreateInner() {
                     </th>
                     <td>
                       <TextField.Root
+                        type="text"
                         id="birth-input"
                         size="3"
+                        maxLength={4}
                         placeholder="출생년도(4자리)"
                         value={form.birth}
-                        onChange={(e) => handleChange('birth', e.target.value)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          // 숫자만 입력 허용하고 4자리로 제한
+                          if (/^\d*$/.test(value) && value.length <= 4) {
+                            handleChange('birth', value);
+                          }
+                        }}
                       />
                     </td>
                   </tr>
@@ -220,11 +235,19 @@ function ClubMemberCreateInner() {
                     </th>
                     <td>
                       <TextField.Root
+                        type="text"
                         id="tennisStartYear-input"
                         size="3"
+                        maxLength={4}
                         placeholder="입문년도(4자리)"
                         value={form.tennisStartYear}
-                        onChange={(e) => handleChange('tennisStartYear', e.target.value)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          // 숫자만 입력 허용하고 4자리로 제한
+                          if (/^\d*$/.test(value) && value.length <= 4) {
+                            handleChange('tennisStartYear', value);
+                          }
+                        }}
                       />
                     </td>
                   </tr>
@@ -252,11 +275,18 @@ function ClubMemberCreateInner() {
                     </th>
                     <td>
                       <TextField.Root
+                        type="text"
                         id="score-input"
                         size="3"
                         placeholder="점수(숫자)"
                         value={form.score}
-                        onChange={(e) => handleChange('score', e.target.value)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          // 숫자만 입력 허용
+                          if (/^\d*$/.test(value)) {
+                            handleChange('score', value);
+                          }
+                        }}
                       />
                     </td>
                   </tr>

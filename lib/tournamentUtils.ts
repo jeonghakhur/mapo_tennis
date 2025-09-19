@@ -334,17 +334,17 @@ export function validateDates(formData: TournamentFormData): ValidationResult {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  if (startDate < today) {
-    return { isValid: false, message: '대회 시작일은 오늘 이후여야 합니다.', field: 'startDate' };
-  }
+  // if (startDate < today) {
+  //   return { isValid: false, message: '대회 시작일은 오늘 이후여야 합니다.', field: 'startDate' };
+  // }
 
-  if (registrationStartDate && registrationStartDate < today) {
-    return {
-      isValid: false,
-      message: '등록 시작일은 오늘 이후여야 합니다.',
-      field: 'registrationStartDate',
-    };
-  }
+  // if (registrationStartDate && registrationStartDate < today) {
+  //   return {
+  //     isValid: false,
+  //     message: '등록 시작일은 오늘 이후여야 합니다.',
+  //     field: 'registrationStartDate',
+  //   };
+  // }
 
   if (registrationStartDate && registrationStartDate > startDate) {
     return {
@@ -410,6 +410,7 @@ export function parseTournamentFormData(
   const entryFee = formData.get('entryFee') as string;
   const bankAccount = formData.get('bankAccount') as string;
   const accountHolder = formData.get('accountHolder') as string;
+  const clubJoinDate = formData.get('clubJoinDate') as string;
   const divisions = formData.get('divisions') as string;
   const openingCeremony = formData.get('openingCeremony') as string;
 
@@ -451,6 +452,7 @@ export function parseTournamentFormData(
     entryFee: entryFee ? parseInt(entryFee) : undefined,
     bankAccount: bankAccount || undefined,
     accountHolder: accountHolder || undefined,
+    clubJoinDate: clubJoinDate || undefined,
     divisions: parsedDivisions,
     openingCeremony: parsedOpeningCeremony,
   };

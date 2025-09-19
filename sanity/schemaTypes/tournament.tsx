@@ -105,6 +105,12 @@ export default defineType({
       description: '계좌 예금주를 입력하세요',
     }),
     defineField({
+      name: 'clubJoinDate',
+      title: '클럽가입일',
+      type: 'date',
+      description: '클럽 가입일을 입력하세요',
+    }),
+    defineField({
       name: 'openingCeremony',
       title: '개회식 정보',
       type: 'object',

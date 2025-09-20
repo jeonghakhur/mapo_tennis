@@ -213,12 +213,18 @@ function ClubMemberCreateInner() {
                       <TextField.Root
                         type="text"
                         inputMode="numeric"
-                        pattern="\d{1,4}"
                         id="birth-input"
                         size="3"
                         maxLength={4}
                         placeholder="출생년도(4자리)"
                         value={form.birth}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          // 숫자만 입력 허용하고 4자리로 제한
+                          if (/^\d*$/.test(value) && value.length <= 4) {
+                            handleChange('birth', value);
+                          }
+                        }}
                       />
                     </td>
                   </tr>
@@ -232,12 +238,18 @@ function ClubMemberCreateInner() {
                       <TextField.Root
                         type="text"
                         inputMode="numeric"
-                        pattern="\d{1,4}"
                         id="tennisStartYear-input"
                         size="3"
                         maxLength={4}
                         placeholder="입문년도(4자리)"
                         value={form.tennisStartYear}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          // 숫자만 입력 허용하고 4자리로 제한
+                          if (/^\d*$/.test(value) && value.length <= 4) {
+                            handleChange('tennisStartYear', value);
+                          }
+                        }}
                       />
                     </td>
                   </tr>

@@ -14,6 +14,7 @@ export function usePosts(options: UsePostsOptions = {}) {
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const params = new URLSearchParams({
     all: showAll.toString(),
@@ -44,20 +45,17 @@ export function usePosts(options: UsePostsOptions = {}) {
       // 페이지 크기와 같으면 더 있을 가능성이 있음, 작으면 마지막 페이지
       setHasMore(data.posts.length >= pageSize);
       setIsLoadingMore(false);
+      setIsLoading(false);
     }
   }, [data, currentPage, pageSize]);
 
   // 다음 페이지 로드
   const loadMore = useCallback(async () => {
-    if (isLoadingMore || !hasMore) return;
+    if (!hasMore) return;
 
-    setIsLoadingMore(true);
-    try {
-      setCurrentPage((prev) => prev + 1);
-    } finally {
-      setIsLoadingMore(false);
-    }
-  }, [isLoadingMore, hasMore]);
+    setIsLoading(true);
+    setCurrentPage((prev) => prev + 1);
+  }, [hasMore]);
 
   // 생성
   const createPost = async (newPost: PostInput) => {
@@ -147,7 +145,7 @@ export function usePosts(options: UsePostsOptions = {}) {
     deletePost,
     loadMore,
     hasMore,
-    isLoadingMore,
+    isLoadingMore: isLoading,
   };
 }
 

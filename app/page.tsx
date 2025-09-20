@@ -63,7 +63,7 @@ function HomePageContent() {
     isLoadingMore,
   } = usePosts({
     showAll: canManagePosts,
-    pageSize: 10,
+    pageSize: 1,
   });
 
   // 목록 전체에서 Lightbox 상태 관리
@@ -353,18 +353,7 @@ function HomePageContent() {
                 dataLength={filteredPosts.length}
                 next={handleLoadMore}
                 hasMore={!searchKeyword && hasMore}
-                loader={
-                  isLoadingMore ? (
-                    <Box className="text-center py-4">
-                      <div className="flex justify-center items-center space-x-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                        <Text size="3" color="gray">
-                          로딩 중...
-                        </Text>
-                      </div>
-                    </Box>
-                  ) : null
-                }
+                loader={null}
                 endMessage={
                   !searchKeyword && posts.length > 0 ? (
                     <Box className="text-center py-4">
@@ -374,7 +363,7 @@ function HomePageContent() {
                     </Box>
                   ) : null
                 }
-                scrollThreshold={0.9}
+                scrollThreshold={0.5}
               >
                 <Flex direction="column" gap="4">
                   {filteredPosts.map((post: Post) => {

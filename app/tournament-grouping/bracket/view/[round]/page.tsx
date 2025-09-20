@@ -265,42 +265,42 @@ export default function RoundPage() {
   };
 
   // 승리한 세트 수 계산
-  const calculateSetsWon = (
-    team1Sets: SetScore[],
-    team2Sets: SetScore[],
-  ): { team1: number; team2: number } => {
-    let team1Won = 0;
-    let team2Won = 0;
+  const calculateSetsWon = useCallback(
+    (team1Sets: SetScore[], team2Sets: SetScore[]): { team1: number; team2: number } => {
+      let team1Won = 0;
+      let team2Won = 0;
 
-    const maxSets = Math.max(team1Sets.length, team2Sets.length);
+      const maxSets = Math.max(team1Sets.length, team2Sets.length);
 
-    for (let i = 0; i < maxSets; i++) {
-      const team1Games = team1Sets[i]?.games || 0;
-      const team2Games = team2Sets[i]?.games || 0;
-      const team1Tiebreak = team1Sets[i]?.tiebreak;
-      const team2Tiebreak = team2Sets[i]?.tiebreak;
+      for (let i = 0; i < maxSets; i++) {
+        const team1Games = team1Sets[i]?.games || 0;
+        const team2Games = team2Sets[i]?.games || 0;
+        const team1Tiebreak = team1Sets[i]?.tiebreak;
+        const team2Tiebreak = team2Sets[i]?.tiebreak;
 
-      // 게임 수로 승부 결정
-      if (team1Games > team2Games) {
-        team1Won++;
-      } else if (team2Games > team1Games) {
-        team2Won++;
-      } else {
-        // 게임 수가 동일한 경우 타이브레이크로 승부 결정
-        if (team1Tiebreak !== undefined && team2Tiebreak !== undefined) {
-          if (team1Tiebreak > team2Tiebreak) {
-            team1Won++;
-          } else if (team2Tiebreak > team1Tiebreak) {
-            team2Won++;
+        // 게임 수로 승부 결정
+        if (team1Games > team2Games) {
+          team1Won++;
+        } else if (team2Games > team1Games) {
+          team2Won++;
+        } else {
+          // 게임 수가 동일한 경우 타이브레이크로 승부 결정
+          if (team1Tiebreak !== undefined && team2Tiebreak !== undefined) {
+            if (team1Tiebreak > team2Tiebreak) {
+              team1Won++;
+            } else if (team2Tiebreak > team1Tiebreak) {
+              team2Won++;
+            }
+            // 타이브레이크도 동일하면 무승부 (둘 다 승리하지 않음)
           }
-          // 타이브레이크도 동일하면 무승부 (둘 다 승리하지 않음)
+          // 타이브레이크 점수가 없으면 무승부 (둘 다 승리하지 않음)
         }
-        // 타이브레이크 점수가 없으면 무승부 (둘 다 승리하지 않음)
       }
-    }
 
-    return { team1: team1Won, team2: team2Won };
-  };
+      return { team1: team1Won, team2: team2Won };
+    },
+    [],
+  );
 
   // 점수 입력 다이얼로그 열기
   const openScoreDialog = useCallback((match: BracketMatch) => {
@@ -394,9 +394,31 @@ export default function RoundPage() {
       // 데이터 새로고침
       await fetchBracket();
     });
-  }, [selectedMatch, scoreForm, selectedTournament, selectedDivision, withLoading, fetchBracket]);
+  }, [
+    selectedMatch,
+    scoreForm,
+    selectedTournament,
+    selectedDivision,
+    withLoading,
+    fetchBracket,
+    calculateSetsWon,
+  ]);
 
-  // 현재 라운드의 모든 경기에 랜덤 점수 자동 입력 (병렬 처리)
+  // 팀명에서 선수 이름 추출하는 공통 함수
+  const extractPlayerNames = useCallback((teamName: string): [string, string] => {
+    try {
+      const parts = teamName.split('-');
+      if (parts.length >= 3) {
+        return [parts[1].split(',')[0].trim(), parts[2].trim()];
+      }
+      return [teamName, ''];
+    } catch (error) {
+      console.error('선수 이름 추출 오류:', error);
+      return [teamName, ''];
+    }
+  }, []);
+
+  // 현재 라운드의 모든 경기에 랜덤 점수 자동 입력 (세트별 점수 생성)
   const handleAutoScoreCurrentRound = useCallback(async () => {
     return withLoading(async () => {
       console.log(`${ROUND_NAME_MAP[round]} 라운드 모든 경기에 랜덤 점수 자동 입력 시작`);
@@ -404,8 +426,10 @@ export default function RoundPage() {
       // 현재 라운드에서 점수가 입력되지 않은 경기들만 필터링
       const matchesToUpdate = currentRoundMatches.filter(
         (match) =>
-          match.team1.score === undefined ||
-          match.team2.score === undefined ||
+          !match.team1.sets ||
+          !match.team2.sets ||
+          match.team1.sets.length === 0 ||
+          match.team2.sets.length === 0 ||
           match.status !== 'completed',
       );
 
@@ -417,15 +441,50 @@ export default function RoundPage() {
 
       console.log(`총 ${matchesToUpdate.length}개 경기에 점수 입력 시작`);
 
-      // 순차 처리로 안정성 향상 (병렬 처리에서 발생하는 문제 방지)
+      // 순차 처리로 안정성 향상
       const updateResults = [];
       for (const match of matchesToUpdate) {
         try {
-          // 한 팀은 6점, 다른 팀은 0-5점 사이에서 랜덤
-          const team1Score = Math.random() < 0.5 ? 6 : Math.floor(Math.random() * 6);
-          const team2Score = team1Score === 6 ? Math.floor(Math.random() * 6) : 6;
+          // 3세트 경기로 가정
+          const team1Sets: SetScore[] = [];
+          const team2Sets: SetScore[] = [];
 
-          console.log(`경기 ${match.matchNumber} 점수 입력 시도: ${team1Score}-${team2Score}`);
+          // 선수 이름 추출
+          const team1Players = extractPlayerNames(match.team1.teamName);
+          const team2Players = extractPlayerNames(match.team2.teamName);
+
+          for (let i = 1; i <= 3; i++) {
+            const team1Games = Math.random() < 0.5 ? 6 : Math.floor(Math.random() * 6);
+            const team2Games = team1Games === 6 ? Math.floor(Math.random() * 6) : 6;
+
+            const setKey = `set-${i}-${Date.now()}-${Math.random()}`;
+
+            team1Sets.push({
+              _key: setKey,
+              setNumber: i,
+              games: team1Games,
+              players: team1Players,
+            });
+            team2Sets.push({
+              _key: setKey,
+              setNumber: i,
+              games: team2Games,
+              players: team2Players,
+            });
+          }
+
+          // 승리한 세트 수 계산
+          const setsWon = calculateSetsWon(team1Sets, team2Sets);
+
+          // 승자 결정
+          let winner = undefined;
+          if (setsWon.team1 > setsWon.team2) {
+            winner = match.team1.teamId;
+          } else if (setsWon.team2 > setsWon.team1) {
+            winner = match.team2.teamId;
+          }
+
+          console.log(`경기 ${match.matchNumber} 세트 점수 입력:`, { team1Sets, team2Sets });
 
           const response = await fetch(
             `/api/tournament-grouping/bracket/${match._key}?tournamentId=${selectedTournament}&division=${selectedDivision}`,
@@ -433,8 +492,11 @@ export default function RoundPage() {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                team1Score,
-                team2Score,
+                team1Sets,
+                team2Sets,
+                team1TotalSetsWon: setsWon.team1,
+                team2TotalSetsWon: setsWon.team2,
+                winner,
                 status: 'completed',
                 court: match.court || '1',
               }),
@@ -490,19 +552,29 @@ export default function RoundPage() {
         setShowSuccessDialog(true);
       }
     });
-  }, [withLoading, currentRoundMatches, selectedTournament, selectedDivision, round, fetchBracket]);
+  }, [
+    withLoading,
+    currentRoundMatches,
+    selectedTournament,
+    selectedDivision,
+    round,
+    fetchBracket,
+    extractPlayerNames,
+    calculateSetsWon,
+  ]);
 
   // 다음 라운드 대진표 생성 함수
   const handleGenerateNextRound = useCallback(async () => {
     return withLoading(async () => {
       console.log(`${ROUND_NAME_MAP[round]} 라운드 완료 확인, 다음 라운드 대진표 생성 시도`);
 
-      // 현재 라운드의 모든 경기가 완료되었는지 확인
+      // 현재 라운드의 모든 경기가 완료되었는지 확인 (세트 기반)
       const allCurrentRoundCompleted = currentRoundMatches.every(
         (match) =>
           match.status === 'completed' &&
-          match.team1.score !== undefined &&
-          match.team2.score !== undefined,
+          match.team1.totalSetsWon !== undefined &&
+          match.team2.totalSetsWon !== undefined &&
+          match.winner !== undefined,
       );
 
       if (!allCurrentRoundCompleted) {

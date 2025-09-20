@@ -167,7 +167,7 @@
     border-collapse: collapse;
     border-top: 1px solid #e0e0e0;
 
-    table-layout: fixed;
+    /* table-layout: fixed; */
 
     th {
       padding: 8px;
@@ -175,9 +175,9 @@
       border-left: 1px solid #e0e0e0;
       text-align: left;
       white-space: nowrap;
-      width: 100px;
 
       &:first-child {
+        width: 100px;
         border-left: none;
       }
     }
@@ -310,8 +310,15 @@ main .toastui-editor-contents {
   text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
 }
 
+.print-only {
+  display: none;
+}
+
 @media print {
   .print-none {
     display: none !important;
+  }
+  .print-only {
+    display: block !important;
   }
 }

@@ -625,6 +625,15 @@ export default function TournamentForm({
                 />
               </BasicField>
 
+              <BasicField label="클럽가입일">
+                <TextField.Root
+                  size="3"
+                  type="date"
+                  value={formData.clubJoinDate || ''}
+                  onChange={(e) => handleInputChange(setFormData, 'clubJoinDate', e.target.value)}
+                />
+              </BasicField>
+
               <BasicField label="메모">
                 <SimpleEditor
                   value={formData.memo || ''}

@@ -43,6 +43,7 @@ const createInitialFormData = (): TournamentFormData => ({
   entryFee: 0,
   bankAccount: '',
   accountHolder: '',
+  clubJoinDate: '',
 });
 
 // divisions 데이터 파싱 함수
@@ -107,6 +108,7 @@ const createFormData = (formData: TournamentFormData, status: string): FormData 
     { key: 'entryFee', value: formData.entryFee?.toString() || '' },
     { key: 'bankAccount', value: formData.bankAccount || '' },
     { key: 'accountHolder', value: formData.accountHolder || '' },
+    { key: 'clubJoinDate', value: formData.clubJoinDate || '' },
     { key: 'divisions', value: JSON.stringify(formData.divisions || []) },
     {
       key: 'openingCeremony',
@@ -160,6 +162,7 @@ export default function EditTournamentPage({ params }: EditTournamentPageProps) 
         entryFee: tournament.entryFee || 30000,
         bankAccount: tournament.bankAccount || '1001-8348-6182 (토스뱅크)',
         accountHolder: tournament.accountHolder || '허정학',
+        clubJoinDate: tournament.clubJoinDate || '',
         openingCeremony: tournament.openingCeremony || {
           isHeld: false,
           date: '',

@@ -1,4 +1,4 @@
-import { TextField, Flex, Text, Switch } from '@radix-ui/themes';
+import { Flex, Text, Switch, Select } from '@radix-ui/themes';
 import { Combobox } from '@/components/ui/combobox';
 import type { TournamentParticipationFormProps } from '@/types/tournament';
 
@@ -11,6 +11,7 @@ export function TournamentParticipationForm({
   isFeePaid,
   setIsFeePaid,
   divisionRef,
+  isIndividual,
 }: TournamentParticipationFormProps) {
   return (
     <div className="table-form">
@@ -36,17 +37,24 @@ export function TournamentParticipationForm({
             </td>
           </tr>
 
-          <tr>
-            <th>메모</th>
-            <td>
-              <TextField.Root
-                size="3"
-                value={memo}
-                onChange={(e) => setMemo(e.target.value)}
-                placeholder="추가 사항을 입력하세요"
-              />
-            </td>
-          </tr>
+          {!isIndividual && (
+            <tr>
+              <th>참가팀순서</th>
+              <td>
+                <Select.Root value={memo} onValueChange={setMemo} size="3">
+                  <Select.Trigger placeholder="참가팀이 여러팀인 경우 순서를 지정해주세요" />
+                  <Select.Content>
+                    <Select.Item value="none">선택안함</Select.Item>
+                    {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => (
+                      <Select.Item key={num} value={num.toString()}>
+                        {num}
+                      </Select.Item>
+                    ))}
+                  </Select.Content>
+                </Select.Root>
+              </td>
+            </tr>
+          )}
           <tr>
             <th>참가비 납부</th>
             <td>

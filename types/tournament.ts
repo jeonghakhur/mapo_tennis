@@ -177,6 +177,7 @@ export interface ParticipantFormProps {
   clubs: Club[];
   isSharedClub?: boolean;
   sharedClubId?: string;
+  isIndividual?: boolean;
 }
 
 export interface TeamMemberCountSelectorProps {
@@ -202,6 +203,7 @@ export interface TournamentParticipationFormProps {
   isFeePaid: boolean;
   setIsFeePaid: (value: boolean) => void;
   divisionRef: React.RefObject<HTMLDivElement | null>;
+  isIndividual: boolean;
 }
 
 // useParticipant 훅의 반환 타입

@@ -290,6 +290,25 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
                       </th>
                       <td className="!text-left">{tournament.accountHolder}</td>
                     </tr>
+                    <tr>
+                      <th>
+                        <Flex justify="between" align="center" flexGrow="1">
+                          {wrapTextWithSpans('협회가입일')}
+                        </Flex>
+                      </th>
+                      <td className="!text-left">
+                        {tournament.clubJoinDate ? (
+                          <>
+                            {formatDate(tournament.clubJoinDate)}
+                            <span className="text-red-600 ml-1">
+                              이전 가입자만 참가 가능합니다.
+                            </span>
+                          </>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>

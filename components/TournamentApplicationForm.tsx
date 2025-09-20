@@ -13,7 +13,7 @@ import { createValidationFunction } from '@/lib/tournamentValidation';
 import { ParticipantForm } from '@/components/tournament/ParticipantForm';
 import { TeamParticipantForm } from '@/components/tournament/TeamParticipantForm';
 import { TournamentParticipationForm } from '@/components/tournament/TournamentParticipationForm';
-import type { ClubMember } from '@/types/tournament';
+import type { ClubMember } from '@/model/clubMember';
 import { useTournamentApplications } from '@/hooks/useTournamentApplications';
 
 // 상수 정의
@@ -97,7 +97,7 @@ export default function TournamentApplicationForm({
     if (isEdit && initialData) {
       setDivision(initialData.division);
 
-      setMemo(initialData.memo || '');
+      setMemo(initialData.memo || 'none');
       setIsFeePaid(initialData.isFeePaid);
     }
   }, [isEdit, initialData]);
@@ -261,6 +261,35 @@ export default function TournamentApplicationForm({
   // 대회ID+부서별 전체 신청 목록
   const { applications: divisionApplications } = useTournamentApplications();
 
+  // 클럽가입일 기준 참가자격 확인
+  const checkEligibility = useCallback((clubJoinDate: string, memberJoinDate: string): boolean => {
+    if (!clubJoinDate || !memberJoinDate) return true; // 날짜가 없으면 참가 가능
+
+    const tournamentJoinDate = new Date(clubJoinDate);
+    const memberJoinDateObj = new Date(memberJoinDate);
+
+    return memberJoinDateObj <= tournamentJoinDate;
+  }, []);
+
+  // 참가자격이 없는 참가자들 찾기
+  const ineligibleParticipants = useMemo(() => {
+    if (!tournament.clubJoinDate) return [];
+
+    return activeParticipants.filter((participant) => {
+      if (!participant.clubId || !participant.isRegistered) return false;
+
+      const member = allClubMembers.find(
+        (m) =>
+          m.club._id === participant.clubId &&
+          m.user.toLowerCase().includes(participant.name.toLowerCase()),
+      );
+
+      if (!member || !member._createdAt) return false;
+
+      return !checkEligibility(tournament.clubJoinDate!, member._createdAt);
+    });
+  }, [activeParticipants, tournament.clubJoinDate, allClubMembers, checkEligibility]);
+
   // 중복 체크: 동일 대회/부서에 동일 이름+클럽으로 이미 신청된 경우
   const isDuplicate = useMemo(() => {
     if (!divisionApplications || divisionApplications.length === 0) return false;
@@ -336,6 +365,15 @@ export default function TournamentApplicationForm({
 
         return;
       }
+      // 참가자격 확인
+      if (ineligibleParticipants.length > 0) {
+        setAlertMessage(
+          `참가자격이 없습니다.\n\n협회가입일(${new Date(tournament.clubJoinDate!).toLocaleDateString('ko-KR')}) 이전에 가입한 회원만 참가 가능합니다.}`,
+        );
+        setShowAlert(true);
+        return;
+      }
+
       if (isDuplicate) {
         // 중복된 참가자 정보 찾기 (수정 모드에서는 현재 수정 중인 참가신청 제외)
         const relevantApplications = divisionApplications.filter(
@@ -409,7 +447,7 @@ export default function TournamentApplicationForm({
             );
           });
 
-          formData.append('memo', memo);
+          formData.append('memo', memo === 'none' ? '' : memo);
           formData.append('isFeePaid', isFeePaid.toString());
 
           const url = isEdit
@@ -467,6 +505,7 @@ export default function TournamentApplicationForm({
       withLoading,
       isDuplicate,
       divisionApplications,
+      ineligibleParticipants,
     ],
   );
 
@@ -478,6 +517,57 @@ export default function TournamentApplicationForm({
       </Heading>
 
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        {/* 참가자격 경고 메시지 */}
+        {tournament.clubJoinDate && ineligibleParticipants.length > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  참가자격이 없는 참가자가 있습니다
+                </h3>
+                <div className="mt-2 text-sm text-red-700">
+                  <p className="mb-2">
+                    대회 클럽가입일({new Date(tournament.clubJoinDate).toLocaleDateString('ko-KR')})
+                    이전에 가입한 회원만 참가 가능합니다.
+                  </p>
+                  <ul className="list-disc list-inside space-y-1">
+                    {ineligibleParticipants.map((participant, index) => {
+                      const clubName =
+                        clubs.find((c) => c._id === participant.clubId)?.name || '알 수 없는 클럽';
+                      const member = allClubMembers.find(
+                        (m) =>
+                          m.club._id === participant.clubId &&
+                          m.user.toLowerCase().includes(participant.name.toLowerCase()),
+                      );
+                      const memberJoinDate = member?._createdAt
+                        ? new Date(member._createdAt).toLocaleDateString('ko-KR')
+                        : '알 수 없음';
+
+                      return (
+                        <li key={index}>
+                          <strong>
+                            ({clubName}) {participant.name}
+                          </strong>{' '}
+                          - 클럽등록일: {memberJoinDate}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {isIndividual ? (
           // 개인전
           <>
@@ -487,6 +577,7 @@ export default function TournamentApplicationForm({
                 label={`참가자-${index + 1} 정보입력`}
                 participant={participant}
                 clubs={clubs}
+                isIndividual={true}
               />
             ))}
           </>
@@ -515,6 +606,7 @@ export default function TournamentApplicationForm({
           isFeePaid={isFeePaid}
           setIsFeePaid={setIsFeePaid}
           divisionRef={divisionRef}
+          isIndividual={isIndividual}
         />
 
         <Flex gap="3" justify="end" className="btn-wrap">

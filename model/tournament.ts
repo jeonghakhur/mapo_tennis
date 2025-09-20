@@ -34,6 +34,7 @@ export interface Tournament {
   entryFee?: number; // 참가비
   bankAccount?: string; // 입금계좌
   accountHolder?: string; // 예금주
+  clubJoinDate?: string; // 클럽가입일
   openingCeremony?: {
     isHeld: boolean; // 개회식 진행 여부
     date?: string; // 개회식 날짜
@@ -78,6 +79,7 @@ export interface TournamentFormData {
   entryFee?: number; // 참가비
   bankAccount?: string; // 입금계좌
   accountHolder?: string; // 예금주
+  clubJoinDate?: string; // 클럽가입일
   openingCeremony?: {
     isHeld: boolean; // 개회식 진행 여부
     date?: string; // 개회식 날짜

@@ -276,11 +276,8 @@ function TournamentBracketContent() {
               const standingsByGroup = new Map<string, GroupStanding[]>();
 
               standings.forEach((standing) => {
-                // 조 정보를 가져오기 위해 경기 정보에서 조 찾기
-                const match = matches.find(
-                  (m) => m.team1.teamId === standing.teamId || m.team2.teamId === standing.teamId,
-                );
-                const groupId = match?.groupId || 'unknown';
+                // standings 데이터에 이미 groupId가 포함되어 있으므로 직접 사용
+                const groupId = standing.groupId || 'unknown';
 
                 if (!standingsByGroup.has(groupId)) {
                   standingsByGroup.set(groupId, []);

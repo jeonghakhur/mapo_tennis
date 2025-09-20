@@ -135,6 +135,7 @@ function NewTournamentGroupingContent() {
             division: string;
             teamMembers: unknown[];
             createdAt: string;
+            memo?: string;
             seed?: number;
           }) => {
             // 개인전/단체전에 따라 팀 이름 생성
@@ -156,7 +157,7 @@ function NewTournamentGroupingContent() {
               if (members && members.length > 0) {
                 const clubName = members[0].clubName || '클럽명 없음';
                 const memberNames = members.map((member) => member.name).join(', ');
-                teamName = `${clubName}-${memberNames}`;
+                teamName = `${clubName} ${app.memo ? '-' + app.memo : ''}-${memberNames}`;
               } else {
                 teamName = '팀원 없음';
               }

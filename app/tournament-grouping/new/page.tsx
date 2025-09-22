@@ -156,8 +156,7 @@ function NewTournamentGroupingContent() {
               const members = app.teamMembers as { name: string; clubName?: string }[];
               if (members && members.length > 0) {
                 const clubName = members[0].clubName || '클럽명 없음';
-                const memberNames = members.map((member) => member.name).join(', ');
-                teamName = `${clubName} ${app.memo ? '-' + app.memo : ''}-${memberNames}`;
+                teamName = `${clubName} ${app.memo ? '-' + app.memo : ''}`;
               } else {
                 teamName = '팀원 없음';
               }

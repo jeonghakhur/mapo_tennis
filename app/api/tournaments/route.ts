@@ -11,6 +11,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const userLevel = searchParams.get('userLevel');
+    const limit = searchParams.get('limit');
 
     // 세션에서 사용자 정보 가져오기
     const session = await getServerSession(authOptions);
@@ -20,6 +21,13 @@ export async function GET(req: NextRequest) {
     // 로그인하지 않은 사용자는 레벨 0으로 처리
     const effectiveUserLevel = userLevel ? parseInt(userLevel) : currentUserLevel;
     const tournaments = await getTournaments(effectiveUserLevel);
+
+    // limit 파라미터가 있으면 해당 개수만큼만 반환
+    if (limit) {
+      const limitNumber = parseInt(limit);
+      return NextResponse.json(tournaments.slice(0, limitNumber));
+    }
+
     return NextResponse.json(tournaments);
   } catch (error) {
     console.error('대회 목록 조회 실패:', error);

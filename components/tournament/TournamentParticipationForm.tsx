@@ -13,6 +13,22 @@ export function TournamentParticipationForm({
   divisionRef,
   isIndividual,
 }: TournamentParticipationFormProps) {
+  const teamOrder = [
+    '가',
+    '나',
+    '다',
+    '라',
+    '마',
+    '바',
+    '사',
+    '아',
+    '자',
+    '차',
+    '카',
+    '타',
+    '파',
+    '하',
+  ];
   return (
     <div className="table-form">
       <h2 className="text-lg font-bold mt-8 mb-2">대회 참석 정보</h2>
@@ -45,9 +61,9 @@ export function TournamentParticipationForm({
                   <Select.Trigger placeholder="참가팀이 여러팀인 경우 순서를 지정해주세요" />
                   <Select.Content>
                     <Select.Item value="none">선택안함</Select.Item>
-                    {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => (
-                      <Select.Item key={num} value={num.toString()}>
-                        {num}
+                    {teamOrder.map((order) => (
+                      <Select.Item key={order} value={order}>
+                        {order}
                       </Select.Item>
                     ))}
                   </Select.Content>

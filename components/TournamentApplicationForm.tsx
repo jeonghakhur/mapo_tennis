@@ -614,13 +614,7 @@ export default function TournamentApplicationForm({
             취소
           </Button>
           <Button type="submit" disabled={isSubmitting} size="3">
-            {isSubmitting
-              ? isEdit
-                ? '수정 중...'
-                : '신청 중...'
-              : isEdit
-                ? '수정 완료'
-                : '참가 신청'}
+            {isSubmitting ? (isEdit ? '수정 중...' : '신청 중...') : isEdit ? '수정' : '참가 신청'}
           </Button>
         </Flex>
       </form>
@@ -654,8 +648,11 @@ export default function TournamentApplicationForm({
                 color={isFeePaidInSuccess ? 'green' : 'orange'}
                 size="3"
                 onClick={() => {
-                  // 수정 후 이동 경로 결정
-                  router.push('/tournament-applications');
+                  // 토너먼트 아이디와 부서를 파라미터로 전달하여 목록으로 이동
+                  const params = new URLSearchParams();
+                  params.set('tournamentId', tournament._id);
+                  params.set('division', division);
+                  router.push(`/tournament-applications?${params.toString()}`);
                 }}
               >
                 목록으로 이동

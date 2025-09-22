@@ -68,7 +68,15 @@ export default function EditTournamentApplicationPage({
   }, [id, session?.user?.email]);
 
   const handleCancel = () => {
-    router.push('/tournament-applications');
+    // 토너먼트 아이디와 부서를 파라미터로 전달하여 목록으로 이동
+    if (application?.tournamentId && application?.division) {
+      const params = new URLSearchParams();
+      params.set('tournamentId', application.tournamentId);
+      params.set('division', application.division);
+      router.push(`/tournament-applications?${params.toString()}`);
+    } else {
+      router.push('/tournament-applications');
+    }
   };
 
   const handleApplicationCancel = async () => {
@@ -89,8 +97,15 @@ export default function EditTournamentApplicationPage({
         throw new Error(errorData.error || '참가신청 취소에 실패했습니다.');
       }
 
-      // 성공적으로 취소되면 목록 페이지로 이동
-      router.push('/tournament-applications');
+      // 성공적으로 취소되면 목록 페이지로 이동 (파라미터 포함)
+      if (application.tournamentId && application.division) {
+        const params = new URLSearchParams();
+        params.set('tournamentId', application.tournamentId);
+        params.set('division', application.division);
+        router.push(`/tournament-applications?${params.toString()}`);
+      } else {
+        router.push('/tournament-applications');
+      }
     } catch (error) {
       console.error('참가신청 취소 오류:', error);
       setError(error instanceof Error ? error.message : '참가신청 취소에 실패했습니다.');
@@ -114,8 +129,15 @@ export default function EditTournamentApplicationPage({
         throw new Error(errorData.error || '참가신청 삭제에 실패했습니다.');
       }
 
-      // 성공적으로 삭제되면 목록 페이지로 이동
-      router.push('/tournament-applications');
+      // 성공적으로 삭제되면 목록 페이지로 이동 (파라미터 포함)
+      if (application.tournamentId && application.division) {
+        const params = new URLSearchParams();
+        params.set('tournamentId', application.tournamentId);
+        params.set('division', application.division);
+        router.push(`/tournament-applications?${params.toString()}`);
+      } else {
+        router.push('/tournament-applications');
+      }
     } catch (error) {
       console.error('참가신청 삭제 오류:', error);
       setError(error instanceof Error ? error.message : '참가신청 삭제에 실패했습니다.');
@@ -140,7 +162,16 @@ export default function EditTournamentApplicationPage({
           <h1 className="text-xl font-bold text-red-600 mb-4">오류</h1>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
-            onClick={() => router.push('/tournament-applications')}
+            onClick={() => {
+              if (application?.tournamentId && application?.division) {
+                const params = new URLSearchParams();
+                params.set('tournamentId', application.tournamentId);
+                params.set('division', application.division);
+                router.push(`/tournament-applications?${params.toString()}`);
+              } else {
+                router.push('/tournament-applications');
+              }
+            }}
             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
             목록으로 돌아가기
@@ -156,7 +187,16 @@ export default function EditTournamentApplicationPage({
         <div className="text-center py-8">
           <h1 className="text-xl font-bold text-gray-600 mb-4">참가신청을 찾을 수 없습니다</h1>
           <button
-            onClick={() => router.push('/tournament-applications')}
+            onClick={() => {
+              if (application?.tournamentId && application?.division) {
+                const params = new URLSearchParams();
+                params.set('tournamentId', application.tournamentId);
+                params.set('division', application.division);
+                router.push(`/tournament-applications?${params.toString()}`);
+              } else {
+                router.push('/tournament-applications');
+              }
+            }}
             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
             목록으로 돌아가기
@@ -174,7 +214,16 @@ export default function EditTournamentApplicationPage({
           <h1 className="text-xl font-bold text-red-600 mb-4">수정 불가</h1>
           <p className="text-gray-600 mb-4">승인된 참가신청은 수정할 수 없습니다.</p>
           <button
-            onClick={() => router.push('/tournament-applications')}
+            onClick={() => {
+              if (application?.tournamentId && application?.division) {
+                const params = new URLSearchParams();
+                params.set('tournamentId', application.tournamentId);
+                params.set('division', application.division);
+                router.push(`/tournament-applications?${params.toString()}`);
+              } else {
+                router.push('/tournament-applications');
+              }
+            }}
             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
             목록으로 돌아가기

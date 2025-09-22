@@ -41,6 +41,7 @@ export interface Tournament {
     time?: string; // 개회식 시간
     location?: string; // 개회식 장소
   };
+  _createdAt: string; // Sanity에서 자동 생성되는 생성일
   createdAt: string;
   updatedAt?: string;
   createdBy: string;

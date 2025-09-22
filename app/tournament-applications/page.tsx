@@ -16,11 +16,11 @@ import {
   Switch,
 } from '@radix-ui/themes';
 import Container from '@/components/Container';
-import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState, Suspense, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useUser } from '@/hooks/useUser';
-import { hasPermissionLevel, isAdmin, isModerator } from '@/lib/authUtils';
+import { hasPermissionLevel, isAdmin } from '@/lib/authUtils';
 import { useTournamentsByUserLevel } from '@/hooks/useTournaments';
 import { useUpdateApplicationStatus } from '@/hooks/useTournamentApplications';
 import type { TournamentApplication } from '@/model/tournamentApplication';
@@ -64,17 +64,31 @@ const fetcher = (url: string) =>
     return r.json();
   });
 
-export default function TournamentApplicationsPage() {
+function TournamentApplicationsPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session } = useSession();
   const { user } = useUser(session?.user?.email);
 
-  // tournaments by user level
+  // tournaments by user level - 검색을 위해 전체 대회 목록 가져오기
   const { tournaments, isLoading: tournamentsLoading } = useTournamentsByUserLevel(user?.level);
+
+  // URL 파라미터에서 검색 조건 가져오기
+  const tournamentIdFromUrl = searchParams.get('tournamentId') || '';
+  const divisionFromUrl = searchParams.get('division') || 'all';
+
+  // 이전 값 추적을 위한 ref
+  const prevTournamentIdRef = useRef<string>('');
+  const prevDivisionRef = useRef<string>('');
 
   // selection state
   const [selectedTournamentId, setSelectedTournamentId] = useState<string>('');
   const [divisionFilter, setDivisionFilter] = useState<string>('all');
+  const [searchTournamentId, setSearchTournamentId] = useState<string>('');
+  const [searchDivision, setSearchDivision] = useState<string>('all');
+
+  // 초기 로딩 완료 여부 추적
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // 상세 검색 관련 상태
   const [showAdvancedFilterModal, setShowAdvancedFilterModal] = useState(false);
@@ -141,12 +155,42 @@ export default function TournamentApplicationsPage() {
     setShowAllMemberDetails(!showAllMemberDetails);
   };
 
-  // choose first tournament automatically
+  // URL 파라미터가 변경될 때 상태 업데이트 (무한 루프 방지)
   useEffect(() => {
-    if (tournaments?.length && !selectedTournamentId) {
-      setSelectedTournamentId(tournaments[0]._id);
+    // 대회 ID가 변경된 경우에만 업데이트
+    if (tournamentIdFromUrl !== prevTournamentIdRef.current) {
+      prevTournamentIdRef.current = tournamentIdFromUrl;
+      if (tournamentIdFromUrl) {
+        setSelectedTournamentId(tournamentIdFromUrl);
+        setSearchTournamentId(tournamentIdFromUrl);
+      }
     }
-  }, [tournaments, selectedTournamentId]);
+
+    // 부서가 변경된 경우에만 업데이트
+    if (divisionFromUrl !== prevDivisionRef.current) {
+      prevDivisionRef.current = divisionFromUrl;
+      setDivisionFilter(divisionFromUrl);
+      setSearchDivision(divisionFromUrl);
+    }
+  }, [tournamentIdFromUrl, divisionFromUrl]);
+
+  // choose first tournament automatically (URL 파라미터가 없을 때만)
+  useEffect(() => {
+    // URL 파라미터가 없고, 로딩이 완료되고, 대회 목록이 있고, 아직 선택된 대회가 없고, 초기 로딩 상태일 때만
+    if (
+      !tournamentIdFromUrl &&
+      !tournamentsLoading &&
+      tournaments?.length > 0 &&
+      !selectedTournamentId &&
+      isInitialLoad
+    ) {
+      // 서버에서 이미 _createdAt 기준으로 정렬되어 있으므로 첫 번째 대회가 최신 등록 대회
+      const latestTournament = tournaments[0];
+      setSelectedTournamentId(latestTournament._id);
+      setSearchTournamentId(latestTournament._id);
+      setIsInitialLoad(false);
+    }
+  }, [tournamentIdFromUrl, tournamentsLoading, tournaments, selectedTournamentId, isInitialLoad]);
 
   // applications via SWR (dependent on selectedTournamentId)
   const {
@@ -519,14 +563,21 @@ export default function TournamentApplicationsPage() {
     }
   };
 
-  const onTournamentChange = (id: string) => {
-    setSelectedTournamentId(id);
-    setDivisionFilter('all');
+  // 검색 실행 함수 - URL 파라미터 업데이트
+  const handleSearch = () => {
+    if (searchTournamentId) {
+      const params = new URLSearchParams(searchParams);
+      params.set('tournamentId', searchTournamentId);
+      params.set('division', searchDivision);
+
+      // URL 업데이트 (브라우저 히스토리에 추가)
+      router.push(`/tournament-applications?${params.toString()}`);
+      setIsInitialLoad(false); // 검색 후에는 초기 로딩 상태 해제
+    }
   };
 
   const canEdit = (app: TournamentApplication | undefined | null) => {
     if (!app) return false;
-    console.log(app);
 
     // 관리자(레벨 5 이상)는 항상 수정 가능
     if (hasPermissionLevel(user, 5)) return true;
@@ -573,8 +624,12 @@ export default function TournamentApplicationsPage() {
           {/* Filters */}
           <Box mb="6" className="print-none">
             <Flex gap="3" mb="4" align="center" wrap="wrap">
-              <Select.Root value={selectedTournamentId} onValueChange={onTournamentChange} size="3">
-                <Select.Trigger placeholder={tournaments?.[0]?.title || '대회를 선택하세요'} />
+              <Select.Root
+                value={searchTournamentId}
+                onValueChange={setSearchTournamentId}
+                size="3"
+              >
+                <Select.Trigger placeholder="대회를 선택하세요" />
                 <Select.Content>
                   {tournaments.map((t) => (
                     <Select.Item key={t._id} value={t._id}>
@@ -583,7 +638,7 @@ export default function TournamentApplicationsPage() {
                   ))}
                 </Select.Content>
               </Select.Root>
-              <Select.Root value={divisionFilter} onValueChange={setDivisionFilter} size="3">
+              <Select.Root value={searchDivision} onValueChange={setSearchDivision} size="3">
                 <Select.Trigger placeholder="전체" />
                 <Select.Content>
                   <Select.Item value="all">전체</Select.Item>
@@ -594,6 +649,28 @@ export default function TournamentApplicationsPage() {
                   ))}
                 </Select.Content>
               </Select.Root>
+
+              <Button
+                size="3"
+                onClick={handleSearch}
+                disabled={!searchTournamentId}
+                style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M7 14A7 7 0 1 0 7 0a7 7 0 0 0 0 14ZM7 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10Z"
+                    fill="currentColor"
+                  />
+                  <path
+                    d="M11.5 11.5 14 14"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                검색
+              </Button>
 
               <Button
                 variant={isAdvancedFilterActive ? 'solid' : 'soft'}
@@ -1612,5 +1689,13 @@ export default function TournamentApplicationsPage() {
         </Dialog.Content>
       </Dialog.Root>
     </Container>
+  );
+}
+
+export default function TournamentApplicationsPage() {
+  return (
+    <Suspense fallback={<SkeletonCard />}>
+      <TournamentApplicationsPageInner />
+    </Suspense>
   );
 }

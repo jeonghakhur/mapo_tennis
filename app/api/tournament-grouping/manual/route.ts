@@ -7,6 +7,8 @@ import type { Group } from '@/types/tournament';
 async function createManualGroupingHandler(req: NextRequest) {
   try {
     const body = await req.json();
+    console.log(body);
+    return;
     const { tournamentId, division, groups } = body;
 
     if (!tournamentId || !division) {

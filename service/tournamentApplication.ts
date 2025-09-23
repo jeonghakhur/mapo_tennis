@@ -32,18 +32,9 @@ const COMMON_FIELDS = {
       score,
       isRegisteredMember,
       "clubMemberInfo": *[_type == "clubMember" && user == ^.name && club._ref == ^.clubId][0] {
-        _id,
-        user,
-        birth,
         tennisStartYear,
         gender,
-        score,
-        email,
-        contact,
-        role,
-        status,
-        joinedAt,
-        approvedByAdmin
+        
       }
     }
   `,
@@ -68,22 +59,18 @@ const COMMON_FIELDS = {
 
 // 쿼리 빌더 함수들
 function buildApplicationQuery(includeJoins = true): string {
-  const baseFields = COMMON_FIELDS.APPLICATION;
-  const teamMembers = includeJoins ? COMMON_FIELDS.TEAM_MEMBERS : '';
-  const tournamentInfo = includeJoins ? COMMON_FIELDS.TOURNAMENT_INFO : '';
-  const applicantInfo = includeJoins ? COMMON_FIELDS.APPLICANT_INFO : '';
+  if (!includeJoins) {
+    return `{
+      ${COMMON_FIELDS.APPLICATION}
+    }`;
+  }
 
   return `{
-    ${baseFields}${teamMembers}${tournamentInfo}${applicantInfo}
+    ${COMMON_FIELDS.APPLICATION},
+    ${COMMON_FIELDS.TEAM_MEMBERS},
+    ${COMMON_FIELDS.TOURNAMENT_INFO},
+    ${COMMON_FIELDS.APPLICANT_INFO}
   }`;
-}
-
-function buildTournamentApplicationsQuery(includeJoins = true): string {
-  return `*[_type == "tournamentApplication" && tournamentId == $tournamentId] | order(createdAt asc) ${buildApplicationQuery(includeJoins)}`;
-}
-
-function buildDivisionApplicationsQuery(includeJoins = true): string {
-  return `*[_type == "tournamentApplication" && tournamentId == $tournamentId && division == $division] | order(createdAt asc) ${buildApplicationQuery(includeJoins)}`;
 }
 
 // 참가 신청 생성
@@ -118,7 +105,8 @@ export async function getTournamentApplications(
   try {
     // 특정 부서만 조회하는 경우
     if (division) {
-      const query = buildDivisionApplicationsQuery();
+      const query = `*[_type == "tournamentApplication" && tournamentId == $tournamentId && division == $division] | order(createdAt asc) ${buildApplicationQuery()}`;
+
       const applications = await client.fetch(query, { tournamentId, division });
 
       // 해당 부서 내에서 순서 계산 (가장 먼저 신청한 사람이 1번째)
@@ -129,7 +117,8 @@ export async function getTournamentApplications(
     }
 
     // 모든 부서의 신청을 가져와서 부서별로 순서 계산
-    const query = buildTournamentApplicationsQuery();
+    const query = `*[_type == "tournamentApplication" && tournamentId == $tournamentId] | order(createdAt asc) ${buildApplicationQuery()}`;
+
     const allApplications = await client.fetch(query, { tournamentId });
 
     return calculateApplicationOrder(allApplications);

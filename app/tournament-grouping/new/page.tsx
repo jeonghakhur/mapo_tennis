@@ -162,6 +162,8 @@ function NewTournamentGroupingContent() {
               }
             }
 
+            console.log(app.teamMembers);
+
             return {
               _id: app._id,
               name: teamName,
@@ -187,7 +189,6 @@ function NewTournamentGroupingContent() {
       // 조편성 인터페이스 숨기기
       setShowGroupingInterface(false);
     }
-    console.log('승인된 신청서 수:', selectedTournament);
   }, [selectedTournament, selectedDivision, fetchApprovedApplications]);
 
   // 최대 팀 수가 변경될 때 팀 목록 필터링 (자동 적용 제거)
@@ -218,6 +219,9 @@ function NewTournamentGroupingContent() {
       alert('조편성을 먼저 완료해주세요.');
       return;
     }
+
+    console.log(manualGroups);
+    return;
 
     return withLoading(async () => {
       // 조편성 저장만 수행 (예선 경기는 결과 페이지에서 생성)
@@ -264,8 +268,6 @@ function NewTournamentGroupingContent() {
       teamsToUse = allTeams;
     }
 
-    console.log('조편성 시작 - 팀 목록:', teamsToUse);
-
     // 조편성 인터페이스 표시 및 기존 조편성 결과 초기화
     setTeams([...teamsToUse]); // 새로운 배열 참조 생성
     setShowGroupingInterface(true);
@@ -276,7 +278,6 @@ function NewTournamentGroupingContent() {
   const handleWarningConfirm = () => {
     setShowWarningDialog(false);
     // 모든 팀으로 조편성 진행
-    console.log('경고 확인 - 모든 팀 사용:', allTeams);
     setTeams([...allTeams]); // 새로운 배열 참조 생성
     setShowGroupingInterface(true);
     setManualGroups([]);

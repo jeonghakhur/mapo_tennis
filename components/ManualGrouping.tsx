@@ -91,7 +91,6 @@ export default function ManualGrouping({
           newUnassignedTeams.push(team);
         }
       });
-      console.log('newGroups', newGroups);
       setGroups(newGroups);
       setUnassignedTeams(newUnassignedTeams);
     } else {

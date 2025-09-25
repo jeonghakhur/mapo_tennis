@@ -38,6 +38,7 @@ export interface Group {
   name: string; // 예: "A조", "B조"
   teams: Team[];
   division: string;
+  tournamentType?: string; // 개인전/단체전 정보
 }
 
 export interface SetScore {

@@ -364,6 +364,7 @@ function HomePageContent() {
                   ) : null
                 }
                 scrollThreshold={0.5}
+                style={{ overflow: 'visible' }}
               >
                 <Flex direction="column" gap="4">
                   {filteredPosts.map((post: Post) => {

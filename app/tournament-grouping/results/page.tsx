@@ -85,6 +85,7 @@ function TournamentGroupingResultsContent() {
       if (groupsResponse.ok) {
         const groupsData = await groupsResponse.json();
         setGroupingResult(groupsData);
+        console.log(groupsData);
       }
 
       // 경기 정보 조회
@@ -188,15 +189,22 @@ function TournamentGroupingResultsContent() {
             )}
             {admin && (
               <Button size="3" color="red" variant="soft" onClick={() => setShowDeleteDialog(true)}>
-                대진표삭제
+                조편성삭제
               </Button>
             )}
           </Flex>
 
           <Flex direction="column" gap="4" mb="4">
-            <Text size="3" weight="bold">
-              총 조 수: {groupingResult.totalGroups}조
-            </Text>
+            <Flex align="center" gap="2">
+              <Text size="3" weight="bold">
+                총 조 수: {groupingResult.totalGroups}조
+              </Text>
+              {groupingResult.groups[0]?.tournamentType && (
+                <Badge color="blue" size="2">
+                  {groupingResult.groups[0].tournamentType === 'individual' ? '개인전' : '단체전'}
+                </Badge>
+              )}
+            </Flex>
           </Flex>
 
           {/* 조별 팀 목록 */}
@@ -216,10 +224,10 @@ function TournamentGroupingResultsContent() {
 
                   <Flex direction="column" gap="2">
                     {group.teams.map((team, index) => (
-                      <Box key={team._id}>
+                      <Box key={team._id || `team_${index}`}>
                         <Flex align="center" justify="between">
                           <Text weight="bold" style={{ wordBreak: 'break-word', flex: '1' }}>
-                            {team.name}
+                            {team.name}({team.members.map((member) => member.name).join(', ')})
                           </Text>
                           <Badge color="green">{team.seed || '시드 없음'}</Badge>
                         </Flex>

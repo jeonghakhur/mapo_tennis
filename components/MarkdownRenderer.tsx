@@ -96,7 +96,7 @@ export default function MarkdownRenderer({ content, onImageClick }: MarkdownRend
                 src={optimizeSanityImageUrl(url)}
                 alt={`image-${idx}`}
                 width={1000}
-                height={400}
+                height={200}
                 style={{
                   width: '100%',
                   // maxHeight: 400,

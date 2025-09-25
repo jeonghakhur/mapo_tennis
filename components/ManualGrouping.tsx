@@ -31,6 +31,7 @@ export default function ManualGrouping({
 
   // 초기 그룹 생성 및 자동 배정
   useEffect(() => {
+    console.log(teams);
     const totalGroups = Math.ceil(teams.length / teamsPerGroup);
     const initialGroups: Group[] = [];
 
@@ -139,7 +140,7 @@ export default function ManualGrouping({
             if (group.groupId === targetGroupId) {
               const teams = [...group.teams];
               const currentIndex = teams.findIndex((t) => t._id === team._id);
-
+              console.log(currentIndex);
               // 현재 위치에서 제거
               teams.splice(currentIndex, 1);
               // 새로운 위치에 삽입
@@ -289,6 +290,7 @@ export default function ManualGrouping({
 
   // 팀 삭제 (조에서 제거하여 미배정으로 이동)
   const handleDeleteTeam = (team: Team, groupId: string) => {
+    console.log(team);
     // 조에서 제거
     setGroups((prevGroups) =>
       prevGroups.map((group) =>

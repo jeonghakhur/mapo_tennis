@@ -14,13 +14,13 @@ async function getGroupsHandler(req: NextRequest) {
     }
 
     // 대회 정보 조회
-    const tournamentQuery = `*[_type == "tournament" && _id == $tournamentId][0] {
-      _id,
-      tournamentType
-    }`;
+    // const tournamentQuery = `*[_type == "tournament" && _id == $tournamentId][0] {
+    //   _id,
+    //   tournamentType
+    // }`;
 
-    const tournament = await client.fetch(tournamentQuery, { tournamentId });
-    const isIndividual = tournament?.tournamentType === 'individual';
+    // const tournament = await client.fetch(tournamentQuery, { tournamentId });
+    // const isIndividual = tournament?.tournamentType === 'individual';
 
     // 조 정보 조회
     const query = `*[_type == "tournamentGroup" && tournamentId == $tournamentId && division == $division] {
@@ -28,67 +28,66 @@ async function getGroupsHandler(req: NextRequest) {
       groupId,
       name,
       teams,
-      division
+      division,
+      tournamentType
     } | order(name asc)`;
 
     const groups = await client.fetch(query, { tournamentId, division });
 
     // 팀 이름을 대회 타입에 따라 처리
-    const processedGroups = groups.map(
-      (group: {
-        teams: Array<{ _key: string; members?: Array<{ name: string; clubName?: string }> }>;
-      }) => ({
-        ...group,
-        teams: group.teams.map(
-          (team: { _key: string; members?: Array<{ name: string; clubName?: string }> }) => {
-            // _key를 _id로 변환 (Sanity 배열 내 객체 구분용)
-            const teamWithId = { ...team, _id: team._key };
+    // const processedGroups = groups.map(
+    //   (group: {
+    //     teams: Array<{ _key: string; members?: Array<{ name: string; clubName?: string }> }>;
+    //   }) => ({
+    //     ...group,
+    //     teams: group.teams.map(
+    //       (team: { _key: string; members?: Array<{ name: string; clubName?: string }> }) => {
+    //         // _key를 _id로 변환 (Sanity 배열 내 객체 구분용)
+    //         const teamWithId = { ...team, _id: team._key };
 
-            if (isIndividual) {
-              // 개인전: 이름 뒤에 클럽명
-              const memberNames =
-                team.members
-                  ?.map(
-                    (member: { name: string; clubName?: string }) =>
-                      `${member.name} (${member.clubName || '클럽명 없음'})`,
-                  )
-                  .join(', ') || '팀원 없음';
-              return { ...teamWithId, name: memberNames };
-            } else {
-              // 단체전: 클럽명을 앞에 한 번만
-              if (team.members && team.members.length > 0) {
-                const clubName = team.members[0].clubName || '클럽명 없음';
-                const memberNames = team.members
-                  .map((member: { name: string }) => member.name)
-                  .join(', ');
-                return { ...teamWithId, name: `${clubName} - ${memberNames}` };
-              } else {
-                return { ...teamWithId, name: '팀원 없음' };
-              }
-            }
-          },
-        ),
-      }),
-    );
+    //         if (isIndividual) {
+    //           // 개인전: 이름 뒤에 클럽명
+    //           const memberNames =
+    //             team.members
+    //               ?.map(
+    //                 (member: { name: string; clubName?: string }) =>
+    //                   `${member.name} (${member.clubName || '클럽명 없음'})`,
+    //               )
+    //               .join(', ') || '팀원 없음';
+    //           return { ...teamWithId, name: memberNames };
+    //         } else {
+    //           // 단체전: 클럽명을 앞에 한 번만
+    //           if (team.members && team.members.length > 0) {
+    //             const clubName = team.members[0].clubName || '클럽명 없음';
+    //             const memberNames = team.members
+    //               .map((member: { name: string }) => member.name)
+    //               .join(', ');
+    //             return { ...teamWithId, name: `${clubName} - ${memberNames}` };
+    //           } else {
+    //             return { ...teamWithId, name: '팀원 없음' };
+    //           }
+    //         }
+    //       },
+    //     ),
+    //   }),
+    // );
 
-    if (processedGroups.length === 0) {
+    if (groups.length === 0) {
       return NextResponse.json({ error: '조편성 결과가 없습니다.' }, { status: 404 });
     }
 
     // 조편성 결과 형태로 변환
-    const totalGroups = processedGroups.length;
-    const teamsPerGroup = Math.max(
-      ...processedGroups.map((g: { teams: Array<unknown> }) => g.teams.length),
-    );
-    const groupsWith3Teams = processedGroups.filter(
+    const totalGroups = groups.length;
+    const teamsPerGroup = Math.max(...groups.map((g: { teams: Array<unknown> }) => g.teams.length));
+    const groupsWith3Teams = groups.filter(
       (g: { teams: Array<unknown> }) => g.teams.length === 3,
     ).length;
-    const groupsWith2Teams = processedGroups.filter(
+    const groupsWith2Teams = groups.filter(
       (g: { teams: Array<unknown> }) => g.teams.length === 2,
     ).length;
 
     const result = {
-      groups: processedGroups,
+      groups: groups,
       totalGroups,
       teamsPerGroup,
       remainingTeams: 0,

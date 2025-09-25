@@ -27,6 +27,18 @@ export default defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
+      name: 'tournamentType',
+      title: '대회 유형',
+      type: 'string',
+      options: {
+        list: [
+          { title: '개인전', value: 'individual' },
+          { title: '단체전', value: 'team' },
+        ],
+      },
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
       name: 'groupId',
       title: '조 ID',
       type: 'string',
@@ -69,11 +81,6 @@ export default defineType({
                   name: 'member',
                   title: '팀원 정보',
                   fields: [
-                    {
-                      name: 'memberKey',
-                      title: '고유 키',
-                      type: 'string',
-                    },
                     {
                       name: 'name',
                       title: '이름',

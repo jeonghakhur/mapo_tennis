@@ -133,7 +133,19 @@ function NewTournamentGroupingContent() {
           (app: {
             _id: string;
             division: string;
-            teamMembers: unknown[];
+            teamMembers: Array<{
+              _key: string;
+              name: string;
+              clubId: string;
+              clubName: string;
+              birth: string;
+              score: number;
+              isRegisteredMember: boolean;
+              clubMemberInfo?: {
+                tennisStartYear: number;
+                gender: string;
+              };
+            }>;
             createdAt: string;
             memo?: string;
             seed?: number;
@@ -156,19 +168,25 @@ function NewTournamentGroupingContent() {
               const members = app.teamMembers as { name: string; clubName?: string }[];
               if (members && members.length > 0) {
                 const clubName = members[0].clubName || '클럽명 없음';
-                teamName = `${clubName} ${app.memo ? '-' + app.memo : ''}`;
+                teamName = `${clubName}${app.memo ? '-' + app.memo : ''}`;
               } else {
                 teamName = '팀원 없음';
               }
             }
 
-            console.log(app.teamMembers);
+            // teamMembers를 평면화하여 tennisStartYear와 gender를 직접 필드로 변환
+            const flattenedTeamMembers = app.teamMembers.map((member) => {
+              const { clubMemberInfo, ...memberWithoutClubInfo } = member;
+              return {
+                ...memberWithoutClubInfo,
+              };
+            });
 
             return {
               _id: app._id,
               name: teamName,
               division: app.division,
-              members: app.teamMembers,
+              members: flattenedTeamMembers,
               seed: app.seed,
               createdAt: app.createdAt,
             };
@@ -220,10 +238,11 @@ function NewTournamentGroupingContent() {
       return;
     }
 
-    console.log(manualGroups);
-    return;
-
     return withLoading(async () => {
+      // 선택된 대회 정보 가져오기
+      const selectedTournamentInfo = tournaments.find((t) => t._id === selectedTournament);
+      const tournamentType = selectedTournamentInfo?.tournamentType || 'individual';
+
       // 조편성 저장만 수행 (예선 경기는 결과 페이지에서 생성)
       const saveRes = await fetch('/api/tournament-grouping/manual', {
         method: 'POST',
@@ -232,6 +251,7 @@ function NewTournamentGroupingContent() {
           tournamentId: selectedTournament,
           division: selectedDivision,
           groups: manualGroups,
+          tournamentType, // 개인전/단체전 정보 추가
         }),
       });
 

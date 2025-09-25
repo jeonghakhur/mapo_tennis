@@ -21,7 +21,7 @@ export interface TournamentApplication {
       _id: string;
       user: string;
       birth?: string;
-      tennisStartYear?: string;
+      tennisStartYear?: number;
       gender?: string;
       score?: number;
       email?: string;
@@ -83,7 +83,7 @@ export interface TournamentApplicationInput {
       _id: string;
       user: string;
       birth?: string;
-      tennisStartYear?: string;
+      tennisStartYear?: number;
       gender?: string;
       score?: number;
       email?: string;

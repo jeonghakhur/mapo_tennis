@@ -7,9 +7,8 @@ import type { Group } from '@/types/tournament';
 async function createManualGroupingHandler(req: NextRequest) {
   try {
     const body = await req.json();
-    console.log(body);
-    return;
-    const { tournamentId, division, groups } = body;
+
+    const { tournamentId, division, groups, tournamentType } = body;
 
     if (!tournamentId || !division) {
       return NextResponse.json({ error: '대회 ID와 부서는 필수입니다.' }, { status: 400 });
@@ -29,6 +28,7 @@ async function createManualGroupingHandler(req: NextRequest) {
       _type: 'tournamentGroup',
       tournamentId,
       division,
+      tournamentType: tournamentType || 'individual', // 개인전/단체전 정보 추가
       groupId: group.groupId,
       name: group.name,
       teams: group.teams.map((team, index) => ({

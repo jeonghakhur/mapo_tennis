@@ -33,8 +33,7 @@ const COMMON_FIELDS = {
       isRegisteredMember,
       "clubMemberInfo": *[_type == "clubMember" && user == ^.name && club._ref == ^.clubId][0] {
         tennisStartYear,
-        gender,
-        
+        gender
       }
     }
   `,

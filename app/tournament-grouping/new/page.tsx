@@ -9,7 +9,7 @@ import { useTournamentsByUserLevel } from '@/hooks/useTournaments';
 import { useUser } from '@/hooks/useUser';
 import { isAdmin } from '@/lib/authUtils';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import type { Group, Team } from '@/types/tournament';
+import type { ManualGroup, Team } from '@/types/tournament';
 import Container from '@/components/Container';
 import ManualGrouping from '@/components/ManualGrouping';
 import { wrapTextWithSpans } from '@/lib/utils';
@@ -31,7 +31,7 @@ function NewTournamentGroupingContent() {
   const [approvedApplications, setApprovedApplications] = useState<number>(0);
   const [allTeams, setAllTeams] = useState<Team[]>([]); // 모든 팀 목록
   const [teams, setTeams] = useState<Team[]>([]); // 필터링된 팀 목록
-  const [manualGroups, setManualGroups] = useState<Group[]>([]);
+  const [manualGroups, setManualGroups] = useState<ManualGroup[]>([]);
   const [existingGroupings, setExistingGroupings] = useState<
     Array<{ tournamentId: string; division: string }>
   >([]);
@@ -136,15 +136,7 @@ function NewTournamentGroupingContent() {
             teamMembers: Array<{
               _key: string;
               name: string;
-              clubId: string;
               clubName: string;
-              birth: string;
-              score: number;
-              isRegisteredMember: boolean;
-              clubMemberInfo?: {
-                tennisStartYear: number;
-                gender: string;
-              };
             }>;
             createdAt: string;
             memo?: string;
@@ -174,19 +166,13 @@ function NewTournamentGroupingContent() {
               }
             }
 
-            // teamMembers를 평면화하여 tennisStartYear와 gender를 직접 필드로 변환
-            const flattenedTeamMembers = app.teamMembers.map((member) => {
-              const { clubMemberInfo, ...memberWithoutClubInfo } = member;
-              return {
-                ...memberWithoutClubInfo,
-              };
-            });
+            // teamMembers를 평면화하여 tennisStartYear와 gender를 직접 필드로
 
             return {
               _id: app._id,
               name: teamName,
               division: app.division,
-              members: flattenedTeamMembers,
+              members: app.teamMembers,
               seed: app.seed,
               createdAt: app.createdAt,
             };

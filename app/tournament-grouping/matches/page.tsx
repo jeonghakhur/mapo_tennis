@@ -578,7 +578,7 @@ function TournamentMatchesContent() {
                         className="border-b hover:bg-gray-50"
                       >
                         <td className="p-3">{match.matchNumber}경기</td>
-                        <td className="p-3">{match.groupId || '-'}</td>
+                        <td className="p-3">{match.groupId.split('_')[1] || '-'}</td>
                         <td className="p-3">
                           <span
                             className={

@@ -19,7 +19,6 @@ export interface ClubMember {
 export interface Team {
   _id: string;
   name: string;
-  division: string;
   members: Array<{
     _key: string;
     name: string;
@@ -38,8 +37,10 @@ export interface Group {
   name: string; // 예: "A조", "B조"
   teams: Team[];
   division: string;
-  tournamentType?: string; // 개인전/단체전 정보
+  tournamentType: 'individual' | 'team'; // 개인전/단체전 정보
 }
+
+export type ManualGroup = Omit<Group, 'division' | 'tournamentType'>;
 
 export interface SetScore {
   _key?: string; // Sanity 배열 항목의 고유 키
@@ -53,12 +54,14 @@ export interface Match {
   _id: string;
   tournamentId: string;
   division: string;
-  groupId?: string; // 예선 경기인 경우
+  groupId: string; // 예선 경기인 경우 조 이름
   round?: number; // 본선 라운드 (16강=1, 8강=2, 4강=3, 결승=4)
   matchNumber: number; // 경기 번호
+  tournamentType: 'individual' | 'team'; // 경기 타입 (단식/복식)
   team1: {
     teamId: string;
     teamName: string;
+    players?: string[]; // 선수 목록 (이름만)
     score?: number; // 기존 호환성을 위해 유지
     sets?: SetScore[]; // 새로운 세트별 점수 구조
     totalSetsWon?: number; // 승리한 세트 수
@@ -66,6 +69,7 @@ export interface Match {
   team2: {
     teamId: string;
     teamName: string;
+    players?: string[]; // 선수 목록 (이름만)
     score?: number; // 기존 호환성을 위해 유지
     sets?: SetScore[]; // 새로운 세트별 점수 구조
     totalSetsWon?: number; // 승리한 세트 수
@@ -117,7 +121,7 @@ export interface TournamentBracket {
 export interface GroupStanding {
   teamId: string;
   teamName: string;
-  groupId?: string; // 조 ID (선택적)
+  groupId: string; // 조 이름 (선택적)
   played: number; // 경기 수
   won: number; // 승리 수
   drawn: number; // 무승부 수
@@ -127,26 +131,6 @@ export interface GroupStanding {
   goalDifference: number; // 득실차
   points: number; // 승점
   position: number; // 순위
-}
-
-// 조편성 옵션
-export interface GroupingOptions {
-  method: 'random' | 'seeded' | 'manual';
-  teamsPerGroup: 2 | 3; // 조당 팀 수
-  seedCriteria?: 'registration_order' | 'previous_performance' | 'manual';
-  avoidSameClub?: boolean; // 같은 클럽 팀 분리 여부
-}
-
-// 조편성 결과
-export interface GroupingResult {
-  groups: Group[];
-  totalGroups: number;
-  teamsPerGroup: number;
-  remainingTeams: number; // 균등 분배 후 남은 팀 수
-  distribution: {
-    groupsWith3Teams: number;
-    groupsWith2Teams: number;
-  };
 }
 
 // 경기 결과

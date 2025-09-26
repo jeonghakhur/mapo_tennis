@@ -227,7 +227,13 @@ function TournamentGroupingResultsContent() {
                       <Box key={team._id || `team_${index}`}>
                         <Flex align="center" justify="between">
                           <Text weight="bold" style={{ wordBreak: 'break-word', flex: '1' }}>
-                            {team.name}({team.members.map((member) => member.name).join(', ')})
+                            {group.tournamentType === 'individual'
+                              ? team.members
+                                  .map((member) => {
+                                    return `${member.name}(${member.clubName || '클럽명 없음'})`;
+                                  })
+                                  .join(', ')
+                              : `${team.name}(${team.members.map((member) => member.name).join(', ')})`}
                           </Text>
                           <Badge color="green">{team.seed || '시드 없음'}</Badge>
                         </Flex>

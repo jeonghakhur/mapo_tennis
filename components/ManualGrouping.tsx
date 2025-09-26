@@ -3,12 +3,11 @@
 import { useState, useEffect } from 'react';
 import { Box, Text, Button, Flex, Card, Heading, Badge } from '@radix-ui/themes';
 import { Plus, Trash2 } from 'lucide-react';
-import type { Team, Group } from '@/types/tournament';
+import type { Team, ManualGroup } from '@/types/tournament';
 import { Combobox } from '@/components/ui/combobox';
-
 interface ManualGroupingProps {
   teams: Team[];
-  onGroupsChange: (groups: Group[]) => void;
+  onGroupsChange: (groups: ManualGroup[]) => void;
   teamsPerGroup: number;
 }
 
@@ -22,7 +21,7 @@ export default function ManualGrouping({
   onGroupsChange,
   teamsPerGroup,
 }: ManualGroupingProps) {
-  const [groups, setGroups] = useState<Group[]>([]);
+  const [groups, setGroups] = useState<ManualGroup[]>([]);
   const [draggedTeam, setDraggedTeam] = useState<DraggedTeam | null>(null);
   const [unassignedTeams, setUnassignedTeams] = useState<Team[]>([]);
   const [selectedTeamForGroup, setSelectedTeamForGroup] = useState<{ [groupId: string]: string }>(
@@ -33,7 +32,7 @@ export default function ManualGrouping({
   useEffect(() => {
     console.log(teams);
     const totalGroups = Math.ceil(teams.length / teamsPerGroup);
-    const initialGroups: Group[] = [];
+    const initialGroups: ManualGroup[] = [];
 
     for (let i = 0; i < totalGroups; i++) {
       // const groupId = `group_${String.fromCharCode(65 + i)}`;
@@ -44,7 +43,6 @@ export default function ManualGrouping({
         groupId,
         name: groupName,
         teams: [],
-        division: teams[0]?.division || '',
       });
     }
 

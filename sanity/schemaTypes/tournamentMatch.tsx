@@ -44,6 +44,18 @@ export default defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
+      name: 'tournamentType',
+      title: '경기 타입',
+      type: 'string',
+      options: {
+        list: [
+          { title: '개인전', value: 'individual' },
+          { title: '단체전', value: 'team' },
+        ],
+      },
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
       name: 'team1',
       title: '팀 1',
       type: 'object',
@@ -59,6 +71,12 @@ export default defineType({
           title: '팀 이름',
           type: 'string',
           validation: (Rule) => Rule.required(),
+        },
+        {
+          name: 'players',
+          title: '선수 목록',
+          type: 'array',
+          of: [{ type: 'string' }],
         },
         {
           name: 'sets',
@@ -129,6 +147,12 @@ export default defineType({
           title: '팀 이름',
           type: 'string',
           validation: (Rule) => Rule.required(),
+        },
+        {
+          name: 'players',
+          title: '선수 목록',
+          type: 'array',
+          of: [{ type: 'string' }],
         },
         {
           name: 'sets',

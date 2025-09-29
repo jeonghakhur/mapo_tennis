@@ -426,7 +426,34 @@ function HomePageContent() {
                                     key={idx}
                                     size="2"
                                     variant="soft"
-                                    onClick={() => window.open(attachment.url, '_blank')}
+                                    onClick={() => {
+                                      // 문서 형태의 파일 확장자들 (PDF와 이미지 제외)
+                                      const documentExtensions = [
+                                        '.hwp',
+                                        '.hwpx',
+                                        '.doc',
+                                        '.docx',
+                                        '.xls',
+                                        '.xlsx',
+                                      ];
+
+                                      const isDocumentFile = documentExtensions.includes(
+                                        extension.toLowerCase(),
+                                      );
+
+                                      if (isDocumentFile) {
+                                        // 문서 파일인 경우 다운로드
+                                        const link = document.createElement('a');
+                                        link.href = attachment.url;
+                                        link.download = attachment.filename;
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        document.body.removeChild(link);
+                                      } else {
+                                        // PDF와 이미지는 새 창에서 열기
+                                        window.open(attachment.url, '_blank');
+                                      }
+                                    }}
                                     style={{
                                       maxWidth: '300px',
                                       overflow: 'hidden',

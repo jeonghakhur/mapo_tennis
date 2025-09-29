@@ -38,10 +38,9 @@ export async function POST(req: NextRequest) {
       'application/vnd.hancom.hwpx', // 한글 문서 (.hwpx)
       'application/x-hwp', // 한글 문서 (.hwp) 대체 MIME 타입
       'application/octet-stream', // 바이너리 파일 (일부 시스템에서 .hwp가 이 타입으로 인식됨)
-      'text/plain',
     ];
 
-    // 허용된 파일 확장자
+    // 허용된 파일 확장자 (보안상 .txt 제외)
     const allowedExtensions = [
       '.jpg',
       '.jpeg',
@@ -58,7 +57,6 @@ export async function POST(req: NextRequest) {
       '.xlsx',
       '.hwp',
       '.hwpx',
-      '.txt',
     ];
 
     // 파일 확장자 추출

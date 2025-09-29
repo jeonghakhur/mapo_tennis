@@ -33,13 +33,61 @@ export async function POST(req: NextRequest) {
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/haansofthwp', // 한글 문서 (.hwp)
+      'application/vnd.hancom.hwp', // 한글 문서 (.hwp)
+      'application/vnd.hancom.hwpx', // 한글 문서 (.hwpx)
+      'application/x-hwp', // 한글 문서 (.hwp) 대체 MIME 타입
+      'application/octet-stream', // 바이너리 파일 (일부 시스템에서 .hwp가 이 타입으로 인식됨)
       'text/plain',
     ];
 
-    // 파일 타입 검증 (허용된 타입 또는 이미지 파일)
-    const isValidType = allowedTypes.includes(file.type) || file.type.startsWith('image/');
+    // 허용된 파일 확장자
+    const allowedExtensions = [
+      '.jpg',
+      '.jpeg',
+      '.png',
+      '.gif',
+      '.webp',
+      '.heic',
+      '.heif',
+      '.avif',
+      '.pdf',
+      '.doc',
+      '.docx',
+      '.xls',
+      '.xlsx',
+      '.hwp',
+      '.hwpx',
+      '.txt',
+    ];
+
+    // 파일 확장자 추출
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+
+    // 파일 타입 검증 (허용된 타입, 이미지 파일, 또는 허용된 확장자)
+    const isValidType =
+      allowedTypes.includes(file.type) ||
+      file.type.startsWith('image/') ||
+      allowedExtensions.includes(fileExtension);
+
+    // 디버깅을 위한 로그 추가
+    console.log('업로드 파일 정보:', {
+      name: file.name,
+      type: file.type,
+      extension: fileExtension,
+      size: file.size,
+      isValidType,
+      allowedTypes,
+      allowedExtensions,
+    });
+
     if (!isValidType) {
-      return NextResponse.json({ error: '지원하지 않는 파일 타입입니다.' }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: `지원하지 않는 파일 타입입니다. 파일 타입: ${file.type}, 파일명: ${file.name}, 확장자: ${fileExtension}`,
+        },
+        { status: 400 },
+      );
     }
 
     // 이미지 파일인지 확인하여 적절한 타입으로 업로드

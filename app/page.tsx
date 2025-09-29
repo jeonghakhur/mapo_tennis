@@ -409,16 +409,57 @@ function HomePageContent() {
                               첨부파일
                             </Text>
                             <Flex gap="2" wrap="wrap">
-                              {post.attachments.map((attachment, idx) => (
-                                <Button
-                                  key={idx}
-                                  size="2"
-                                  variant="soft"
-                                  onClick={() => window.open(attachment.url, '_blank')}
-                                >
-                                  {attachment.filename}
-                                </Button>
-                              ))}
+                              {post.attachments.map((attachment, idx) => {
+                                // 파일명과 확장자 분리
+                                const lastDotIndex = attachment.filename.lastIndexOf('.');
+                                const filename =
+                                  lastDotIndex > 0
+                                    ? attachment.filename.substring(0, lastDotIndex)
+                                    : attachment.filename;
+                                const extension =
+                                  lastDotIndex > 0
+                                    ? attachment.filename.substring(lastDotIndex)
+                                    : '';
+
+                                return (
+                                  <Button
+                                    key={idx}
+                                    size="2"
+                                    variant="soft"
+                                    onClick={() => window.open(attachment.url, '_blank')}
+                                    style={{
+                                      maxWidth: '300px',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                    }}
+                                    title={attachment.filename}
+                                  >
+                                    <span
+                                      style={{
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                        flex: 1,
+                                      }}
+                                    >
+                                      {filename}
+                                    </span>
+                                    {extension && (
+                                      <span
+                                        style={{
+                                          flexShrink: 0,
+                                          marginLeft: '2px',
+                                        }}
+                                      >
+                                        {extension}
+                                      </span>
+                                    )}
+                                  </Button>
+                                );
+                              })}
                             </Flex>
                           </Box>
                         )}

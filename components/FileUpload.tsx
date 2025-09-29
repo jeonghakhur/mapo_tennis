@@ -75,7 +75,7 @@ export default function FileUpload({ attachments, onAttachmentsChange }: FileUpl
         type="file"
         onChange={handleFileSelect}
         style={{ display: 'none' }}
-        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.hwp,.hwpx"
       />
 
       <Button

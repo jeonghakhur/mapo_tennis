@@ -499,7 +499,7 @@ function TournamentMatchesContent() {
       );
     }
 
-    return <div className="flex gap-1">{scores}</div>;
+    return <div className="flex flex-col gap-1">{scores}</div>;
   };
 
   return (
@@ -605,7 +605,7 @@ function TournamentMatchesContent() {
                             {match.team2.teamName}
                           </span>
                         </td>
-                        <td className="p-3">{renderSetScores(match)}</td>
+                        <td className="p-3 ">{renderSetScores(match)}</td>
                         <td className="p-3">
                           <Badge
                             color={

@@ -26,9 +26,9 @@ export interface Tournament {
     matchDates: string[];
     startTime: string;
     prizes: {
-      first: number;
-      second: number;
-      third: number;
+      first: string;
+      second: string;
+      third: string;
     };
   }>;
   entryFee?: number; // 참가비
@@ -65,6 +65,7 @@ export interface TournamentFormData {
   drawMethod?: string; // 대진추첨
   equipment?: string; // 대회사용구
   memo?: string; // 메모
+  selectedDivisions?: string[]; // 선택된 참가부서 목록
   divisions?: Array<{
     _key: string; // Sanity Studio에서 필요한 고유 키
     division: string;
@@ -72,9 +73,9 @@ export interface TournamentFormData {
     matchDates: string[];
     startTime: string;
     prizes: {
-      first: number;
-      second: number;
-      third: number;
+      first: string;
+      second: string;
+      third: string;
     };
   }>;
   entryFee?: number; // 참가비

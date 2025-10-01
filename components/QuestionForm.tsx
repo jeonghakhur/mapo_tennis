@@ -1,6 +1,6 @@
 import { useForm, Controller } from 'react-hook-form';
 import { Box, Button, TextField } from '@radix-ui/themes';
-import { SimpleEditor } from '@/components/tiptap-templates/simple/simple-editor';
+import MarkdownEditor from '@/components/MarkdownEditor';
 import FileUpload from '@/components/FileUpload';
 import type { QuestionAttachment } from '@/model/question';
 
@@ -73,14 +73,7 @@ export default function QuestionForm({
             return text.length > 0 || '내용을 입력해 주세요.';
           },
         }}
-        render={({ field }) => (
-          <SimpleEditor
-            value={field.value}
-            onChange={field.onChange}
-            minHeight="200px"
-            maxHeight="400px"
-          />
-        )}
+        render={({ field }) => <MarkdownEditor value={field.value} onChange={field.onChange} />}
       />
 
       <Box position="relative" mt="4">

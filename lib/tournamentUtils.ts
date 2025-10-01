@@ -7,15 +7,20 @@ export const DIVISION_OPTIONS = [
   { value: 'futures', label: '퓨처스부' },
   { value: 'chrysanthemum', label: '국화부' },
   { value: 'forsythia', label: '개나리부' },
+  { value: 'senior', label: '시니어부' },
 ] as const;
 
 // 부서별 기본값 설정
 export const DIVISION_DEFAULTS = {
-  master: { teamCount: 24, prizes: { first: 500000, second: 300000, third: 200000 } },
-  challenger: { teamCount: 36, prizes: { first: 500000, second: 300000, third: 200000 } },
-  futures: { teamCount: 24, prizes: { first: 300000, second: 200000, third: 100000 } },
-  chrysanthemum: { teamCount: 24, prizes: { first: 300000, second: 200000, third: 100000 } },
-  forsythia: { teamCount: 24, prizes: { first: 300000, second: 200000, third: 100000 } },
+  master: { teamCount: 24, prizes: { first: '500,000', second: '300,000', third: '200,000' } },
+  challenger: { teamCount: 36, prizes: { first: '500,000', second: '300,000', third: '200,000' } },
+  futures: { teamCount: 24, prizes: { first: '300,000', second: '200,000', third: '100,000' } },
+  chrysanthemum: {
+    teamCount: 24,
+    prizes: { first: '300,000', second: '200,000', third: '100,000' },
+  },
+  forsythia: { teamCount: 24, prizes: { first: '300,000', second: '200,000', third: '100,000' } },
+  senior: { teamCount: 24, prizes: { first: '300,000', second: '200,000', third: '100,000' } },
 } as const;
 
 export const DEFAULT_START_TIME = '08:00';
@@ -56,17 +61,6 @@ export function handleDivisionDetailChange(
   setFormData((prev) => {
     const newDivisions = prev.divisions?.map((division) => {
       if (division.division !== divisionValue) return division;
-
-      // 참가팀수가 0이면 다른 값들을 초기화하되 teamCount는 0으로 유지
-      if (field === 'teamCount' && value === 0) {
-        return {
-          ...division,
-          teamCount: 0,
-          matchDates: [],
-          startTime: '',
-          prizes: { first: 0, second: 0, third: 0 },
-        };
-      }
 
       let updatedDivision = { ...division };
       if (field === 'first' || field === 'second' || field === 'third') {
@@ -186,13 +180,14 @@ export function getDefaultPrizes(divisionValue: string) {
   switch (divisionValue) {
     case 'master':
     case 'challenger':
-      return { first: 500000, second: 300000, third: 200000 };
+      return { first: '500,000', second: '300,000', third: '200,000' };
     case 'futures':
     case 'forsythia':
     case 'chrysanthemum':
-      return { first: 300000, second: 200000, third: 100000 };
+    case 'senior':
+      return { first: '300,000', second: '200,000', third: '100,000' };
     default:
-      return { first: 0, second: 0, third: 0 };
+      return { first: '', second: '', third: '' };
   }
 }
 
@@ -206,6 +201,7 @@ export function getDefaultTeamCount(divisionValue: string) {
     case 'futures':
     case 'forsythia':
     case 'chrysanthemum':
+    case 'senior':
       return 24;
     default:
       return 0;
@@ -236,14 +232,7 @@ export function createDefaultTournamentFormData(): TournamentFormData {
     drawMethod: '',
     equipment: '낫소 볼',
     memo: '',
-    divisions: DIVISION_OPTIONS.map((option) => ({
-      _key: option.value,
-      division: option.value,
-      teamCount: getDefaultTeamCount(option.value),
-      matchDates: [],
-      startTime: getDefaultStartTime(),
-      prizes: getDefaultPrizes(option.value),
-    })),
+    divisions: [], // 기본적으로 빈 배열, 사용자가 체크박스로 선택
     entryFee: 30000,
     bankAccount: '1001-8348-6182 (토스뱅크)',
     accountHolder: '허정학',
@@ -291,15 +280,21 @@ export function validateDivisionDetails(
 ): ValidationResult {
   if (!showDivisionDetails) return { isValid: true, message: '', field: '' };
 
-  for (const division of formData.divisions || []) {
-    // 참가팀수가 0이면 해당 부서는 참가하지 않으므로 검증 건너뛰기
-    if (division.teamCount === 0) continue;
+  // 최소 하나의 참가부서가 선택되어야 함
+  if (!formData.divisions || formData.divisions.length === 0) {
+    return {
+      isValid: false,
+      message: '최소 하나 이상의 참가부서를 선택해주세요.',
+      field: 'divisions',
+    };
+  }
 
-    if (division.teamCount <= 0) {
+  for (const division of formData.divisions) {
+    if (!division.teamCount || division.teamCount < 1) {
       const divisionOption = DIVISION_OPTIONS.find((option) => option.value === division.division);
       return {
         isValid: false,
-        message: `${divisionOption?.label}의 참가팀수를 입력해주세요.`,
+        message: `${divisionOption?.label}의 참가팀수를 1명 이상 입력해주세요.`,
         field: 'divisions',
       };
     }

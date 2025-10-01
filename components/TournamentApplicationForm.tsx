@@ -16,9 +16,6 @@ import { TournamentParticipationForm } from '@/components/tournament/TournamentP
 import type { ClubMember } from '@/model/clubMember';
 import { useTournamentApplications } from '@/hooks/useTournamentApplications';
 
-// 상수 정의
-const INDIVIDUAL_PARTICIPANTS = 2;
-
 interface TournamentApplicationFormProps {
   tournament: Tournament;
   onCancel: () => void;
@@ -122,6 +119,12 @@ export default function TournamentApplicationForm({
   // 참가자 관리
   const isIndividual = tournament.tournamentType === 'individual';
 
+  // 개인전 참가자 수 계산 (시니어부는 1명, 그 외는 2명)
+  const individualParticipantCount = useMemo(() => {
+    if (!isIndividual) return 0;
+    return division === 'senior' ? 1 : 2;
+  }, [isIndividual, division]);
+
   // 개별 참가자 훅 선언 (최대 8명)
   const player1 = useParticipant(searchClubMember);
   const player2 = useParticipant(searchClubMember);
@@ -204,10 +207,10 @@ export default function TournamentApplicationForm({
   // 현재 활성 참가자 배열
   const activeParticipants = useMemo(() => {
     if (isIndividual) {
-      return participants.slice(0, INDIVIDUAL_PARTICIPANTS);
+      return participants.slice(0, individualParticipantCount);
     }
     return participants.slice(0, teamMemberCount);
-  }, [isIndividual, participants, teamMemberCount]);
+  }, [isIndividual, participants, teamMemberCount, individualParticipantCount]);
 
   // 수정 모드일 때 참가자 정보 초기화
   useEffect(() => {
@@ -254,8 +257,14 @@ export default function TournamentApplicationForm({
 
   // 통합된 검증 함수
   const validateForm = useMemo(
-    () => createValidationFunction(activeParticipants, isIndividual, division),
-    [activeParticipants, isIndividual, division],
+    () =>
+      createValidationFunction(
+        activeParticipants,
+        isIndividual,
+        division,
+        isIndividual ? individualParticipantCount : undefined,
+      ),
+    [activeParticipants, isIndividual, division, individualParticipantCount],
   );
 
   // 대회ID+부서별 전체 신청 목록

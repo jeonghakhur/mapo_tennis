@@ -98,7 +98,9 @@ export async function POST(req: NextRequest) {
 
     // 참가자 정보 파싱 - teamMembers 배열로 처리
     const teamMembers = [];
-    const expectedMemberCount = tournamentType === 'individual' ? 2 : 8; // 단체전은 최대 8명
+    // 시니어부 개인전은 1명, 그 외 개인전은 2명, 단체전은 최대 8명
+    const expectedMemberCount =
+      tournamentType === 'individual' ? (division === 'senior' ? 1 : 2) : 8;
 
     for (let i = 1; i <= expectedMemberCount; i++) {
       const name = formData.get(`player${i}Name`) as string;
@@ -124,8 +126,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 최소 참가자 수 검증
-    const minMemberCount = tournamentType === 'individual' ? 2 : 6;
+    // 최소 참가자 수 검증 (시니어부 개인전은 1명, 그 외 개인전은 2명, 단체전은 6명)
+    const minMemberCount = tournamentType === 'individual' ? (division === 'senior' ? 1 : 2) : 6;
     if (teamMembers.length < minMemberCount) {
       return NextResponse.json(
         {

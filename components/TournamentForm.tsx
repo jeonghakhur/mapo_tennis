@@ -11,13 +11,13 @@ import {
   RadioGroup,
 } from '@radix-ui/themes';
 import { Save } from 'lucide-react';
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import type { TournamentFormData } from '@/model/tournament';
 import { usePostsByCategory } from '@/hooks/usePosts';
 import SkeletonCard from '@/components/SkeletonCard';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import LoadingOverlay from '@/components/LoadingOverlay';
-import { SimpleEditor } from '@/components/tiptap-templates/simple/simple-editor';
+import MarkdownEditor from '@/components/MarkdownEditor';
 
 import {
   DIVISION_OPTIONS,
@@ -29,7 +29,6 @@ import {
   handleMatchDateChange,
   focusToField,
   handleInputChange,
-  canShowDivisionDetails,
 } from '@/lib/tournamentUtils';
 
 interface TournamentFormProps {
@@ -168,10 +167,77 @@ const DivisionDetails = ({
   formData: TournamentFormData;
   setFormData: React.Dispatch<React.SetStateAction<TournamentFormData>>;
 }) => {
-  const [showDivisionDetails, setShowDivisionDetails] = useState(false);
+  const [expandedDivisions, setExpandedDivisions] = useState<Record<string, boolean>>({});
   const dateRange = useMemo(
     () => generateDateRange(formData.startDate, formData.endDate),
     [formData.startDate, formData.endDate],
+  );
+
+  // 선택된 부서 목록을 메모이제이션
+  const selectedDivisionKeys = useMemo(
+    () => formData.divisions?.map((d) => d.division).join(',') || '',
+    [formData.divisions],
+  );
+
+  // 초기 렌더링 및 formData.divisions 변경 시 선택된 부서들을 자동으로 열기
+  useEffect(() => {
+    if (selectedDivisionKeys) {
+      const divisions = selectedDivisionKeys.split(',').filter(Boolean);
+      if (divisions.length > 0) {
+        setExpandedDivisions((prev) => {
+          const newExpandedDivisions = { ...prev };
+          divisions.forEach((divisionKey) => {
+            // 아직 설정되지 않은 경우에만 true로 설정
+            if (newExpandedDivisions[divisionKey] === undefined) {
+              newExpandedDivisions[divisionKey] = true;
+            }
+          });
+          return newExpandedDivisions;
+        });
+      }
+    }
+  }, [selectedDivisionKeys]);
+
+  const toggleDivision = useCallback(
+    (divisionValue: string) => {
+      const isCurrentlySelected = formData.divisions?.some((d) => d.division === divisionValue);
+
+      if (isCurrentlySelected) {
+        // 체크박스 해제: divisions에서 제거
+        setFormData((prev) => ({
+          ...prev,
+          divisions: prev.divisions?.filter((d) => d.division !== divisionValue) || [],
+        }));
+        setExpandedDivisions((prev) => ({
+          ...prev,
+          [divisionValue]: false,
+        }));
+      } else {
+        // 체크박스 선택: divisions에 추가
+        const newDivision = {
+          _key: divisionValue,
+          division: divisionValue,
+          teamCount:
+            DIVISION_DEFAULTS[divisionValue as keyof typeof DIVISION_DEFAULTS]?.teamCount || 0,
+          matchDates: [],
+          startTime: DEFAULT_START_TIME,
+          prizes: DIVISION_DEFAULTS[divisionValue as keyof typeof DIVISION_DEFAULTS]?.prizes || {
+            first: '',
+            second: '',
+            third: '',
+          },
+        };
+        setFormData((prev) => ({
+          ...prev,
+          divisions: [...(prev.divisions || []), newDivision],
+        }));
+        setExpandedDivisions((prev) => ({
+          ...prev,
+          [divisionValue]: true,
+        }));
+      }
+    },
+    [formData.divisions, setFormData],
   );
 
   const renderDivisionField = (
@@ -179,171 +245,161 @@ const DivisionDetails = ({
     details: {
       teamCount: number;
       startTime: string;
-      prizes: { first: number; second: number; third: number };
+      prizes: { first: string; second: string; third: string };
       matchDates: string[];
     },
+    isSelected: boolean,
   ) => (
-    <div key={division.value} className="border rounded-lg p-4">
-      <Text size="3" weight="bold" mb="3" className="block">
-        {division.label}
-      </Text>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* 참가팀수 */}
-        <div>
-          <Text size="2" weight="bold" className="block mb-2">
-            참가팀수 *
-          </Text>
-          <TextField.Root
-            size="3"
-            type="number"
-            min="0"
-            max="100"
-            value={details.teamCount}
-            onChange={(e) => {
-              const value = e.target.value;
-              const numValue = value === '' ? 0 : parseInt(value);
-              handleDivisionDetailChange(
-                formData,
-                setFormData,
-                division.value,
-                'teamCount',
-                isNaN(numValue) ? 0 : numValue,
-              );
-            }}
-            placeholder="팀 수 입력"
-          />
-        </div>
-
-        {/* 시작 시간 */}
-        <div>
-          <Text size="2" weight="bold" className="block mb-2">
-            시작 시간 *
-          </Text>
-          <TextField.Root
-            size="3"
-            type="time"
-            value={details.startTime}
-            onChange={(e) =>
-              handleDivisionDetailChange(
-                formData,
-                setFormData,
-                division.value,
-                'startTime',
-                e.target.value,
-              )
-            }
-            disabled={details.teamCount === 0}
-          />
-        </div>
-
-        {/* 시상금들 */}
-        {[
-          { key: 'first', label: '우승상금' },
-          { key: 'second', label: '준우승상금' },
-          { key: 'third', label: '3위상금' },
-        ].map(({ key, label }) => (
-          <div key={key}>
-            <Text size="2" weight="bold" className="block mb-2">
-              {label}
-            </Text>
-            <TextField.Root
-              size="3"
-              type="number"
-              min="0"
-              value={details.prizes[key as keyof typeof details.prizes]}
-              onChange={(e) =>
-                handleDivisionDetailChange(
-                  formData,
-                  setFormData,
-                  division.value,
-                  key as 'first' | 'second' | 'third',
-                  parseInt(e.target.value) || 0,
-                )
-              }
-              placeholder="금액 입력"
-              disabled={details.teamCount === 0}
-            />
-          </div>
-        ))}
-      </div>
-
-      {/* 시합일 체크박스 */}
-      <div className="mt-4">
-        <Text size="2" weight="bold" className="block mb-2">
-          시합일 선택 *
+    <div key={division.value} className="mb-4">
+      <Flex gap="2" align="center">
+        <Checkbox checked={isSelected} onCheckedChange={() => toggleDivision(division.value)} />
+        <Text
+          size="3"
+          weight="bold"
+          className="cursor-pointer"
+          onClick={() => toggleDivision(division.value)}
+        >
+          {division.label}
         </Text>
-        <Flex gap="3" wrap="wrap">
-          {dateRange.map((date) => (
-            <Flex key={date} gap="2" align="center">
-              <Checkbox
-                checked={((details.matchDates as string[]) || []).includes(date)}
-                onCheckedChange={(checked) =>
-                  handleMatchDateChange(
-                    formData,
-                    setFormData,
-                    division.value,
-                    date,
-                    checked as boolean,
-                  )
-                }
-                disabled={details.teamCount === 0}
-              />
-              <Text size="2">
-                {new Date(date).toLocaleDateString('ko-KR', {
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </Text>
-            </Flex>
-          ))}
-        </Flex>
-      </div>
+      </Flex>
+
+      {isSelected && expandedDivisions[division.value] && (
+        <div className="table-form mt-4">
+          <table>
+            <tbody>
+              <tr>
+                <th style={{ width: '80px !important' }}>참가팀수 </th>
+                <td>
+                  <TextField.Root
+                    size="3"
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={details.teamCount}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      const numValue = value === '' ? 1 : parseInt(value);
+                      handleDivisionDetailChange(
+                        formData,
+                        setFormData,
+                        division.value,
+                        'teamCount',
+                        isNaN(numValue) ? 1 : numValue,
+                      );
+                    }}
+                    placeholder="팀 수 입력"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th>시작 시간</th>
+                <td>
+                  <TextField.Root
+                    size="3"
+                    type="time"
+                    value={details.startTime}
+                    onChange={(e) =>
+                      handleDivisionDetailChange(
+                        formData,
+                        setFormData,
+                        division.value,
+                        'startTime',
+                        e.target.value,
+                      )
+                    }
+                  />
+                </td>
+              </tr>
+
+              {[
+                { key: 'first', label: '우승 시상' },
+                { key: 'second', label: '준우승 시상' },
+                { key: 'third', label: '3위 시상' },
+              ].map(({ key, label }) => (
+                <tr key={key}>
+                  <th>{label}</th>
+                  <td>
+                    <TextField.Root
+                      size="3"
+                      type="text"
+                      value={details.prizes[key as keyof typeof details.prizes]}
+                      onChange={(e) =>
+                        handleDivisionDetailChange(
+                          formData,
+                          setFormData,
+                          division.value,
+                          key as 'first' | 'second' | 'third',
+                          e.target.value,
+                        )
+                      }
+                      placeholder="예: 500,000"
+                    />
+                  </td>
+                </tr>
+              ))}
+              <tr>
+                <th>시합일 선택</th>
+                <td>
+                  <Flex gap="3" wrap="wrap">
+                    {dateRange.map((date) => (
+                      <Flex key={date} gap="2" align="center">
+                        <Checkbox
+                          checked={((details.matchDates as string[]) || []).includes(date)}
+                          onCheckedChange={(checked) =>
+                            handleMatchDateChange(
+                              formData,
+                              setFormData,
+                              division.value,
+                              date,
+                              checked as boolean,
+                            )
+                          }
+                        />
+                        <Text size="2">
+                          {new Date(date).toLocaleDateString('ko-KR', {
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </Text>
+                      </Flex>
+                    ))}
+                  </Flex>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 
   return (
-    <>
-      <Flex justify="center" mt="4">
-        <Button
-          type="button"
-          size="3"
-          variant={showDivisionDetails ? 'soft' : 'solid'}
-          disabled={!canShowDivisionDetails(formData)}
-          onClick={() => setShowDivisionDetails(!showDivisionDetails)}
-        >
-          {showDivisionDetails ? '상세 정보 숨기기' : '참가부서별 상세 정보 입력'}
-        </Button>
-      </Flex>
+    <div>
+      <Text size="4" weight="bold" mb="3" className="block" mt="4">
+        참가부서별 상세 정보
+      </Text>
+      <div className="space-y-4">
+        {DIVISION_OPTIONS.map((division) => {
+          const existingDetails = formData.divisions?.find((d) => d.division === division.value);
+          const isSelected = !!existingDetails;
+          const details = existingDetails || {
+            _key: division.value,
+            division: division.value,
+            teamCount:
+              DIVISION_DEFAULTS[division.value as keyof typeof DIVISION_DEFAULTS]?.teamCount || 0,
+            matchDates: [],
+            startTime: DEFAULT_START_TIME,
+            prizes: DIVISION_DEFAULTS[division.value as keyof typeof DIVISION_DEFAULTS]?.prizes || {
+              first: '',
+              second: '',
+              third: '',
+            },
+          };
 
-      {showDivisionDetails && (
-        <div>
-          <Text size="4" weight="bold" mb="3" className="block">
-            참가부서별 상세 정보
-          </Text>
-          <div className="space-y-4">
-            {DIVISION_OPTIONS.map((division) => {
-              const existingDetails = formData.divisions?.find(
-                (d) => d.division === division.value,
-              );
-              const details = existingDetails || {
-                _key: division.value,
-                division: division.value,
-                teamCount:
-                  DIVISION_DEFAULTS[division.value as keyof typeof DIVISION_DEFAULTS]?.teamCount ||
-                  0,
-                matchDates: [],
-                startTime: DEFAULT_START_TIME,
-                prizes: DIVISION_DEFAULTS[division.value as keyof typeof DIVISION_DEFAULTS]
-                  ?.prizes || { first: 0, second: 0, third: 0 },
-              };
-
-              return renderDivisionField(division, details);
-            })}
-          </div>
-        </div>
-      )}
-    </>
+          return renderDivisionField(division, details, isSelected);
+        })}
+      </div>
+    </div>
   );
 };
 
@@ -379,8 +435,8 @@ export default function TournamentForm({
     async (e: React.FormEvent) => {
       e.preventDefault();
 
-      // 폼 검증
-      const validation = validateTournamentForm(formData, false);
+      // 폼 검증 (divisions 검증 포함)
+      const validation = validateTournamentForm(formData, true);
       if (!validation.isValid) {
         setAlertMessage(validation.message);
         setFocusField(validation.field);
@@ -635,12 +691,9 @@ export default function TournamentForm({
               </BasicField>
 
               <BasicField label="메모">
-                <SimpleEditor
+                <MarkdownEditor
                   value={formData.memo || ''}
                   onChange={(value) => handleInputChange(setFormData, 'memo', value)}
-                  height="400px"
-                  minHeight="300px"
-                  maxHeight="600px"
                 />
               </BasicField>
 

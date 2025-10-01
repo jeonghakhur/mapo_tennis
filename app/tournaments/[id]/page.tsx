@@ -315,7 +315,7 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
 
               {tournament.memo && (
                 <div className="tiptab-content">
-                  <div dangerouslySetInnerHTML={{ __html: tournament.memo }} />
+                  <MarkdownRenderer content={tournament.memo} />
                 </div>
               )}
 
@@ -362,35 +362,34 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
                               </th>
                               <td className="!text-left">{division.startTime}</td>
                             </tr>
-                            {division.prizes.first > 0 && (
-                              <tr>
-                                <th>
-                                  <Flex justify="between" align="center" flexGrow="1">
-                                    {wrapTextWithSpans('시상금')}
-                                  </Flex>
-                                </th>
-                                <td className="!text-left">
-                                  <Flex align="center" gap="2">
-                                    <Badge color="yellow" variant="soft" size="3">
-                                      1위
-                                    </Badge>
-                                    <Text>{division.prizes.first.toLocaleString()}원</Text>
-                                  </Flex>
-                                  <Flex align="center" gap="2" mt="2">
-                                    <Badge color="gray" variant="soft" size="3">
-                                      2위
-                                    </Badge>
-                                    <Text>{division.prizes.second.toLocaleString()}원</Text>
-                                  </Flex>
-                                  <Flex align="center" gap="2" mt="2">
-                                    <Badge color="brown" variant="soft" size="3">
-                                      3위
-                                    </Badge>
-                                    <Text>{division.prizes.third.toLocaleString()}원</Text>
-                                  </Flex>
-                                </td>
-                              </tr>
-                            )}
+
+                            <tr>
+                              <th>
+                                <Flex justify="between" align="center" flexGrow="1">
+                                  {wrapTextWithSpans('시상')}
+                                </Flex>
+                              </th>
+                              <td className="!text-left">
+                                <Flex align="center" gap="2">
+                                  <Badge color="yellow" variant="soft" size="3">
+                                    1위
+                                  </Badge>
+                                  <Text>{division.prizes.first.toLocaleString()}원</Text>
+                                </Flex>
+                                <Flex align="center" gap="2" mt="2">
+                                  <Badge color="gray" variant="soft" size="3">
+                                    2위
+                                  </Badge>
+                                  <Text>{division.prizes.second.toLocaleString()}원</Text>
+                                </Flex>
+                                <Flex align="center" gap="2" mt="2">
+                                  <Badge color="brown" variant="soft" size="3">
+                                    3위
+                                  </Badge>
+                                  <Text>{division.prizes.third.toLocaleString()}원</Text>
+                                </Flex>
+                              </td>
+                            </tr>
                           </tbody>
                         </table>
                       </div>
@@ -506,10 +505,8 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
           </div>
 
           {/* 플로팅 참가 신청 버튼 */}
-          {tournament.status === 'upcoming' &&
-            hasPermissionLevel(user, 1) &&
-            // !tournament.isDraft &&
-            isRegistrationPeriod() && (
+          {hasPermissionLevel(user, 1) &&
+            (isAdmin(user) || (tournament.status === 'upcoming' && isRegistrationPeriod())) && (
               <div
                 style={{
                   position: 'fixed',

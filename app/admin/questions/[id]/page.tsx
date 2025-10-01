@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Box, Text, Button, Flex, Separator, Grid } from '@radix-ui/themes';
-import { SimpleEditor } from '@/components/tiptap-templates/simple/simple-editor';
+import MarkdownEditor from '@/components/MarkdownEditor';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import Image from 'next/image';
 import { useQuestionDetail, useAnswerQuestion, useDeleteQuestion } from '@/hooks/useQuestions';
@@ -176,7 +176,7 @@ export default function AdminQuestionDetailPage() {
         </Box>
       )}
 
-      <SimpleEditor value={answer} onChange={setAnswer} minHeight="120px" maxHeight="300px" />
+      <MarkdownEditor value={answer} onChange={setAnswer} />
       <Box className="btn-wrap mt-4">
         <Button size="3" color="red" variant="soft" onClick={() => setShowDelete(true)}>
           삭제

@@ -63,7 +63,7 @@ function HomePageContent() {
     isLoadingMore,
   } = usePosts({
     showAll: canManagePosts,
-    pageSize: 1,
+    pageSize: 2,
   });
 
   // 목록 전체에서 Lightbox 상태 관리
@@ -252,6 +252,14 @@ function HomePageContent() {
     } finally {
       setIsLoadingComments(false);
     }
+  };
+
+  const handleCommnetCreated = (created: Comment) => {
+    setInitialComments((prev) => [created, ...prev]);
+  };
+
+  const handleCommnetDeleted = (deletedId: string) => {
+    setInitialComments((prev) => prev.filter((comment) => comment._id !== deletedId));
   };
 
   // 필터링된 포스트 (중복 제거 포함)
@@ -504,7 +512,7 @@ function HomePageContent() {
                               }
                             />
                             <CommentButton
-                              commentCount={post.commentCount || 0}
+                              commentCount={initialComments.length || post.commentCount || 0}
                               onClick={() => handleCommentClick(post._id, post.title)}
                               isLoading={isLoadingComments && selectedPostId === post._id}
                             />
@@ -546,6 +554,8 @@ function HomePageContent() {
               open={commentDialogOpen}
               onOpenChange={setCommentDialogOpen}
               initialComments={initialComments}
+              onCommentCreated={handleCommnetCreated}
+              onCommentDeleted={handleCommnetDeleted}
             />
           )}
 

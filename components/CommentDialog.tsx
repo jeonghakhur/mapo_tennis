@@ -11,7 +11,9 @@ interface CommentDialogProps {
   postTitle: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialComments?: Comment[]; // 초기 코멘트 데이터
+  initialComments?: Comment[];
+  onCommentCreated: (comment: Comment) => void;
+  onCommentDeleted: (commentId: string) => void;
 }
 
 export default function CommentDialog({
@@ -20,6 +22,8 @@ export default function CommentDialog({
   open,
   onOpenChange,
   initialComments = [],
+  onCommentCreated,
+  onCommentDeleted,
 }: CommentDialogProps) {
   const { data: session } = useSession();
   const { comments, isCreating, fetchComments, createComment, deleteComment } = useComments({
@@ -44,12 +48,14 @@ export default function CommentDialog({
     const result = await createComment(newComment);
     if (result) {
       setNewComment('');
+      onCommentCreated(result);
     }
   };
 
   const handleDelete = async (commentId: string) => {
     setCommentToDelete(commentId);
     setShowDeleteConfirm(true);
+    onCommentDeleted(commentId);
   };
 
   const confirmDelete = async () => {

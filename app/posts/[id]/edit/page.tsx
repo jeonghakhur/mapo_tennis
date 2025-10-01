@@ -15,6 +15,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { useLoading } from '@/hooks/useLoading';
 import { usePost } from '@/hooks/usePosts';
 import { usePosts } from '@/hooks/usePosts';
+import { mutate } from 'swr';
 
 interface EditPostPageProps {
   params: Promise<{
@@ -156,7 +157,10 @@ export default function EditPostPage({ params }: EditPostPageProps) {
           confirmColor="green"
           open={showSuccessDialog}
           onOpenChange={setShowSuccessDialog}
-          onConfirm={() => router.push('/')}
+          onConfirm={async () => {
+            await mutate('/api/posts');
+            router.push('/');
+          }}
         />
         <form className="space-y-4">
           <Flex align="center" gap="3">

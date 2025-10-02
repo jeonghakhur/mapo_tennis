@@ -323,7 +323,7 @@ function TournamentMatchesContent() {
 
       // 각 경기에 대해 랜덤 세트 점수 생성 및 업데이트
       const updatePromises = matchesToUpdate.map(async (match) => {
-        // 3세트 경기로 가정
+        // 개인전은 1세트, 단체전은 3세트
         const team1Sets: SetScore[] = [];
         const team2Sets: SetScore[] = [];
 
@@ -331,7 +331,10 @@ function TournamentMatchesContent() {
         const team1Players = extractPlayerNames(match.team1.teamName);
         const team2Players = extractPlayerNames(match.team2.teamName);
 
-        for (let i = 1; i <= 3; i++) {
+        // 세트 수 결정: 개인전 1세트, 단체전 3세트
+        const setCount = isTeamTournament ? 3 : 1;
+
+        for (let i = 1; i <= setCount; i++) {
           const team1Games = Math.random() < 0.5 ? 6 : Math.floor(Math.random() * 6);
           const team2Games = team1Games === 6 ? Math.floor(Math.random() * 6) : 6;
 
@@ -589,6 +592,7 @@ function TournamentMatchesContent() {
                 return (a.matchNumber || 0) - (b.matchNumber || 0);
               })
               .map((match) => {
+                const setsWon = calculateSetsWon(match.team1.sets || [], match.team2.sets || []);
                 return (
                   <div key={match._id}>
                     <Flex className="mb-2 font-bold" align="center" justify="between">
@@ -604,11 +608,31 @@ function TournamentMatchesContent() {
                         <tbody>
                           <tr>
                             <th style={{ width: '60px' }}>팀1</th>
-                            <td>{match.team1.teamName}</td>
+                            <td
+                              className={
+                                setsWon.team1 > setsWon.team2
+                                  ? 'font-bold text-green-600'
+                                  : setsWon.team1 < setsWon.team2
+                                    ? 'text-gray-500'
+                                    : ''
+                              }
+                            >
+                              {match.team1.teamName}
+                            </td>
                           </tr>
                           <tr>
                             <th>팀2</th>
-                            <td>{match.team2.teamName}</td>
+                            <td
+                              className={
+                                setsWon.team2 > setsWon.team1
+                                  ? 'font-bold text-green-600'
+                                  : setsWon.team2 < setsWon.team1
+                                    ? 'text-gray-500'
+                                    : ''
+                              }
+                            >
+                              {match.team2.teamName}
+                            </td>
                           </tr>
                           <tr>
                             <th>점수</th>

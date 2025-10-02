@@ -91,6 +91,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/tournament-grouping': '조편성',
   '/tournament-grouping/matches': '예선경기등록',
   '/tournament-grouping/bracket': '예선경기결과',
+  '/tournament-grouping/results': '예선조변성결과',
 };
 
 // 동적 라우트 제목 매핑

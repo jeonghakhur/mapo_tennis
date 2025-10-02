@@ -119,11 +119,19 @@ export default function TournamentApplicationForm({
   // 참가자 관리
   const isIndividual = tournament.tournamentType === 'individual';
 
-  // 개인전 참가자 수 계산 (시니어부는 1명, 그 외는 2명)
+  // 개인전 참가자 수 계산 (division의 playerCount 사용, 없으면 기본값 2명)
   const individualParticipantCount = useMemo(() => {
     if (!isIndividual) return 0;
-    return division === 'senior' ? 1 : 2;
-  }, [isIndividual, division]);
+
+    // 해당 division의 playerCount 찾기
+    const divisionData = tournament.divisions?.find((d) => d.division === division);
+    if (divisionData?.playerCount) {
+      return divisionData.playerCount;
+    }
+
+    // playerCount가 없으면 기본값 (시니어부는 1명, 그 외는 2명)
+    return 1;
+  }, [isIndividual, division, tournament.divisions]);
 
   // 개별 참가자 훅 선언 (최대 8명)
   const player1 = useParticipant(searchClubMember);
@@ -577,34 +585,6 @@ export default function TournamentApplicationForm({
           </div>
         )}
 
-        {isIndividual ? (
-          // 개인전
-          <>
-            {activeParticipants.map((participant, index) => (
-              <ParticipantForm
-                key={index}
-                label={`참가자-${index + 1} 정보입력`}
-                participant={participant}
-                clubs={clubs}
-                isIndividual={true}
-              />
-            ))}
-          </>
-        ) : (
-          // 단체전
-          <>
-            <h2 className="text-xl font-bold">참가자 정보</h2>
-            <TeamParticipantForm
-              participants={activeParticipants}
-              clubs={clubs}
-              sharedClubId={sharedClubId}
-              onSharedClubChange={handleSharedClubChange}
-              teamMemberCount={teamMemberCount}
-              onTeamMemberCountChange={handleTeamMemberCountChange}
-            />
-          </>
-        )}
-
         {/* 대회 참석 정보 */}
         <TournamentParticipationForm
           availableDivisions={availableDivisions}
@@ -617,6 +597,38 @@ export default function TournamentApplicationForm({
           divisionRef={divisionRef}
           isIndividual={isIndividual}
         />
+
+        {division && (
+          <>
+            {isIndividual ? (
+              // 개인전
+              <>
+                {activeParticipants.map((participant, index) => (
+                  <ParticipantForm
+                    key={index}
+                    label={`참가자-${index + 1} 정보입력`}
+                    participant={participant}
+                    clubs={clubs}
+                    isIndividual={true}
+                  />
+                ))}
+              </>
+            ) : (
+              // 단체전
+              <>
+                <h2 className="text-xl font-bold">참가자 정보</h2>
+                <TeamParticipantForm
+                  participants={activeParticipants}
+                  clubs={clubs}
+                  sharedClubId={sharedClubId}
+                  onSharedClubChange={handleSharedClubChange}
+                  teamMemberCount={teamMemberCount}
+                  onTeamMemberCountChange={handleTeamMemberCountChange}
+                />
+              </>
+            )}
+          </>
+        )}
 
         <Flex gap="3" justify="end" className="btn-wrap">
           <Button type="button" variant="soft" onClick={onCancel} size="3">

@@ -11,20 +11,27 @@ export class TournamentGroupingService {
    */
   static createGroupMatches(groups: Group[], tournamentId: string): Match[] {
     const matches: Match[] = [];
-    let matchNumber = 1;
+    let globalMatchNumber = 1;
 
-    groups.forEach((group) => {
+    // 조를 정렬하여 1조부터 차례대로 처리
+    const sortedGroups = [...groups].sort((a, b) => {
+      const aGroupNum = parseInt(a.groupId.split('_')[1] || '0');
+      const bGroupNum = parseInt(b.groupId.split('_')[1] || '0');
+      return aGroupNum - bGroupNum;
+    });
+
+    sortedGroups.forEach((group) => {
       const { teams } = group;
 
       // 풀리그 방식: 모든 팀이 서로 한 번씩 경기
       for (let i = 0; i < teams.length; i++) {
         for (let j = i + 1; j < teams.length; j++) {
           matches.push({
-            _id: `match_${tournamentId}_${group.division}_${matchNumber}`,
+            _id: `match_${tournamentId}_${group.division}_${globalMatchNumber}`,
             tournamentId,
             division: group.division,
             groupId: group.groupId,
-            matchNumber,
+            matchNumber: globalMatchNumber,
             team1: {
               teamId: teams[i]._id,
               teamName: teams[i].name,
@@ -39,7 +46,7 @@ export class TournamentGroupingService {
             status: 'scheduled',
             createdAt: new Date().toISOString(),
           });
-          matchNumber++;
+          globalMatchNumber++;
         }
       }
     });
@@ -367,8 +374,6 @@ export async function createGroupMatches(tournamentId: string, division: string)
   }));
 
   const matches = TournamentGroupingService.createGroupMatches(processedGroups, tournamentId);
-  console.log('matches', matches);
-
   // 기존 경기 정보 삭제
   await client.delete({
     query: `*[_type == "tournamentMatch" && tournamentId == $tournamentId && division == $division]`,

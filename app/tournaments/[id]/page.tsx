@@ -50,7 +50,6 @@ export default function TournamentDetailPage({ params }: TournamentDetailPagePro
   const isAllContentLoaded = useCallback(() => {
     if (isLoading) return false;
     if (!tournament) return false;
-    console.log('tournament', tournament);
     // 규칙 포스트가 있는 경우 로딩 완료 확인
     if (tournament.rulesPostId && isLoadingRules) return false;
 

@@ -36,6 +36,7 @@ function TournamentMatchesContent() {
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [showScoreDialog, setShowScoreDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [scoreForm, setScoreForm] = useState({
     team1Sets: [] as SetScore[],
@@ -406,6 +407,35 @@ function TournamentMatchesContent() {
     );
   };
 
+  // 예선 경기 삭제
+  const handleDeleteMatches = useCallback(async () => {
+    return withLoading(async () => {
+      console.log('예선 경기 삭제 시작');
+
+      const response = await fetch('/api/tournament-grouping/matches', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tournamentId: selectedTournament,
+          division: selectedDivision,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '예선 경기 삭제에 실패했습니다.');
+      }
+
+      console.log('예선 경기 삭제 완료');
+      setSuccessMessage('예선 경기가 성공적으로 삭제되었습니다.');
+      setShowSuccessDialog(true);
+      setShowDeleteDialog(false);
+
+      // SWR 캐시 무효화
+      await mutateMatches();
+    });
+  }, [withLoading, selectedTournament, selectedDivision, mutateMatches]);
+
   // 점수 입력 다이얼로그 열기
   const openScoreDialog = (match: Match) => {
     console.log('openScoreDialog', match);
@@ -519,6 +549,11 @@ function TournamentMatchesContent() {
           {admin && (
             <Button size="3" color="orange" onClick={handleAutoScoreAllMatches}>
               점수자동입력
+            </Button>
+          )}
+          {admin && matches.length > 0 && (
+            <Button size="3" color="red" variant="soft" onClick={() => setShowDeleteDialog(true)}>
+              예선경기삭제
             </Button>
           )}
           {hasBracket && (
@@ -856,6 +891,20 @@ function TournamentMatchesContent() {
           </Box>
         </Card>
       )}
+      {/* 예선 경기 삭제 확인 다이얼로그 */}
+      <ConfirmDialog
+        title="예선 경기 삭제"
+        description="모든 예선 경기를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        confirmText="삭제"
+        cancelText="취소"
+        confirmColor="red"
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={() => {
+          handleDeleteMatches();
+        }}
+      />
+
       {/* 성공 다이얼로그 */}
       <ConfirmDialog
         title="업데이트 완료"
@@ -864,7 +913,15 @@ function TournamentMatchesContent() {
         confirmColor="green"
         open={showSuccessDialog}
         onOpenChange={setShowSuccessDialog}
-        onConfirm={() => setShowSuccessDialog(false)}
+        onConfirm={() => {
+          setShowSuccessDialog(false);
+          // 삭제 완료 메시지인 경우 results 페이지로 이동
+          if (successMessage.includes('삭제')) {
+            router.push(
+              `/tournament-grouping/results?tournamentId=${selectedTournament}&division=${selectedDivision}`,
+            );
+          }
+        }}
       />
     </Container>
   );

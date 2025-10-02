@@ -50,16 +50,6 @@ export function TournamentParticipationForm({
                   emptyMessage="찾는 부서가 없습니다."
                 />
               </div>
-              {isIndividual && division === 'senior' && (
-                <Text size="2" color="blue" mt="2">
-                  시니어부는 1명의 참가자만 입력합니다.
-                </Text>
-              )}
-              {isIndividual && division && division !== 'senior' && (
-                <Text size="2" color="gray" mt="2">
-                  2명의 참가자를 입력해주세요.
-                </Text>
-              )}
             </td>
           </tr>
 

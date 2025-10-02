@@ -168,6 +168,12 @@
     border-top: 1px solid #e0e0e0;
 
     /* table-layout: fixed; */
+    tr:first-child {
+      th:first-child,
+      td:first-child {
+        width: 100px;
+      }
+    }
 
     th {
       padding: 8px;
@@ -177,7 +183,6 @@
       white-space: nowrap;
 
       &:first-child {
-        width: 100px;
         border-left: none;
       }
     }

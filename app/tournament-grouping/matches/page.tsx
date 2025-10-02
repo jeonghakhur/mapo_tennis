@@ -578,103 +578,85 @@ function TournamentMatchesContent() {
             </Heading>
           </Flex>
 
-          <div className="table-view text-center">
-            <table>
-              <thead>
-                <tr>
-                  <th>경기 번호</th>
-                  <th>조</th>
-                  <th>팀 1</th>
-                  <th>팀 2</th>
-                  <th>세트 점수</th>
-                  <th>상태</th>
-                  <th>코트</th>
-                  <th>액션</th>
-                </tr>
-              </thead>
-              <tbody>
-                {matches
-                  .sort((a, b) => {
-                    const aGroupName = a.groupId || '';
-                    const bGroupName = b.groupId || '';
-                    if (aGroupName !== bGroupName) {
-                      return aGroupName.localeCompare(bGroupName);
-                    }
-                    return (a.matchNumber || 0) - (b.matchNumber || 0);
-                  })
-                  .map((match) => {
-                    const setsWon = calculateSetsWon(
-                      match.team1.sets || [],
-                      match.team2.sets || [],
-                    );
-                    return (
-                      <tr
-                        key={match._id || `match-${match.matchNumber}-${match.team1.teamId}`}
-                        className="border-b hover:bg-gray-50"
-                      >
-                        <td className="p-3">{match.matchNumber}경기</td>
-                        <td className="p-3">{match.groupId.split('_')[1] || '-'}</td>
-                        <td className="p-3">
-                          <span
-                            className={
-                              setsWon.team1 > setsWon.team2
-                                ? 'font-bold text-green-600'
-                                : setsWon.team1 < setsWon.team2
-                                  ? 'text-gray-500'
-                                  : ''
-                            }
-                          >
-                            {match.team1.teamName}
-                          </span>
-                        </td>
-                        <td className="p-3">
-                          <span
-                            className={
-                              setsWon.team2 > setsWon.team1
-                                ? 'font-bold text-green-600'
-                                : setsWon.team2 < setsWon.team1
-                                  ? 'text-gray-500'
-                                  : ''
-                            }
-                          >
-                            {match.team2.teamName}
-                          </span>
-                        </td>
-                        <td className="p-3 ">{renderSetScores(match)}</td>
-                        <td className="p-3">
-                          <Badge
-                            color={
-                              match.status === 'completed'
-                                ? 'green'
-                                : match.status === 'in_progress'
-                                  ? 'yellow'
-                                  : match.status === 'cancelled'
-                                    ? 'red'
-                                    : 'gray'
-                            }
-                            size="1"
-                          >
-                            {match.status === 'completed'
-                              ? '완료'
-                              : match.status === 'in_progress'
-                                ? '진행중'
-                                : match.status === 'cancelled'
-                                  ? '취소'
-                                  : '예정'}
-                          </Badge>
-                        </td>
-                        <td className="p-3">{match.court || '-'}</td>
-                        <td className="p-3">
-                          <Button size="2" variant="soft" onClick={() => openScoreDialog(match)}>
-                            점수 입력
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-              </tbody>
-            </table>
-          </div>
+          <Flex direction="column" gap="4">
+            {matches
+              .sort((a, b) => {
+                const aGroupName = a.groupId || '';
+                const bGroupName = b.groupId || '';
+                if (aGroupName !== bGroupName) {
+                  return aGroupName.localeCompare(bGroupName);
+                }
+                return (a.matchNumber || 0) - (b.matchNumber || 0);
+              })
+              .map((match) => {
+                return (
+                  <div key={match._id}>
+                    <Flex className="mb-2 font-bold" align="center" justify="between">
+                      <span>
+                        {match.matchNumber}경기 - {match.groupId.split('_')[1] || '-'}조
+                      </span>
+                      <Button size="2" variant="soft" onClick={() => openScoreDialog(match)}>
+                        점수 입력
+                      </Button>
+                    </Flex>
+                    <div className="table-form">
+                      <table>
+                        <tbody>
+                          <tr>
+                            <th style={{ width: '60px' }}>팀1</th>
+                            <td>{match.team1.teamName}</td>
+                          </tr>
+                          <tr>
+                            <th>팀2</th>
+                            <td>{match.team2.teamName}</td>
+                          </tr>
+                          <tr>
+                            <th>점수</th>
+                            <td>{renderSetScores(match)}</td>
+                          </tr>
+                          <tr>
+                            <th>코트</th>
+                            <td>{match.court || '-'}</td>
+                          </tr>
+                          <tr>
+                            <th>상태</th>
+                            <td>
+                              <Badge
+                                color={
+                                  match.status === 'completed'
+                                    ? 'green'
+                                    : match.status === 'in_progress'
+                                      ? 'yellow'
+                                      : match.status === 'cancelled'
+                                        ? 'red'
+                                        : 'gray'
+                                }
+                                size="1"
+                              >
+                                {match.status === 'completed'
+                                  ? '완료'
+                                  : match.status === 'in_progress'
+                                    ? '진행중'
+                                    : match.status === 'cancelled'
+                                      ? '취소'
+                                      : '예정'}
+                              </Badge>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* <Text>{renderSetScores(match)}</Text>
+                    
+                    <div className="p-3">{match.court || '-'}</div>
+                    <div className="p-3">
+                      
+                    </div> */}
+                  </div>
+                );
+              })}
+          </Flex>
         </Box>
       )}
       {/* 점수 입력 다이얼로그 */}

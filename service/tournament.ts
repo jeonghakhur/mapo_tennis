@@ -53,37 +53,7 @@ export async function getTournaments(userLevel?: number): Promise<Tournament[]> 
 
 // 대회 개별 조회
 export async function getTournament(id?: string): Promise<Tournament | null> {
-  const fields = `
-    _id,
-    _type,
-    title,
-    startDate,
-    endDate,
-    location,
-    tournamentType,
-    registrationStartDate,
-    registrationDeadline,
-    descriptionPostId,
-    rulesPostId,
-    host,
-    organizer,
-    participants,
-    registrationMethod,
-    drawMethod,
-    equipment,
-    memo,
-    entryFee,
-    bankAccount,
-    accountHolder,
-    clubJoinDate,
-    openingCeremony,
-    divisions,
-    status,
-    isDraft,
-    createdAt,
-    updatedAt,
-    createdBy
-  `;
+  const fields = `...`;
 
   // ID가 없거나 빈 문자열인 경우 최근 등록된 대회 조회
   if (!id || id.trim() === '') {

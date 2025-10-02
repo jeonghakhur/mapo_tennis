@@ -219,6 +219,7 @@ const DivisionDetails = ({
           division: divisionValue,
           teamCount:
             DIVISION_DEFAULTS[divisionValue as keyof typeof DIVISION_DEFAULTS]?.teamCount || 0,
+          playerCount: undefined,
           matchDates: [],
           startTime: DEFAULT_START_TIME,
           prizes: DIVISION_DEFAULTS[divisionValue as keyof typeof DIVISION_DEFAULTS]?.prizes || {
@@ -244,6 +245,7 @@ const DivisionDetails = ({
     division: { value: string; label: string },
     details: {
       teamCount: number;
+      playerCount?: number;
       startTime: string;
       prizes: { first: string; second: string; third: string };
       matchDates: string[];
@@ -289,6 +291,37 @@ const DivisionDetails = ({
                     }}
                     placeholder="팀 수 입력"
                   />
+                </td>
+              </tr>
+              <tr>
+                <th>참가선수명수</th>
+                <td>
+                  <Select.Root
+                    size="3"
+                    value={details.playerCount?.toString() || ''}
+                    onValueChange={(value) => {
+                      if (!value) return;
+                      handleDivisionDetailChange(
+                        formData,
+                        setFormData,
+                        division.value,
+                        'playerCount',
+                        parseInt(value),
+                      );
+                    }}
+                  >
+                    <Select.Trigger placeholder="참가선수명수를 선택하세요" />
+                    <Select.Content>
+                      <Select.Item value="1">1명</Select.Item>
+                      <Select.Item value="2">2명</Select.Item>
+                      <Select.Item value="3">3명</Select.Item>
+                      <Select.Item value="4">4명</Select.Item>
+                      <Select.Item value="5">5명</Select.Item>
+                      <Select.Item value="6">6명</Select.Item>
+                      <Select.Item value="7">7명</Select.Item>
+                      <Select.Item value="8">8명</Select.Item>
+                    </Select.Content>
+                  </Select.Root>
                 </td>
               </tr>
               <tr>
@@ -387,6 +420,7 @@ const DivisionDetails = ({
             division: division.value,
             teamCount:
               DIVISION_DEFAULTS[division.value as keyof typeof DIVISION_DEFAULTS]?.teamCount || 0,
+            playerCount: undefined,
             matchDates: [],
             startTime: DEFAULT_START_TIME,
             prizes: DIVISION_DEFAULTS[division.value as keyof typeof DIVISION_DEFAULTS]?.prizes || {

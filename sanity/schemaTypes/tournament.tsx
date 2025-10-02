@@ -221,6 +221,24 @@ export default defineType({
               validation: (Rule) => Rule.required().min(0),
             },
             {
+              name: 'playerCount',
+              title: '참가선수명수',
+              type: 'number',
+              options: {
+                list: [
+                  { title: '1명', value: 1 },
+                  { title: '2명', value: 2 },
+                  { title: '3명', value: 3 },
+                  { title: '4명', value: 4 },
+                  { title: '5명', value: 5 },
+                  { title: '6명', value: 6 },
+                  { title: '7명', value: 7 },
+                  { title: '8명', value: 8 },
+                ],
+              },
+              description: '부서별 참가할 수 있는 선수 수를 선택하세요',
+            },
+            {
               name: 'matchDates',
               title: '시합일',
               type: 'array',

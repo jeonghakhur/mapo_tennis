@@ -26,7 +26,14 @@ export const DIVISION_DEFAULTS = {
 export const DEFAULT_START_TIME = '08:00';
 
 // 부서 필드 타입
-export type DivisionField = 'teamCount' | 'matchDates' | 'startTime' | 'first' | 'second' | 'third';
+export type DivisionField =
+  | 'teamCount'
+  | 'playerCount'
+  | 'matchDates'
+  | 'startTime'
+  | 'first'
+  | 'second'
+  | 'third';
 
 // 검증 결과 타입
 export interface ValidationResult {

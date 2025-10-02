@@ -23,6 +23,7 @@ export interface Tournament {
     _key: string; // Sanity Studio에서 필요한 고유 키
     division: string;
     teamCount: number;
+    playerCount?: number; // 부서별 참가선수명수
     matchDates: string[];
     startTime: string;
     prizes: {
@@ -70,6 +71,7 @@ export interface TournamentFormData {
     _key: string; // Sanity Studio에서 필요한 고유 키
     division: string;
     teamCount: number;
+    playerCount?: number; // 부서별 참가선수명수
     matchDates: string[];
     startTime: string;
     prizes: {

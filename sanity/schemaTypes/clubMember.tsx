@@ -29,14 +29,12 @@ export default defineType({
       type: 'string',
       title: '출생년도(4자리)',
       description: '예: 2002',
-      validation: (Rule) => Rule.regex(/^\d{4}$/).error('4자리 연도(예: 2002)로 입력하세요.'),
     }),
     defineField({
       name: 'tennisStartYear',
       type: 'string',
       title: '테니스 입문년도',
       description: '예: 2015',
-      validation: (Rule) => Rule.regex(/^\d{4}$/).error('4자리 연도(예: 2015)로 입력하세요.'),
     }),
     defineField({
       name: 'gender',
@@ -58,7 +56,6 @@ export default defineType({
       name: 'joinedAt',
       type: 'datetime',
       title: '가입일',
-      validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'leftAt',

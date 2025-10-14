@@ -301,9 +301,12 @@ export default function TournamentApplicationForm({
           m.user.toLowerCase().includes(participant.name.toLowerCase()),
       );
 
-      if (!member || !member._createdAt) return false;
+      if (!member) return false;
 
-      return !checkEligibility(tournament.clubJoinDate!, member._createdAt);
+      const memberJoinDate = member.joinedAt || member._createdAt;
+      if (!memberJoinDate) return false;
+
+      return !checkEligibility(tournament.clubJoinDate!, memberJoinDate);
     });
   }, [activeParticipants, tournament.clubJoinDate, allClubMembers, checkEligibility]);
 
@@ -565,8 +568,9 @@ export default function TournamentApplicationForm({
                           m.club._id === participant.clubId &&
                           m.user.toLowerCase().includes(participant.name.toLowerCase()),
                       );
-                      const memberJoinDate = member?._createdAt
-                        ? new Date(member._createdAt).toLocaleDateString('ko-KR')
+                      const joinDate = member?.joinedAt || member?._createdAt;
+                      const memberJoinDate = joinDate
+                        ? new Date(joinDate).toLocaleDateString('ko-KR')
                         : '알 수 없음';
 
                       return (

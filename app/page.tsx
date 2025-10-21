@@ -125,7 +125,7 @@ function HomePageContent() {
     initializeKakao();
   }, []);
 
-  // 카카오 공유하기 함수
+  // 카카오 공유하기 함수 (기본 페이지용)
   const handleKakaoShare = () => {
     console.log('카카오 공유하기 버튼 클릭됨');
     console.log('window.Kakao 존재 여부:', !!window.Kakao);
@@ -146,8 +146,8 @@ function HomePageContent() {
           '마포구 테니스 협회 공식 웹사이트입니다. 대회 정보, 클럽 관리, 소식 등을 확인하세요.',
         imageUrl: 'https://mapo-tennis.com/icon_512x512.png', // 800x400 사이즈 권장
         link: {
-          mobileWebUrl: window.location.href,
-          webUrl: window.location.href,
+          mobileWebUrl: window.location.origin,
+          webUrl: window.location.origin,
         },
       },
       social: {
@@ -159,14 +159,77 @@ function HomePageContent() {
         {
           title: '웹사이트 보기',
           link: {
-            mobileWebUrl: window.location.href,
-            webUrl: window.location.href,
+            mobileWebUrl: window.location.origin,
+            webUrl: window.location.origin,
           },
         },
       ],
     };
 
     console.log('공유 데이터:', shareData);
+
+    try {
+      window.Kakao.Share.sendDefault(shareData);
+      console.log('카카오 공유 요청 완료');
+    } catch (error) {
+      console.error('카카오 공유 실패:', error);
+      alert('카카오 공유에 실패했습니다. 다시 시도해주세요.');
+    }
+  };
+
+  // 포스트별 카카오 공유하기 함수
+  const handlePostKakaoShare = (post: Post) => {
+    console.log('포스트 카카오 공유하기 버튼 클릭됨');
+
+    if (!window.Kakao) {
+      console.error('카카오 SDK가 로드되지 않았습니다.');
+      alert('카카오 SDK가 로드되지 않았습니다. 페이지를 새로고침해주세요.');
+      return;
+    }
+
+    // 포스트에서 이미지 추출
+    const imageUrls = extractImageUrls(post.content);
+    const firstImage =
+      imageUrls.length > 0 ? imageUrls[0] : 'https://mapo-tennis.com/icon_512x512.png';
+
+    // 포스트 내용에서 텍스트만 추출 (마크다운 제거)
+    const contentPreview = post.content
+      .replace(/!\[.*?\]\(.*?\)/g, '') // 이미지 제거
+      .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // 링크 제거
+      .replace(/[#*_~`]/g, '') // 마크다운 기호 제거
+      .trim()
+      .substring(0, 100); // 최대 100자
+
+    const postUrl = `${window.location.origin}/posts/${post._id}`;
+
+    const shareData = {
+      objectType: 'feed',
+      content: {
+        title: post.title,
+        description: contentPreview || '마포구 테니스 협회 소식',
+        imageUrl: firstImage,
+        link: {
+          mobileWebUrl: postUrl,
+          webUrl: postUrl,
+        },
+      },
+      social: {
+        likeCount: post.likeCount || 0,
+        commentCount: post.commentCount || 0,
+        sharedCount: 0,
+      },
+      buttons: [
+        {
+          title: '자세히 보기',
+          link: {
+            mobileWebUrl: postUrl,
+            webUrl: postUrl,
+          },
+        },
+      ],
+    };
+
+    console.log('포스트 공유 데이터:', shareData);
 
     try {
       window.Kakao.Share.sendDefault(shareData);
@@ -516,6 +579,27 @@ function HomePageContent() {
                               onClick={() => handleCommentClick(post._id, post.title)}
                               isLoading={isLoadingComments && selectedPostId === post._id}
                             />
+                            <Button
+                              size="2"
+                              variant="soft"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePostKakaoShare(post);
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                              }}
+                            >
+                              <Image
+                                src="/images/icon_kakao_talk.png"
+                                alt="카카오톡 공유"
+                                width={20}
+                                height={20}
+                              />
+                              공유
+                            </Button>
                           </Flex>
                           {hasPermissionLevel(session?.user, 4) && (
                             <Button

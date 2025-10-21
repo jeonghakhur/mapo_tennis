@@ -58,6 +58,31 @@ const DIVISION_LABEL: Record<string, string> = {
 
 const fmt = (d?: string) => (d ? format(new Date(d), 'yy.MM.dd HH:mm', { locale: ko }) : '');
 
+const formatPhoneNumber = (phoneNumber: string | undefined): string => {
+  if (!phoneNumber) return '';
+
+  // 이미 하이픈이 포함된 경우 그대로 반환
+  if (phoneNumber.includes('-')) return phoneNumber;
+
+  // 숫자만 추출
+  const numbers = phoneNumber.replace(/\D/g, '');
+
+  // 10으로 시작하는 경우 010으로 변경
+  let formattedNumber = numbers;
+  if (numbers.startsWith('10') && numbers.length >= 10) {
+    formattedNumber = '0' + numbers;
+  }
+
+  // 전화번호 형식으로 포맷 (010-1234-5678)
+  if (formattedNumber.length === 11) {
+    return `${formattedNumber.slice(0, 3)}-${formattedNumber.slice(3, 7)}-${formattedNumber.slice(7)}`;
+  } else if (formattedNumber.length === 10) {
+    return `${formattedNumber.slice(0, 3)}-${formattedNumber.slice(3, 6)}-${formattedNumber.slice(6)}`;
+  }
+
+  return phoneNumber;
+};
+
 const fetcher = (url: string) =>
   fetch(url).then((r) => {
     if (!r.ok) throw new Error('Failed to fetch');
@@ -695,7 +720,7 @@ function TournamentApplicationsPageInner() {
 
           {/* My applications */}
           {myApplications.length > 0 && (
-            <Box mb="6">
+            <Box mb="6" className="print-none">
               <Heading size="4" mb="3">
                 나의신청내역
               </Heading>
@@ -1009,12 +1034,16 @@ function TournamentApplicationsPageInner() {
                         </thead>
                         <tbody>
                           {apps.map((application) => {
+                            console.log(application.teamMembers);
                             return (
                               <tr key={application._id}>
                                 <td>{application.teamMembers[0]?.clubName}</td>
                                 <td>
                                   {application.teamMembers
-                                    ?.map((member) => `${member.name}(${member.score})`)
+                                    ?.map(
+                                      (member) =>
+                                        `${member.name}(${member.score}) ${formatPhoneNumber(member.clubMemberInfo?.contact)}`,
+                                    )
                                     .join(', ')}
                                 </td>
                               </tr>

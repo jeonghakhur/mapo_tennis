@@ -130,17 +130,35 @@ function TournamentMatchesContent() {
     { value: 'cancelled', label: '취소' },
   ];
 
-  // 팀명에서 선수 이름 추출하는 공통 함수
-  const extractPlayerNames = useCallback((teamName: string): [string, string] => {
+  // 개인전일 경우 팀명에서 선수 이름만 추출하는 함수
+  const extractIndividualPlayerNames = useCallback((teamName: string): [string, string] => {
     try {
-      const parts = teamName.split('-');
-      if (parts.length >= 3) {
-        return [parts[1].split(',')[0].trim(), parts[2].trim()];
+      // 개나리15(마포여성클럽), 개나리16(마포여성클럽) 형식에서 선수 이름만 추출
+      const parts = teamName.split(',');
+      if (parts.length >= 2) {
+        const player1 = parts[0].split('(')[0].trim(); // 개나리15
+        const player2 = parts[1].split('(')[0].trim(); // 개나리16
+        return [player1, player2];
       }
       return [teamName, ''];
     } catch (error) {
-      console.error('선수 이름 추출 오류:', error);
+      console.error('개인전 선수 이름 추출 오류:', error);
       return [teamName, ''];
+    }
+  }, []);
+
+  // 단체전일 경우 팀의 players 배열에서 선수 이름 추출하는 함수
+  const extractTeamPlayerNames = useCallback((players: string[]): [string, string] => {
+    try {
+      if (players && players.length >= 2) {
+        return [players[0], players[1]];
+      } else if (players && players.length === 1) {
+        return [players[0], ''];
+      }
+      return ['', ''];
+    } catch (error) {
+      console.error('단체전 선수 이름 추출 오류:', error);
+      return ['', ''];
     }
   }, []);
 
@@ -155,12 +173,16 @@ function TournamentMatchesContent() {
     // 고유한 _key 생성
     const setKey = `set-${newSetNumber}-${Date.now()}`;
 
-    // 선수 이름 추출
+    // 선수 이름 추출 (개인전/단체전에 따라 다르게 처리)
     const team1Players = selectedMatch
-      ? extractPlayerNames(selectedMatch.team1.teamName)
+      ? isTeamTournament
+        ? extractTeamPlayerNames(selectedMatch.team1.players || [])
+        : extractIndividualPlayerNames(selectedMatch.team1.teamName)
       : ['', ''];
     const team2Players = selectedMatch
-      ? extractPlayerNames(selectedMatch.team2.teamName)
+      ? isTeamTournament
+        ? extractTeamPlayerNames(selectedMatch.team2.players || [])
+        : extractIndividualPlayerNames(selectedMatch.team2.teamName)
       : ['', ''];
 
     const newSet: SetScore = {
@@ -327,9 +349,13 @@ function TournamentMatchesContent() {
         const team1Sets: SetScore[] = [];
         const team2Sets: SetScore[] = [];
 
-        // 선수 이름 추출
-        const team1Players = extractPlayerNames(match.team1.teamName);
-        const team2Players = extractPlayerNames(match.team2.teamName);
+        // 선수 이름 추출 (개인전/단체전에 따라 다르게 처리)
+        const team1Players = isTeamTournament
+          ? extractTeamPlayerNames(match.team1.players || [])
+          : extractIndividualPlayerNames(match.team1.teamName);
+        const team2Players = isTeamTournament
+          ? extractTeamPlayerNames(match.team2.players || [])
+          : extractIndividualPlayerNames(match.team2.teamName);
 
         // 세트 수 결정: 개인전 1세트, 단체전 3세트
         const setCount = isTeamTournament ? 3 : 1;
@@ -394,7 +420,14 @@ function TournamentMatchesContent() {
         setShowSuccessDialog(true);
       }
     });
-  }, [withLoading, matches, mutateMatches, isTeamTournament, extractPlayerNames]);
+  }, [
+    withLoading,
+    matches,
+    mutateMatches,
+    isTeamTournament,
+    extractIndividualPlayerNames,
+    extractTeamPlayerNames,
+  ]);
 
   // 본선 대진표 생성 페이지로 이동
   const handleCreateBracket = () => {
@@ -445,8 +478,12 @@ function TournamentMatchesContent() {
     setSelectedMatch(match);
 
     // 기본적으로 1세트가 있도록 설정
-    const team1Players = extractPlayerNames(match.team1.teamName);
-    const team2Players = extractPlayerNames(match.team2.teamName);
+    const team1Players = isTeamTournament
+      ? extractTeamPlayerNames(match.team1.players || [])
+      : extractIndividualPlayerNames(match.team1.teamName);
+    const team2Players = isTeamTournament
+      ? extractTeamPlayerNames(match.team2.players || [])
+      : extractIndividualPlayerNames(match.team2.teamName);
 
     const team1Sets =
       match.team1.sets && match.team1.sets.length > 0
@@ -459,7 +496,7 @@ function TournamentMatchesContent() {
                 ? set.players
                 : isTeamTournament
                   ? ['', ''] // 단체전: 빈 문자열 2개
-                  : [match.team1.teamName, ''], // 개인전: 팀명과 빈 문자열
+                  : team1Players, // 개인전: 추출된 선수 이름
           }))
         : [
             {
@@ -483,7 +520,7 @@ function TournamentMatchesContent() {
                 ? set.players
                 : isTeamTournament
                   ? ['', ''] // 단체전: 빈 문자열 2개
-                  : [match.team2.teamName, ''], // 개인전: 팀명과 빈 문자열
+                  : team2Players, // 개인전: 추출된 선수 이름
           }))
         : [
             {
@@ -689,14 +726,10 @@ function TournamentMatchesContent() {
           <Dialog.Title>
             {selectedMatch && (
               <>
-                {selectedMatch.groupId || '-'} • {selectedMatch.matchNumber}경기
+                {selectedMatch.groupId.split('_')[1] || '-'}조 • {selectedMatch.matchNumber}경기
               </>
             )}
           </Dialog.Title>
-          <Flex mb="4" gap="2" direction="column">
-            <Text className="text-blue-600">팀1: {selectedMatch?.team1?.teamName}</Text>
-            <Text className="text-green-600">팀2: {selectedMatch?.team2?.teamName}</Text>
-          </Flex>
 
           <Flex direction="column" gap="4" style={{ overflowY: 'auto', maxHeight: '70vh' }}>
             {/* 세트별 점수 입력 */}
@@ -710,19 +743,12 @@ function TournamentMatchesContent() {
                 {[
                   {
                     teamKey: 'team1' as const,
-                    teamName: selectedMatch?.team1.teamName.split(' - ')[0] || '',
-                    color: 'blue' as const,
                   },
                   {
                     teamKey: 'team2' as const,
-                    teamName: selectedMatch?.team2.teamName.split(' - ')[0] || '',
-                    color: 'green' as const,
                   },
-                ].map(({ teamKey, teamName, color }) => (
+                ].map(({ teamKey }) => (
                   <Box key={teamKey}>
-                    <Text size="2" weight="bold" my="2" color={color} as="div">
-                      {tournament?.tournamentType === 'team' && teamName}
-                    </Text>
                     <div className="table-form">
                       <table>
                         <tbody>
@@ -745,7 +771,7 @@ function TournamentMatchesContent() {
                                   style={{ width: '50px' }}
                                   size="3"
                                 />
-                                <TextField.Root
+                                {/* <TextField.Root
                                   size="3"
                                   placeholder="타이"
                                   value={scoreForm[`${teamKey}Sets`][setIndex]?.tiebreak || ''}
@@ -758,7 +784,7 @@ function TournamentMatchesContent() {
                                     )
                                   }
                                   style={{ width: '50px' }}
-                                />
+                                /> */}
                               </Flex>
                             </td>
                           </tr>
@@ -766,27 +792,71 @@ function TournamentMatchesContent() {
                             <th>선수명</th>
                             <td>
                               <Flex gap="2">
-                                {[0, 1].map((playerIndex) => (
-                                  <TextField.Root
-                                    key={playerIndex}
-                                    size="3"
-                                    placeholder={`선수 ${playerIndex + 1}명`}
-                                    value={
-                                      scoreForm[`${teamKey}Sets`][setIndex]?.players?.[
-                                        playerIndex
-                                      ] || ''
-                                    }
-                                    onChange={(e) =>
-                                      updatePlayerName(
-                                        teamKey,
-                                        setIndex,
-                                        playerIndex,
-                                        e.target.value,
-                                      )
-                                    }
-                                    style={{ flex: 1 }}
-                                  />
-                                ))}
+                                {[0, 1].map((playerIndex) => {
+                                  // 개인전/단체전에 따라 다른 UI 렌더링
+                                  if (isTeamTournament) {
+                                    // 단체전: Select 컴포넌트로 선수 선택
+                                    const teamPlayers =
+                                      teamKey === 'team1'
+                                        ? selectedMatch?.team1.players || []
+                                        : selectedMatch?.team2.players || [];
+
+                                    return (
+                                      <Select.Root
+                                        key={playerIndex}
+                                        value={
+                                          scoreForm[`${teamKey}Sets`][setIndex]?.players?.[
+                                            playerIndex
+                                          ] || 'none'
+                                        }
+                                        onValueChange={(value) =>
+                                          updatePlayerName(
+                                            teamKey,
+                                            setIndex,
+                                            playerIndex,
+                                            value === 'none' ? '' : value,
+                                          )
+                                        }
+                                      >
+                                        <Select.Trigger
+                                          placeholder={`선수 ${playerIndex + 1} 선택`}
+                                          style={{ flex: 1 }}
+                                        />
+                                        <Select.Content>
+                                          <Select.Item value="none">선수 선택</Select.Item>
+                                          {teamPlayers.map((player, index) => (
+                                            <Select.Item key={index} value={player}>
+                                              {player}
+                                            </Select.Item>
+                                          ))}
+                                        </Select.Content>
+                                      </Select.Root>
+                                    );
+                                  } else {
+                                    // 개인전: TextField로 선수명 직접 입력
+                                    return (
+                                      <TextField.Root
+                                        key={playerIndex}
+                                        size="3"
+                                        placeholder={`선수 ${playerIndex + 1}명`}
+                                        value={
+                                          scoreForm[`${teamKey}Sets`][setIndex]?.players?.[
+                                            playerIndex
+                                          ] || ''
+                                        }
+                                        onChange={(e) =>
+                                          updatePlayerName(
+                                            teamKey,
+                                            setIndex,
+                                            playerIndex,
+                                            e.target.value,
+                                          )
+                                        }
+                                        style={{ flex: 1 }}
+                                      />
+                                    );
+                                  }
+                                })}
                               </Flex>
                             </td>
                           </tr>

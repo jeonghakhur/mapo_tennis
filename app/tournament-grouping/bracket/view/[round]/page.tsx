@@ -154,6 +154,7 @@ export default function RoundPage() {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('data', data);
         setBracketMatches(data.matches || []);
         setHasBracket(data.matches && data.matches.length > 0);
       }
@@ -441,11 +442,16 @@ export default function RoundPage() {
 
       console.log(`총 ${matchesToUpdate.length}개 경기에 점수 입력 시작`);
 
+      // 대회 타입 확인 (개인전/단체전)
+      const isIndividual = tournament?.tournamentType === 'individual';
+      const numberOfSets = isIndividual ? 1 : 3; // 개인전: 1세트, 단체전: 3세트
+
+      console.log(`대회 타입: ${isIndividual ? '개인전' : '단체전'}, 세트 수: ${numberOfSets}`);
+
       // 순차 처리로 안정성 향상
       const updateResults = [];
       for (const match of matchesToUpdate) {
         try {
-          // 3세트 경기로 가정
           const team1Sets: SetScore[] = [];
           const team2Sets: SetScore[] = [];
 
@@ -453,9 +459,26 @@ export default function RoundPage() {
           const team1Players = extractPlayerNames(match.team1.teamName);
           const team2Players = extractPlayerNames(match.team2.teamName);
 
-          for (let i = 1; i <= 3; i++) {
-            const team1Games = Math.random() < 0.5 ? 6 : Math.floor(Math.random() * 6);
-            const team2Games = team1Games === 6 ? Math.floor(Math.random() * 6) : 6;
+          // BYE 팀 확인
+          const team1IsBye = match.team1.teamName.toUpperCase().includes('BYE');
+          const team2IsBye = match.team2.teamName.toUpperCase().includes('BYE');
+
+          for (let i = 1; i <= numberOfSets; i++) {
+            let team1Games: number;
+            let team2Games: number;
+
+            // BYE 팀 처리: BYE 팀은 항상 0:6으로 패배
+            if (team1IsBye) {
+              team1Games = 0;
+              team2Games = 6;
+            } else if (team2IsBye) {
+              team1Games = 6;
+              team2Games = 0;
+            } else {
+              // 일반 경기: 랜덤 점수
+              team1Games = Math.random() < 0.5 ? 6 : Math.floor(Math.random() * 6);
+              team2Games = team1Games === 6 ? Math.floor(Math.random() * 6) : 6;
+            }
 
             const setKey = `set-${i}-${Date.now()}-${Math.random()}`;
 
@@ -561,6 +584,7 @@ export default function RoundPage() {
     fetchBracket,
     extractPlayerNames,
     calculateSetsWon,
+    tournament,
   ]);
 
   // 다음 라운드 대진표 생성 함수
@@ -750,60 +774,58 @@ export default function RoundPage() {
 
       {/* 라운드별 이동 버튼 */}
       {hasBracket && bracketMatches.length > 0 && (
-        <Card mb="3">
-          <Box p="1">
-            <Heading size="4" weight="bold" mb="4">
-              라운드별 보기
-            </Heading>
-            <Flex gap="2" wrap="wrap">
-              {bracketMatches.some((m) => m.round === 'round32') && (
-                <Button
-                  size="3"
-                  variant={round === 'round32' ? 'solid' : 'soft'}
-                  onClick={() => handleNavigateToRound('round32')}
-                >
-                  32강
-                </Button>
-              )}
-              {bracketMatches.some((m) => m.round === 'round16') && (
-                <Button
-                  size="3"
-                  variant={round === 'round16' ? 'solid' : 'soft'}
-                  onClick={() => handleNavigateToRound('round16')}
-                >
-                  16강
-                </Button>
-              )}
-              {bracketMatches.some((m) => m.round === 'quarterfinal') && (
-                <Button
-                  size="3"
-                  variant={round === 'quarterfinal' ? 'solid' : 'soft'}
-                  onClick={() => handleNavigateToRound('quarterfinal')}
-                >
-                  8강
-                </Button>
-              )}
-              {bracketMatches.some((m) => m.round === 'semifinal') && (
-                <Button
-                  size="3"
-                  variant={round === 'semifinal' ? 'solid' : 'soft'}
-                  onClick={() => handleNavigateToRound('semifinal')}
-                >
-                  4강
-                </Button>
-              )}
-              {bracketMatches.some((m) => m.round === 'final') && (
-                <Button
-                  size="3"
-                  variant={round === 'final' ? 'solid' : 'soft'}
-                  onClick={() => handleNavigateToRound('final')}
-                >
-                  결승
-                </Button>
-              )}
-            </Flex>
-          </Box>
-        </Card>
+        <Box p="1">
+          <Heading size="4" weight="bold" mb="4">
+            라운드별 보기
+          </Heading>
+          <Flex gap="2" wrap="wrap">
+            {bracketMatches.some((m) => m.round === 'round32') && (
+              <Button
+                size="3"
+                variant={round === 'round32' ? 'solid' : 'soft'}
+                onClick={() => handleNavigateToRound('round32')}
+              >
+                32강
+              </Button>
+            )}
+            {bracketMatches.some((m) => m.round === 'round16') && (
+              <Button
+                size="3"
+                variant={round === 'round16' ? 'solid' : 'soft'}
+                onClick={() => handleNavigateToRound('round16')}
+              >
+                16강
+              </Button>
+            )}
+            {bracketMatches.some((m) => m.round === 'quarterfinal') && (
+              <Button
+                size="3"
+                variant={round === 'quarterfinal' ? 'solid' : 'soft'}
+                onClick={() => handleNavigateToRound('quarterfinal')}
+              >
+                8강
+              </Button>
+            )}
+            {bracketMatches.some((m) => m.round === 'semifinal') && (
+              <Button
+                size="3"
+                variant={round === 'semifinal' ? 'solid' : 'soft'}
+                onClick={() => handleNavigateToRound('semifinal')}
+              >
+                4강
+              </Button>
+            )}
+            {bracketMatches.some((m) => m.round === 'final') && (
+              <Button
+                size="3"
+                variant={round === 'final' ? 'solid' : 'soft'}
+                onClick={() => handleNavigateToRound('final')}
+              >
+                결승
+              </Button>
+            )}
+          </Flex>
+        </Box>
       )}
 
       {/* 현재 라운드 대진표 */}

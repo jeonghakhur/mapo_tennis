@@ -374,6 +374,7 @@ export async function createGroupMatches(tournamentId: string, division: string)
   }));
 
   const matches = TournamentGroupingService.createGroupMatches(processedGroups, tournamentId);
+  // console.log(matches);
   // 기존 경기 정보 삭제
   await client.delete({
     query: `*[_type == "tournamentMatch" && tournamentId == $tournamentId && division == $division]`,

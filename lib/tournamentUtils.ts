@@ -1,4 +1,5 @@
 import type { TournamentFormData } from '@/model/tournament';
+import type { Group, Match, GroupStanding, Team } from '@/types/tournament';
 
 // 참가부서 옵션
 export const DIVISION_OPTIONS = [
@@ -477,4 +478,166 @@ export function getTournamentTypeLabel(value: string): string {
     team: '단체전',
   };
   return typeMap[value] || value;
+}
+
+// GroupStanding을 다시 export (타입 재사용)
+export type { GroupStanding };
+
+/**
+ * 매치 데이터와 그룹 데이터로부터 조별 순위를 계산합니다
+ */
+export function calculateGroupStandingsFromMatches(
+  groups: Group[],
+  matches: Match[],
+): GroupStanding[] {
+  const allStandings: GroupStanding[] = [];
+
+  groups.forEach((group) => {
+    const groupMatches = matches.filter((match) => match.groupId === group.groupId);
+    const standings = new Map<string, GroupStanding>();
+
+    // 초기 순위 데이터 생성
+    // Sanity에서 가져온 teams는 _key를 가지고 있고, 이것이 경기의 teamId와 매칭됩니다
+    group.teams.forEach((team) => {
+      // Sanity 배열의 team은 _key를 가지고 있고, 경기 생성 시 이것이 teamId로 사용됩니다
+      // team 객체에서 _key 또는 _id를 안전하게 가져옵니다
+      const teamData = team as Team & { _key?: string };
+      const teamId = teamData._key || team._id;
+
+      if (!teamId) {
+        console.warn('Team without valid ID:', team);
+        return;
+      }
+
+      standings.set(teamId, {
+        teamId,
+        teamName: team.name,
+        groupId: group.groupId,
+        played: 0,
+        won: 0,
+        drawn: 0,
+        lost: 0,
+        goalsFor: 0,
+        goalsAgainst: 0,
+        goalDifference: 0,
+        points: 0,
+        position: 0,
+      });
+    });
+
+    // 경기 결과 반영
+    groupMatches.forEach((match) => {
+      if (match.status === 'completed') {
+        const team1Standing = standings.get(match.team1.teamId);
+        const team2Standing = standings.get(match.team2.teamId);
+
+        if (!team1Standing) {
+          console.warn(`  ⚠️ team1 Standing을 찾을 수 없음: ${match.team1.teamId}`);
+        }
+        if (!team2Standing) {
+          console.warn(`  ⚠️ team2 Standing을 찾을 수 없음: ${match.team2.teamId}`);
+        }
+
+        if (team1Standing && team2Standing) {
+          // 경기 수 증가
+          team1Standing.played++;
+          team2Standing.played++;
+
+          // 세트별 점수로 승부 결정
+          let team1SetsWon = 0;
+          let team2SetsWon = 0;
+          let team1TotalGames = 0;
+          let team2TotalGames = 0;
+
+          if (match.team1.sets && match.team2.sets) {
+            const maxSets = Math.max(match.team1.sets.length, match.team2.sets.length);
+
+            for (let i = 0; i < maxSets; i++) {
+              const team1Games = match.team1.sets[i]?.games || 0;
+              const team2Games = match.team2.sets[i]?.games || 0;
+              const team1Tiebreak = match.team1.sets[i]?.tiebreak;
+              const team2Tiebreak = match.team2.sets[i]?.tiebreak;
+
+              // 총 게임 수 계산
+              team1TotalGames += team1Games;
+              team2TotalGames += team2Games;
+
+              // 세트 승부 결정
+              if (team1Games > team2Games) {
+                team1SetsWon++;
+              } else if (team2Games > team1Games) {
+                team2SetsWon++;
+              } else {
+                // 게임 수가 동일한 경우 타이브레이크로 승부 결정
+                if (team1Tiebreak !== undefined && team2Tiebreak !== undefined) {
+                  if (team1Tiebreak > team2Tiebreak) {
+                    team1SetsWon++;
+                  } else if (team2Tiebreak > team1Tiebreak) {
+                    team2SetsWon++;
+                  }
+                }
+              }
+            }
+          } else {
+            // 기존 호환성을 위해 score 필드도 확인
+            if (match.team1.score !== undefined && match.team2.score !== undefined) {
+              team1TotalGames = match.team1.score;
+              team2TotalGames = match.team2.score;
+
+              if (match.team1.score > match.team2.score) {
+                team1SetsWon = 1;
+                team2SetsWon = 0;
+              } else if (match.team2.score > match.team1.score) {
+                team1SetsWon = 0;
+                team2SetsWon = 1;
+              }
+            }
+          }
+
+          // 득점/실점 기록 (총 게임 수 사용)
+          team1Standing.goalsFor += team1TotalGames;
+          team1Standing.goalsAgainst += team2TotalGames;
+          team2Standing.goalsFor += team2TotalGames;
+          team2Standing.goalsAgainst += team1TotalGames;
+
+          // 승패 결정 (세트 승부 기준)
+          if (team1SetsWon > team2SetsWon) {
+            team1Standing.won++;
+            team2Standing.lost++;
+            team1Standing.points += 3;
+          } else if (team2SetsWon > team1SetsWon) {
+            team1Standing.lost++;
+            team2Standing.won++;
+            team2Standing.points += 3;
+          } else {
+            team1Standing.drawn++;
+            team2Standing.drawn++;
+            team1Standing.points += 1;
+            team2Standing.points += 1;
+          }
+        }
+      }
+    });
+
+    // 득실차 계산
+    standings.forEach((standing) => {
+      standing.goalDifference = standing.goalsFor - standing.goalsAgainst;
+    });
+
+    // 순위 정렬: 승점 > 득실차 > 득점
+    const sortedStandings = Array.from(standings.values()).sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+      return b.goalsFor - a.goalsFor;
+    });
+
+    // 순위 부여
+    sortedStandings.forEach((standing, index) => {
+      standing.position = index + 1;
+    });
+
+    allStandings.push(...sortedStandings);
+  });
+
+  return allStandings;
 }

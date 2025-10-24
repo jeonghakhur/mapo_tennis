@@ -54,7 +54,9 @@ export default function TournamentGroupingListPage() {
       const matchesResponse = await fetch(
         `/api/tournament-grouping/matches?tournamentId=${tournamentId}&division=${division}`,
       );
-      const hasMatches = matchesResponse.ok;
+
+      const matchesData = await matchesResponse.json();
+      const hasMatches = matchesData.length > 0;
 
       // 본선 대진표 확인
       const bracketResponse = await fetch(

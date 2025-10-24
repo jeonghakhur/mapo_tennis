@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { Box, Text, Button, Flex, Card, Heading, Badge } from '@radix-ui/themes';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -9,24 +9,11 @@ import { useLoading } from '@/hooks/useLoading';
 import { useTournament } from '@/hooks/useTournaments';
 import { useUser } from '@/hooks/useUser';
 import { isAdmin } from '@/lib/authUtils';
-import { useStandings } from '@/hooks/useStandings';
 import { useGroups } from '@/hooks/useGroups';
 import { useMatches } from '@/hooks/useMatches';
+import { calculateGroupStandingsFromMatches } from '@/lib/tournamentUtils';
+import type { GroupStanding } from '@/lib/tournamentUtils';
 
-interface GroupStanding {
-  teamId: string;
-  teamName: string;
-  groupId?: string;
-  position: number;
-  points: number;
-  goalDifference: number;
-  played: number;
-  won: number;
-  drawn: number;
-  lost: number;
-  goalsFor: number;
-  goalsAgainst: number;
-}
 import ConfirmDialog from '@/components/ConfirmDialog';
 import Container from '@/components/Container';
 
@@ -70,9 +57,22 @@ function TournamentBracketContent() {
 
   // SWR 훅 사용
   const { tournament } = useTournament(selectedTournament || '');
-  const { standings } = useStandings(selectedTournament || null, selectedDivision || null);
-  const { groupNameMap } = useGroups(selectedTournament || null, selectedDivision || null);
+  const { groups, groupNameMap } = useGroups(selectedTournament || null, selectedDivision || null);
   const { matches } = useMatches(selectedTournament || null, selectedDivision || null);
+  console.log('groups', groups);
+
+  // 프론트엔드에서 조별 순위 계산
+  const standings = useMemo(() => {
+    if (!groups.length || !matches.length) {
+      // console.log('⚠️ groups 또는 matches가 비어있음:', {
+      //   groups: groups.length,
+      //   matches: matches.length,
+      // });
+      return [];
+    }
+
+    return calculateGroupStandingsFromMatches(groups, matches);
+  }, [groups, matches]);
 
   // 부서 이름 매핑
   const divisionNameMap: Record<string, string> = {
@@ -246,9 +246,21 @@ function TournamentBracketContent() {
             </Button>
           )}
           {bracketMatches.length === 0 && qualifiedTeams.length > 0 && admin && (
-            <Button size="3" onClick={() => setShowCreateDialog(true)}>
-              본선대진표생성
-            </Button>
+            <>
+              <Button size="3" onClick={() => setShowCreateDialog(true)}>
+                본선대진표생성
+              </Button>
+              <Button
+                size="3"
+                onClick={() => {
+                  router.push(
+                    `/tournament-grouping/matches?tournamentId=${selectedTournament}&division=${selectedDivision}`,
+                  );
+                }}
+              >
+                예선경기상세
+              </Button>
+            </>
           )}
           {bracketMatches.length > 0 && admin && (
             <Button size="3" color="red" onClick={() => setShowDeleteDialog(true)}>

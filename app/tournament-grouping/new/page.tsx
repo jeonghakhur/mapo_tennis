@@ -151,7 +151,7 @@ function NewTournamentGroupingContent() {
                 (app.teamMembers as { name: string; clubName?: string }[])
                   ?.map(
                     (member: { name: string; clubName?: string }) =>
-                      `${member.clubName || '클럽명 없음'}-${member.name}`,
+                      `${member.name}(${member.clubName || '클럽명 없음'})`,
                   )
                   .join(', ') || '팀원 없음';
               teamName = memberNames;

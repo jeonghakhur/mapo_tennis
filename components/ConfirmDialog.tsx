@@ -61,7 +61,9 @@ export default function ConfirmDialog({
       {trigger && <AlertDialog.Trigger disabled={disabled}>{trigger}</AlertDialog.Trigger>}
       <AlertDialog.Content>
         <AlertDialog.Title>{title}</AlertDialog.Title>
-        <AlertDialog.Description>{description}</AlertDialog.Description>
+        <AlertDialog.Description style={{ whiteSpace: 'pre-wrap' }}>
+          {description}
+        </AlertDialog.Description>
         <Flex gap="3" mt="4" justify="end">
           {cancelText && (
             <AlertDialog.Cancel onClick={handleCancel}>

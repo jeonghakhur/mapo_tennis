@@ -8,7 +8,6 @@ import Container from '@/components/Container';
 import { useTournamentGroupings } from '@/hooks/useTournamentGroupings';
 import { useUser } from '@/hooks/useUser';
 import { isAdmin } from '@/lib/authUtils';
-import LoadingOverlay from '@/components/LoadingOverlay';
 import SkeletonCard from '@/components/SkeletonCard';
 
 export default function TournamentGroupingListPage() {
@@ -17,7 +16,7 @@ export default function TournamentGroupingListPage() {
   const { user } = useUser(session?.user?.email);
   const { groupings, isLoading, error, mutate } = useTournamentGroupings();
   const [groupingStatus, setGroupingStatus] = useState<
-    Record<string, { hasMatches: boolean; hasBracket: boolean }>
+    Record<string, { hasMatches: boolean; hasBracket: string | null }>
   >({});
 
   // 관리자 권한 확인
@@ -41,7 +40,7 @@ export default function TournamentGroupingListPage() {
   // 본선 대진표 상세 페이지로 이동
   const handleViewBracket = (tournamentId: string, division: string) => {
     router.push(
-      `/tournament-grouping/bracket/view?tournamentId=${tournamentId}&division=${division}`,
+      `/tournament-grouping/bracket/view/${groupingStatus[`${tournamentId}__${division}`]?.hasBracket}?tournamentId=${tournamentId}&division=${division}`,
     );
   };
 
@@ -62,10 +61,10 @@ export default function TournamentGroupingListPage() {
       const bracketResponse = await fetch(
         `/api/tournament-grouping/bracket?tournamentId=${tournamentId}&division=${division}`,
       );
-      let hasBracket = false;
+      let hasBracket: string | null = null;
       if (bracketResponse.ok) {
         const bracketData = await bracketResponse.json();
-        hasBracket = bracketData.matches && bracketData.matches.length > 0;
+        hasBracket = bracketData.matches.length > 0 ? bracketData.matches[0].round : null;
       }
 
       setGroupingStatus((prev) => ({
@@ -76,7 +75,7 @@ export default function TournamentGroupingListPage() {
       console.error('조편성 상태 확인 오류:', error);
       setGroupingStatus((prev) => ({
         ...prev,
-        [key]: { hasMatches: false, hasBracket: false },
+        [key]: { hasMatches: false, hasBracket: null },
       }));
     }
   }, []);
@@ -201,7 +200,6 @@ export default function TournamentGroupingListPage() {
                       예선 경기
                     </Button>
                   )}
-
                   {groupingStatus[`${grouping.tournamentId}__${grouping.division}`]?.hasBracket && (
                     <Button
                       size="2"

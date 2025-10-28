@@ -191,7 +191,6 @@ export default function RoundPage() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('data', data);
         setBracketMatches(data.matches || []);
         setHasBracket(data.matches && data.matches.length > 0);
       }
@@ -645,13 +644,14 @@ export default function RoundPage() {
   const handleGenerateNextRound = useCallback(async () => {
     return withLoading(async () => {
       console.log(`${ROUND_NAME_MAP[round]} 라운드 완료 확인, 다음 라운드 대진표 생성 시도`);
+      console.log('currentRoundMatches', currentRoundMatches);
 
       // 현재 라운드의 모든 경기가 완료되었는지 확인 (세트 기반)
       const allCurrentRoundCompleted = currentRoundMatches.every(
         (match) =>
           match.status === 'completed' &&
-          match.team1.totalSetsWon !== undefined &&
-          match.team2.totalSetsWon !== undefined &&
+          // match.team1.totalSetsWon !== undefined &&
+          // match.team2.totalSetsWon !== undefined &&
           match.winner !== undefined,
       );
 
@@ -939,20 +939,22 @@ export default function RoundPage() {
               .map((match) => (
                 <div key={match._key}>
                   <Box>
-                    <Text size="2" weight="bold" mb="2">
+                    <Text size="2" weight="bold" mb="2" as="div">
                       {match.matchNumber}경기 {match.court ? `(${match.court}코트)` : ''}
                     </Text>
                     {/* 세트별 상세 정보 */}
+
                     {match.team1.sets && match.team1.sets.length > 0 && (
                       <Box mb="2">
                         <div className="table-view">
                           <table>
                             <thead>
                               <tr>
-                                <td>세트</td>
-                                <td>클럽명</td>
+                                <td style={{ width: '50px' }}>세트</td>
                                 <td>선수</td>
-                                <td>점수</td>
+                                <td style={{ width: '50px' }} className="text-center">
+                                  점수
+                                </td>
                               </tr>
                             </thead>
                             <tbody>
@@ -961,11 +963,6 @@ export default function RoundPage() {
                                 const team2Set = match.team2.sets?.[setIndex];
 
                                 if (!team1Set || !team2Set) return null;
-                                const team1Players =
-                                  team1Set.players?.filter((p) => p.trim()) || [];
-                                const team2Players =
-                                  team2Set.players?.filter((p) => p.trim()) || [];
-
                                 if (!team1Set || !team2Set) return null;
 
                                 return (
@@ -978,11 +975,11 @@ export default function RoundPage() {
                                             ? 'font-bold text-green-600'
                                             : ''
                                         }
+                                        style={{ whiteSpace: 'pre-line' }}
                                       >
-                                        {match.team1.teamName.split(' - ')[0]}
+                                        {match.team1.teamName.split(',').join('\n')}
                                       </td>
-                                      <td>{team1Players.join(', ')}</td>
-                                      <td>
+                                      <td className="text-center">
                                         {team1Set.games}
                                         {team1Set.tiebreak !== undefined && (
                                           <>({team1Set.tiebreak})</>
@@ -996,11 +993,11 @@ export default function RoundPage() {
                                             ? 'font-bold text-green-600'
                                             : ''
                                         }
+                                        style={{ whiteSpace: 'pre-line' }}
                                       >
-                                        {match.team2.teamName.split(' - ')[0]}
+                                        {match.team2.teamName.split(',').join('\n')}
                                       </td>
-                                      <td>{team2Players.join(', ')}</td>
-                                      <td>
+                                      <td className="text-center">
                                         {team2Set.games}
                                         {team2Set.tiebreak !== undefined && (
                                           <>({team2Set.tiebreak})</>

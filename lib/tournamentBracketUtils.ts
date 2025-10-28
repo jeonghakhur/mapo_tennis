@@ -588,12 +588,14 @@ export function generateBracketMatches(
           teamName: a.teamName,
           // 바이 경기에서 승리한 팀의 점수 설정
           ...(a.isBye ? {} : { score: 6 }),
+          sets: [{ _key: `${key}_team1_set1`, setNumber: 1, games: a.isBye ? 0 : 6, players: [] }],
         },
         team2: {
           teamId: b.teamId,
           teamName: b.teamName,
           // 바이 경기에서 패배한 팀의 점수 설정
           ...(b.isBye ? {} : { score: 0 }),
+          sets: [{ _key: `${key}_team2_set1`, setNumber: 1, games: b.isBye ? 0 : 6, players: [] }],
         },
         status: 'completed',
         winner: winner.teamId || undefined,
@@ -607,8 +609,16 @@ export function generateBracketMatches(
       _key: key,
       round,
       matchNumber: matchNumber++,
-      team1: { teamId: a.teamId, teamName: a.teamName },
-      team2: { teamId: b.teamId, teamName: b.teamName },
+      team1: {
+        teamId: a.teamId,
+        teamName: a.teamName,
+        sets: [{ _key: `${key}_team1_set1`, setNumber: 1, games: 0, players: [] }],
+      },
+      team2: {
+        teamId: b.teamId,
+        teamName: b.teamName,
+        sets: [{ _key: `${key}_team2_set1`, setNumber: 1, games: 0, players: [] }],
+      },
       status: 'scheduled',
     });
   }

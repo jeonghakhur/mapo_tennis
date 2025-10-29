@@ -5,11 +5,14 @@ interface UseExpenseFiltersOptions {
   expenses: Expense[];
   startDate?: string;
   endDate?: string;
+  expenseTypeFilter?: string;
 }
 
 interface UseExpenseFiltersReturn {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
+  expenseTypeFilter: string;
+  setExpenseTypeFilter: (type: string) => void;
   categoryFilter: string;
   setCategoryFilter: (category: string) => void;
   sortBy: 'date' | 'amount' | 'title' | 'createdAt';
@@ -26,8 +29,10 @@ export function useExpenseFilters({
   expenses,
   startDate = '',
   endDate = '',
+  expenseTypeFilter: initialExpenseTypeFilter = 'all',
 }: UseExpenseFiltersOptions): UseExpenseFiltersReturn {
   const [searchTerm, setSearchTerm] = useState('');
+  const [expenseTypeFilter, setExpenseTypeFilter] = useState(initialExpenseTypeFilter);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortBy, setSortBy] = useState<SortField>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -44,6 +49,11 @@ export function useExpenseFilters({
           expense.description?.toLowerCase().includes(searchLower) ||
           expense.author.toLowerCase().includes(searchLower),
       );
+    }
+
+    // 구분항목(경비 타입) 필터링
+    if (expenseTypeFilter !== 'all') {
+      filtered = filtered.filter((expense) => expense.expenseType === expenseTypeFilter);
     }
 
     // 카테고리 필터링
@@ -97,7 +107,16 @@ export function useExpenseFilters({
     });
 
     return filtered;
-  }, [expenses, searchTerm, categoryFilter, startDate, endDate, sortBy, sortOrder]);
+  }, [
+    expenses,
+    searchTerm,
+    expenseTypeFilter,
+    categoryFilter,
+    startDate,
+    endDate,
+    sortBy,
+    sortOrder,
+  ]);
 
   const totalAmount = useMemo(() => {
     return filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -106,6 +125,8 @@ export function useExpenseFilters({
   return {
     searchTerm,
     setSearchTerm,
+    expenseTypeFilter,
+    setExpenseTypeFilter,
     categoryFilter,
     setCategoryFilter,
     sortBy,

@@ -11,6 +11,7 @@ interface ExpenseFormData {
   storeName: string;
   address: string;
   amount: string;
+  expenseType: string;
   category: string;
   date: string;
   description: string;
@@ -25,6 +26,10 @@ interface ExpenseFormProps {
   onCancel?: () => void;
   loading?: boolean;
   showImageUpload?: boolean;
+  // 수정 페이지용: 기존 이미지 미리보기 URL
+  existingReceiptImageUrl?: string;
+  existingProductImageUrl?: string;
+  isEditMode?: boolean;
 }
 
 export default function ExpenseForm({
@@ -34,12 +39,16 @@ export default function ExpenseForm({
   onCancel,
   loading = false,
   showImageUpload = true,
+  existingReceiptImageUrl,
+  existingProductImageUrl,
+  isEditMode = false,
 }: ExpenseFormProps) {
   const [form, setForm] = useState<ExpenseFormData>({
     title: '',
     storeName: '',
     address: '',
     amount: '',
+    expenseType: '',
     category: '',
     date: '',
     description: '',
@@ -48,11 +57,15 @@ export default function ExpenseForm({
 
   const [receiptImage, setReceiptImage] = useState<File | undefined>(undefined);
   const [preview, setPreview] = useState<string | null>(null);
+  const [productImage, setProductImage] = useState<File | undefined>(undefined);
+  const [productPreview, setProductPreview] = useState<string | null>(null);
   const [ocrLoading, setOcrLoading] = useState(false);
   const [error, setError] = useState('');
+  const [removeReceiptImage, setRemoveReceiptImage] = useState(false);
+  const [removeProductImage, setRemoveProductImage] = useState(false);
 
-  // 드래그 앤 드롭 설정
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  // 영수증 드래그 앤 드롭 설정
+  const onReceiptDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles && acceptedFiles[0]) {
       const file = acceptedFiles[0];
       setReceiptImage(file);
@@ -64,8 +77,31 @@ export default function ExpenseForm({
     }
   }, []);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
+  // 물품 사진 드래그 앤 드롭 설정
+  const onProductDrop = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles && acceptedFiles[0]) {
+      const file = acceptedFiles[0];
+      setProductImage(file);
+      setProductPreview(URL.createObjectURL(file));
+    }
+  }, []);
+
+  const {
+    getRootProps: getReceiptRootProps,
+    getInputProps: getReceiptInputProps,
+    isDragActive: isReceiptDragActive,
+  } = useDropzone({
+    onDrop: onReceiptDrop,
+    accept: { 'image/*': [] },
+    multiple: false,
+  });
+
+  const {
+    getRootProps: getProductRootProps,
+    getInputProps: getProductInputProps,
+    isDragActive: isProductDragActive,
+  } = useDropzone({
+    onDrop: onProductDrop,
     accept: { 'image/*': [] },
     multiple: false,
   });
@@ -133,10 +169,17 @@ export default function ExpenseForm({
     setForm((f) => ({ ...f, category: value }));
   }, []);
 
-  // 이미지 삭제
-  const handleImageDelete = useCallback(() => {
+  const handleExpenseTypeChange = useCallback((value: string) => {
+    setForm((f) => ({ ...f, expenseType: value }));
+  }, []);
+
+  // 영수증 이미지 삭제
+  const handleReceiptImageDelete = useCallback(() => {
     setReceiptImage(undefined);
     setPreview(null);
+    if (isEditMode && existingReceiptImageUrl) {
+      setRemoveReceiptImage(true);
+    }
     setForm((f) => ({
       ...f,
       title: '',
@@ -147,7 +190,16 @@ export default function ExpenseForm({
       date: '',
       description: '',
     }));
-  }, []);
+  }, [isEditMode, existingReceiptImageUrl]);
+
+  // 물품 이미지 삭제
+  const handleProductImageDelete = useCallback(() => {
+    setProductImage(undefined);
+    setProductPreview(null);
+    if (isEditMode && existingProductImageUrl) {
+      setRemoveProductImage(true);
+    }
+  }, [isEditMode, existingProductImageUrl]);
 
   // 폼 제출
   const handleSubmit = async (e: React.FormEvent) => {
@@ -165,12 +217,27 @@ export default function ExpenseForm({
       formData.append('storeName', form.storeName);
       formData.append('address', form.address);
       formData.append('amount', form.amount);
+      if (form.expenseType) {
+        formData.append('expenseType', form.expenseType);
+      }
       formData.append('category', form.category);
       formData.append('date', form.date);
       formData.append('description', form.description);
 
       if (receiptImage) {
         formData.append('receiptImage', receiptImage);
+      }
+
+      if (removeReceiptImage) {
+        formData.append('removeReceiptImage', '1');
+      }
+
+      if (productImage) {
+        formData.append('productImage', productImage);
+      }
+
+      if (removeProductImage) {
+        formData.append('removeProductImage', '1');
       }
 
       await onSubmit(formData);
@@ -220,9 +287,9 @@ export default function ExpenseForm({
       textAlign: 'center' as const,
       marginBottom: 16,
       cursor: 'pointer',
-      background: isDragActive ? '#f0f0f0' : '#fafafa',
+      background: isReceiptDragActive || isProductDragActive ? '#f0f0f0' : '#fafafa',
     }),
-    [isDragActive],
+    [isReceiptDragActive, isProductDragActive],
   );
 
   return (
@@ -245,24 +312,97 @@ export default function ExpenseForm({
                 />
                 <button
                   type="button"
-                  onClick={handleImageDelete}
+                  onClick={handleReceiptImageDelete}
                   style={deleteButtonStyle}
-                  aria-label="이미지 삭제"
+                  aria-label="영수증 이미지 삭제"
+                >
+                  ×
+                </button>
+              </div>
+            ) : existingReceiptImageUrl && !removeReceiptImage ? (
+              <div style={{ position: 'relative', display: 'inline-block', marginBottom: 16 }}>
+                <Image
+                  src={existingReceiptImageUrl}
+                  alt="기존 영수증 이미지"
+                  width={300}
+                  height={200}
+                  style={imagePreviewStyle}
+                />
+                <button
+                  type="button"
+                  onClick={handleReceiptImageDelete}
+                  style={deleteButtonStyle}
+                  aria-label="영수증 이미지 삭제"
                 >
                   ×
                 </button>
               </div>
             ) : (
-              <div {...getRootProps()} style={dropzoneStyle}>
-                <input {...getInputProps()} />
+              <div {...getReceiptRootProps()} style={dropzoneStyle}>
+                <input {...getReceiptInputProps()} />
                 <Text size="2" color="gray">
-                  {isDragActive
+                  {isReceiptDragActive
                     ? '여기로 영수증 이미지를 드래그하세요...'
                     : '클릭 또는 드래그로 영수증 이미지를 첨부하세요'}
                 </Text>
               </div>
             )}
             {ocrLoading && <Text color="gray">GPT Vision 분석 중...</Text>}
+          </div>
+        )}
+
+        {/* 물품 사진 업로드 섹션 */}
+        {showImageUpload && (
+          <div>
+            <Text weight="bold" size="3" mb="2" as="div">
+              물품 사진
+            </Text>
+            {productPreview ? (
+              <div style={{ position: 'relative', display: 'inline-block', marginBottom: 16 }}>
+                <Image
+                  src={productPreview}
+                  alt="물품 미리보기"
+                  width={300}
+                  height={200}
+                  style={imagePreviewStyle}
+                />
+                <button
+                  type="button"
+                  onClick={handleProductImageDelete}
+                  style={deleteButtonStyle}
+                  aria-label="물품 이미지 삭제"
+                >
+                  ×
+                </button>
+              </div>
+            ) : existingProductImageUrl && !removeProductImage ? (
+              <div style={{ position: 'relative', display: 'inline-block', marginBottom: 16 }}>
+                <Image
+                  src={existingProductImageUrl}
+                  alt="기존 물품 이미지"
+                  width={300}
+                  height={200}
+                  style={imagePreviewStyle}
+                />
+                <button
+                  type="button"
+                  onClick={handleProductImageDelete}
+                  style={deleteButtonStyle}
+                  aria-label="물품 이미지 삭제"
+                >
+                  ×
+                </button>
+              </div>
+            ) : (
+              <div {...getProductRootProps()} style={dropzoneStyle}>
+                <input {...getProductInputProps()} />
+                <Text size="2" color="gray">
+                  {isProductDragActive
+                    ? '여기로 물품 이미지를 드래그하세요...'
+                    : '클릭 또는 드래그로 물품 이미지를 첨부하세요'}
+                </Text>
+              </div>
+            )}
           </div>
         )}
 
@@ -295,6 +435,23 @@ export default function ExpenseForm({
                     min="0"
                     required
                   />
+                </td>
+              </tr>
+              <tr>
+                <th>구분항목</th>
+                <td>
+                  <Select.Root
+                    size="3"
+                    value={form.expenseType}
+                    onValueChange={handleExpenseTypeChange}
+                  >
+                    <Select.Trigger placeholder="구분항목 선택" />
+                    <Select.Content>
+                      <Select.Item value="association_fee">협회비</Select.Item>
+                      <Select.Item value="development_fund">발전기금</Select.Item>
+                      <Select.Item value="board_fee">이사회비</Select.Item>
+                    </Select.Content>
+                  </Select.Root>
                 </td>
               </tr>
               <tr>

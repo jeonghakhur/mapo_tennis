@@ -28,6 +28,18 @@ export default defineType({
       validation: (Rule) => Rule.required().positive(),
     }),
     defineField({
+      name: 'expenseType',
+      title: '구분항목',
+      type: 'string',
+      options: {
+        list: [
+          { title: '협회비', value: 'association_fee' },
+          { title: '발전기금', value: 'development_fund' },
+          { title: '이사회비', value: 'board_fee' },
+        ],
+      },
+    }),
+    defineField({
       name: 'category',
       title: '카테고리',
       type: 'string',
@@ -64,6 +76,14 @@ export default defineType({
     defineField({
       name: 'receiptImage',
       title: '영수증 이미지',
+      type: 'image',
+      options: {
+        hotspot: true,
+      },
+    }),
+    defineField({
+      name: 'productImage',
+      title: '물품 이미지',
       type: 'image',
       options: {
         hotspot: true,

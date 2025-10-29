@@ -27,6 +27,7 @@ export async function createExpense(expenseData: ExpenseInput): Promise<Expense>
     storeName: expenseData.storeName,
     address: expenseData.address,
     amount: expenseData.amount,
+    expenseType: expenseData.expenseType,
     category: expenseData.category,
     date: expenseData.date,
     description: expenseData.description,
@@ -36,6 +37,11 @@ export async function createExpense(expenseData: ExpenseInput): Promise<Expense>
     typeof expenseData.receiptImage === 'object' &&
     'asset' in expenseData.receiptImage
       ? { receiptImage: expenseData.receiptImage }
+      : {}),
+    ...(expenseData.productImage &&
+    typeof expenseData.productImage === 'object' &&
+    'asset' in expenseData.productImage
+      ? { productImage: expenseData.productImage }
       : {}),
     ...(expenseData.extractedText ? { extractedText: expenseData.extractedText } : {}),
   };

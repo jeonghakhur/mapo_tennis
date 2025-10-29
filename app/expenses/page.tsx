@@ -42,6 +42,8 @@ function ExpenseStats({ totalAmount, count }: { totalAmount: number; count: numb
 function ExpenseFilters({
   searchTerm,
   setSearchTerm,
+  expenseTypeFilter,
+  setExpenseTypeFilter,
   categoryFilter,
   setCategoryFilter,
   sortBy,
@@ -55,6 +57,8 @@ function ExpenseFilters({
 }: {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
+  expenseTypeFilter: string;
+  setExpenseTypeFilter: (type: string) => void;
   categoryFilter: string;
   setCategoryFilter: (category: string) => void;
   sortBy: 'date' | 'amount' | 'title' | 'createdAt';
@@ -86,7 +90,8 @@ function ExpenseFilters({
     [],
   );
 
-  const hasActiveFilters = categoryFilter !== 'all' || startDate || endDate;
+  const hasActiveFilters =
+    expenseTypeFilter !== 'all' || categoryFilter !== 'all' || startDate || endDate;
 
   return (
     <Card className="p-4 mb-6">
@@ -164,6 +169,22 @@ function ExpenseFilters({
               </div>
             </div>
 
+            {/* 구분항목 필터 */}
+            <div className="flex gap-3 items-center">
+              <Text weight="bold" size="3" mb="2">
+                구분항목
+              </Text>
+              <Select.Root value={expenseTypeFilter} onValueChange={setExpenseTypeFilter} size="3">
+                <Select.Trigger />
+                <Select.Content>
+                  <Select.Item value="all">전체</Select.Item>
+                  <Select.Item value="association_fee">협회비</Select.Item>
+                  <Select.Item value="development_fund">발전기금</Select.Item>
+                  <Select.Item value="board_fee">이사회비</Select.Item>
+                </Select.Content>
+              </Select.Root>
+            </div>
+
             {/* 기존 필터들 */}
             <div className="flex gap-3 items-center">
               <Text weight="bold" size="3" mb="2">
@@ -221,6 +242,7 @@ function ExpenseFilters({
                   variant="soft"
                   color="gray"
                   onClick={() => {
+                    setExpenseTypeFilter('all');
                     setCategoryFilter('all');
                     setStartDate('');
                     setEndDate('');
@@ -247,6 +269,17 @@ function ExpenseCard({ expense, onClick }: { expense: Expense; onClick: () => vo
         <Text size="5" weight="bold" className="block mb-2">
           {expense.title}
         </Text>
+        {expense.expenseType && (
+          <Badge color="gray">
+            {expense.expenseType === 'association_fee'
+              ? '협회비'
+              : expense.expenseType === 'development_fund'
+                ? '발전기금'
+                : expense.expenseType === 'board_fee'
+                  ? '이사회비'
+                  : expense.expenseType}
+          </Badge>
+        )}
         <Badge color={categoryColors[expense.category as keyof typeof categoryColors]}>
           {categoryLabels[expense.category as keyof typeof categoryLabels]}
         </Badge>
@@ -283,6 +316,8 @@ export default function ExpensesPage() {
   const {
     searchTerm,
     setSearchTerm,
+    expenseTypeFilter,
+    setExpenseTypeFilter,
     categoryFilter,
     setCategoryFilter,
     sortBy,
@@ -362,6 +397,8 @@ export default function ExpensesPage() {
           <ExpenseFilters
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
+            expenseTypeFilter={expenseTypeFilter}
+            setExpenseTypeFilter={setExpenseTypeFilter}
             categoryFilter={categoryFilter}
             setCategoryFilter={setCategoryFilter}
             sortBy={sortBy}

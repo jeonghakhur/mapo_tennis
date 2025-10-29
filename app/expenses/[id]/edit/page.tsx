@@ -54,6 +54,7 @@ export default function EditExpensePage({ params }: { params: Promise<{ id: stri
         storeName: expense?.storeName || '',
         address: expense?.address || '',
         amount: expense ? String(expense.amount) : '',
+        expenseType: expense?.expenseType || '',
         category: expense?.category || '',
         date: expense?.date || '',
         description: expense?.description || '',
@@ -61,7 +62,7 @@ export default function EditExpensePage({ params }: { params: Promise<{ id: stri
       onSubmit={handleSubmit}
       onCancel={handleCancel}
       loading={saving}
-      showImageUpload={false}
+      showImageUpload={true}
       isEditMode={true}
       expense={expense}
       onDelete={handleDelete}

@@ -31,10 +31,12 @@ const parseExpenseFormData = (formData: FormData) => {
   const address = formData.get('address') as string;
   const amount = parseInt(formData.get('amount') as string);
   const category = formData.get('category') as string;
+  const expenseType = formData.get('expenseType') as string | null;
   const date = formData.get('date') as string;
   const description = formData.get('description') as string;
   const extractedText = formData.get('extractedText') as string | undefined;
   const receiptImageFile = formData.get('receiptImage') as File | null;
+  const productImageFile = formData.get('productImage') as File | null;
 
   if (!title || !amount || !category || !date) {
     throw new Error('필수 필드가 누락되었습니다.');
@@ -45,11 +47,13 @@ const parseExpenseFormData = (formData: FormData) => {
     storeName,
     address,
     amount,
+    expenseType: expenseType || undefined,
     category: category as ExpenseCategory,
     date,
     description,
     extractedText,
     receiptImageFile,
+    productImageFile,
   };
 };
 
@@ -72,11 +76,25 @@ export async function POST(req: NextRequest) {
 
     let receiptImageSanity = undefined;
     if (parsedData.receiptImageFile && typeof parsedData.receiptImageFile === 'object') {
-      // Sanity에 이미지 업로드
+      // Sanity에 영수증 이미지 업로드
       const asset = await client.assets.upload('image', parsedData.receiptImageFile, {
         filename: parsedData.receiptImageFile.name,
       });
       receiptImageSanity = {
+        asset: {
+          _type: 'reference' as const,
+          _ref: asset._id,
+        },
+      };
+    }
+
+    let productImageSanity = undefined;
+    if (parsedData.productImageFile && typeof parsedData.productImageFile === 'object') {
+      // Sanity에 물품 이미지 업로드
+      const asset = await client.assets.upload('image', parsedData.productImageFile, {
+        filename: parsedData.productImageFile.name,
+      });
+      productImageSanity = {
         asset: {
           _type: 'reference' as const,
           _ref: asset._id,
@@ -89,11 +107,13 @@ export async function POST(req: NextRequest) {
       storeName: parsedData.storeName || undefined,
       address: parsedData.address || undefined,
       amount: parsedData.amount,
+      expenseType: parsedData.expenseType,
       category: parsedData.category,
       date: parsedData.date,
       description: parsedData.description || undefined,
       author,
       receiptImage: receiptImageSanity,
+      productImage: productImageSanity,
       extractedText: parsedData.extractedText || undefined,
     };
 

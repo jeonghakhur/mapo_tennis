@@ -6,7 +6,6 @@ import Container from '@/components/Container';
 import ExpenseForm from '@/components/ExpenseForm';
 import { urlFor } from '@/sanity/lib/image';
 import type { Expense } from '@/model/expense';
-import Image from 'next/image';
 
 interface ExpensePageLayoutProps {
   // 페이지 정보
@@ -20,6 +19,7 @@ interface ExpensePageLayoutProps {
     storeName: string;
     address: string;
     amount: string;
+    expenseType?: string;
     category: string;
     date: string;
     description: string;
@@ -84,35 +84,32 @@ export default function ExpensePageLayout({
       {/* 폼 */}
       <ExpenseForm
         submitButtonText={submitButtonText}
-        initialData={initialData}
+        initialData={
+          isEditMode && expense
+            ? {
+                title: expense.title,
+                storeName: expense.storeName || '',
+                address: expense.address || '',
+                amount: String(expense.amount),
+                expenseType: expense.expenseType || '',
+                category: expense.category,
+                date: expense.date,
+                description: expense.description || '',
+              }
+            : initialData
+        }
         onSubmit={onSubmit}
         onCancel={onCancel}
         loading={loading}
         showImageUpload={showImageUpload}
+        isEditMode={isEditMode}
+        existingReceiptImageUrl={
+          expense?.receiptImage ? urlFor(expense.receiptImage).url() : undefined
+        }
+        existingProductImageUrl={
+          expense?.productImage ? urlFor(expense.productImage).url() : undefined
+        }
       />
-
-      {/* 수정 페이지에서만 영수증 이미지 표시 */}
-      {isEditMode && expense?.receiptImage && (
-        <Box className="mt-8">
-          <Text weight="bold" size="3" color="gray" mb="4">
-            기존 영수증 이미지
-          </Text>
-          <Box className="border rounded-lg overflow-hidden">
-            <Image
-              src={urlFor(expense.receiptImage).url()}
-              alt="영수증"
-              width={800}
-              height={600}
-              style={{
-                width: '100%',
-                height: 'auto',
-                objectFit: 'contain',
-                maxHeight: 'none',
-              }}
-            />
-          </Box>
-        </Box>
-      )}
     </Container>
   );
 }

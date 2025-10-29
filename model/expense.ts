@@ -5,6 +5,7 @@ export interface Expense {
   storeName?: string;
   address?: string;
   amount: number;
+  expenseType?: 'association_fee' | 'development_fund' | 'board_fee';
   category:
     | 'court_rental'
     | 'equipment'
@@ -39,6 +40,24 @@ export interface Expense {
       right: number;
     };
   };
+  productImage?: {
+    asset: {
+      _ref: string;
+      _type: 'reference';
+    };
+    hotspot?: {
+      x: number;
+      y: number;
+      height: number;
+      width: number;
+    };
+    crop?: {
+      top: number;
+      bottom: number;
+      left: number;
+      right: number;
+    };
+  };
   extractedText?: string;
   author: string;
   createdAt: string;
@@ -50,6 +69,7 @@ export interface ExpenseInput {
   storeName?: string;
   address?: string;
   amount: number;
+  expenseType?: 'association_fee' | 'development_fund' | 'board_fee';
   category:
     | 'court_rental'
     | 'equipment'
@@ -67,6 +87,7 @@ export interface ExpenseInput {
   date: string;
   description?: string;
   receiptImage?: File | { asset: { _ref: string; _type: 'reference' } };
+  productImage?: File | { asset: { _ref: string; _type: 'reference' } };
   extractedText?: string;
   author: string;
 }

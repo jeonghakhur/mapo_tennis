@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
       storeName: parsedData.storeName || undefined,
       address: parsedData.address || undefined,
       amount: parsedData.amount,
-      expenseType: parsedData.expenseType,
+      expenseType: parsedData.expenseType as ExpenseInput['expenseType'],
       category: parsedData.category,
       date: parsedData.date,
       description: parsedData.description || undefined,

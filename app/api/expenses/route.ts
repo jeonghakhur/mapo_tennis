@@ -36,7 +36,7 @@ const parseExpenseFormData = (formData: FormData) => {
   const description = formData.get('description') as string;
   const extractedText = formData.get('extractedText') as string | undefined;
   const receiptImageFile = formData.get('receiptImage') as File | null;
-  const productImageFile = formData.get('productImage') as File | null;
+  const attachmentFiles = formData.getAll('attachments') as File[];
 
   if (!title || !amount || !category || !date) {
     throw new Error('필수 필드가 누락되었습니다.');
@@ -53,7 +53,7 @@ const parseExpenseFormData = (formData: FormData) => {
     description,
     extractedText,
     receiptImageFile,
-    productImageFile,
+    attachmentFiles,
   };
 };
 
@@ -88,18 +88,22 @@ export async function POST(req: NextRequest) {
       };
     }
 
-    let productImageSanity = undefined;
-    if (parsedData.productImageFile && typeof parsedData.productImageFile === 'object') {
-      // Sanity에 물품 이미지 업로드
-      const asset = await client.assets.upload('image', parsedData.productImageFile, {
-        filename: parsedData.productImageFile.name,
-      });
-      productImageSanity = {
-        asset: {
-          _type: 'reference' as const,
-          _ref: asset._id,
-        },
-      };
+    // 첨부파일 업로드
+    const attachmentReferences: Array<{ asset: { _ref: string; _type: 'reference' } }> = [];
+    if (parsedData.attachmentFiles && parsedData.attachmentFiles.length > 0) {
+      for (const attachmentFile of parsedData.attachmentFiles) {
+        if (attachmentFile && typeof attachmentFile === 'object') {
+          const asset = await client.assets.upload('file', attachmentFile, {
+            filename: attachmentFile.name,
+          });
+          attachmentReferences.push({
+            asset: {
+              _type: 'reference' as const,
+              _ref: asset._id,
+            },
+          });
+        }
+      }
     }
 
     const expenseData: ExpenseInput = {
@@ -113,8 +117,8 @@ export async function POST(req: NextRequest) {
       description: parsedData.description || undefined,
       author,
       receiptImage: receiptImageSanity,
-      productImage: productImageSanity,
       extractedText: parsedData.extractedText || undefined,
+      attachments: attachmentReferences.length > 0 ? attachmentReferences : undefined,
     };
 
     const expense = await createExpense(expenseData);

@@ -28,7 +28,6 @@ interface ExpenseFormProps {
   showImageUpload?: boolean;
   // 수정 페이지용: 기존 이미지 미리보기 URL
   existingReceiptImageUrl?: string;
-  existingProductImageUrl?: string;
   isEditMode?: boolean;
 }
 
@@ -40,7 +39,6 @@ export default function ExpenseForm({
   loading = false,
   showImageUpload = true,
   existingReceiptImageUrl,
-  existingProductImageUrl,
   isEditMode = false,
 }: ExpenseFormProps) {
   const [form, setForm] = useState<ExpenseFormData>({
@@ -57,12 +55,11 @@ export default function ExpenseForm({
 
   const [receiptImage, setReceiptImage] = useState<File | undefined>(undefined);
   const [preview, setPreview] = useState<string | null>(null);
-  const [productImage, setProductImage] = useState<File | undefined>(undefined);
-  const [productPreview, setProductPreview] = useState<string | null>(null);
+  const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
+  const [attachmentPreviews, setAttachmentPreviews] = useState<string[]>([]);
   const [ocrLoading, setOcrLoading] = useState(false);
   const [error, setError] = useState('');
   const [removeReceiptImage, setRemoveReceiptImage] = useState(false);
-  const [removeProductImage, setRemoveProductImage] = useState(false);
 
   // 영수증 드래그 앤 드롭 설정
   const onReceiptDrop = useCallback((acceptedFiles: File[]) => {
@@ -77,15 +74,6 @@ export default function ExpenseForm({
     }
   }, []);
 
-  // 물품 사진 드래그 앤 드롭 설정
-  const onProductDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles && acceptedFiles[0]) {
-      const file = acceptedFiles[0];
-      setProductImage(file);
-      setProductPreview(URL.createObjectURL(file));
-    }
-  }, []);
-
   const {
     getRootProps: getReceiptRootProps,
     getInputProps: getReceiptInputProps,
@@ -96,14 +84,39 @@ export default function ExpenseForm({
     multiple: false,
   });
 
+  // 첨부파일 드래그 앤 드롭 설정
+  const onAttachmentDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      if (acceptedFiles && acceptedFiles.length > 0) {
+        const newFiles = [...attachmentFiles, ...acceptedFiles];
+        setAttachmentFiles(newFiles);
+
+        // 미리보기 생성
+        const newPreviews = acceptedFiles.map((file) => URL.createObjectURL(file));
+        setAttachmentPreviews((prev) => [...prev, ...newPreviews]);
+      }
+    },
+    [attachmentFiles],
+  );
+
   const {
-    getRootProps: getProductRootProps,
-    getInputProps: getProductInputProps,
-    isDragActive: isProductDragActive,
+    getRootProps: getAttachmentRootProps,
+    getInputProps: getAttachmentInputProps,
+    isDragActive: isAttachmentDragActive,
   } = useDropzone({
-    onDrop: onProductDrop,
-    accept: { 'image/*': [] },
-    multiple: false,
+    onDrop: onAttachmentDrop,
+    accept: {
+      'image/*': ['.jpg', '.jpeg', '.png', '.gif'],
+      'application/pdf': ['.pdf'],
+      'application/msword': ['.doc'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'application/vnd.ms-excel': ['.xls'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+      'application/x-unknown': ['.hwp'],
+      'application/haansofthwp': ['.hwp'],
+      'application/haansofthwpx': ['.hwpx'],
+    },
+    multiple: true,
   });
 
   // GPT Vision 처리 및 자동입력
@@ -192,15 +205,6 @@ export default function ExpenseForm({
     }));
   }, [isEditMode, existingReceiptImageUrl]);
 
-  // 물품 이미지 삭제
-  const handleProductImageDelete = useCallback(() => {
-    setProductImage(undefined);
-    setProductPreview(null);
-    if (isEditMode && existingProductImageUrl) {
-      setRemoveProductImage(true);
-    }
-  }, [isEditMode, existingProductImageUrl]);
-
   // 폼 제출
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -232,13 +236,10 @@ export default function ExpenseForm({
         formData.append('removeReceiptImage', '1');
       }
 
-      if (productImage) {
-        formData.append('productImage', productImage);
-      }
-
-      if (removeProductImage) {
-        formData.append('removeProductImage', '1');
-      }
+      // 첨부파일 추가
+      attachmentFiles.forEach((file) => {
+        formData.append('attachments', file);
+      });
 
       await onSubmit(formData);
     } catch (err) {
@@ -278,6 +279,17 @@ export default function ExpenseForm({
     [],
   );
 
+  // 첨부파일 삭제 핸들러
+  const handleAttachmentDelete = useCallback(
+    (index: number) => {
+      setAttachmentFiles((prev) => prev.filter((_, i) => i !== index));
+      const previewToRemove = attachmentPreviews[index];
+      URL.revokeObjectURL(previewToRemove);
+      setAttachmentPreviews((prev) => prev.filter((_, i) => i !== index));
+    },
+    [attachmentPreviews],
+  );
+
   // 드롭존 스타일
   const dropzoneStyle = useMemo(
     () => ({
@@ -287,9 +299,9 @@ export default function ExpenseForm({
       textAlign: 'center' as const,
       marginBottom: 16,
       cursor: 'pointer',
-      background: isReceiptDragActive || isProductDragActive ? '#f0f0f0' : '#fafafa',
+      background: isReceiptDragActive || isAttachmentDragActive ? '#f0f0f0' : '#fafafa',
     }),
-    [isReceiptDragActive, isProductDragActive],
+    [isReceiptDragActive, isAttachmentDragActive],
   );
 
   return (
@@ -351,58 +363,61 @@ export default function ExpenseForm({
           </div>
         )}
 
-        {/* 물품 사진 업로드 섹션 */}
+        {/* 첨부파일 업로드 섹션 */}
         {showImageUpload && (
           <div>
             <Text weight="bold" size="3" mb="2" as="div">
-              물품 사진
+              첨부파일
             </Text>
-            {productPreview ? (
-              <div style={{ position: 'relative', display: 'inline-block', marginBottom: 16 }}>
-                <Image
-                  src={productPreview}
-                  alt="물품 미리보기"
-                  width={300}
-                  height={200}
-                  style={imagePreviewStyle}
-                />
-                <button
-                  type="button"
-                  onClick={handleProductImageDelete}
-                  style={deleteButtonStyle}
-                  aria-label="물품 이미지 삭제"
-                >
-                  ×
-                </button>
-              </div>
-            ) : existingProductImageUrl && !removeProductImage ? (
-              <div style={{ position: 'relative', display: 'inline-block', marginBottom: 16 }}>
-                <Image
-                  src={existingProductImageUrl}
-                  alt="기존 물품 이미지"
-                  width={300}
-                  height={200}
-                  style={imagePreviewStyle}
-                />
-                <button
-                  type="button"
-                  onClick={handleProductImageDelete}
-                  style={deleteButtonStyle}
-                  aria-label="물품 이미지 삭제"
-                >
-                  ×
-                </button>
-              </div>
-            ) : (
-              <div {...getProductRootProps()} style={dropzoneStyle}>
-                <input {...getProductInputProps()} />
-                <Text size="2" color="gray">
-                  {isProductDragActive
-                    ? '여기로 물품 이미지를 드래그하세요...'
-                    : '클릭 또는 드래그로 물품 이미지를 첨부하세요'}
-                </Text>
+            {attachmentFiles.length > 0 && (
+              <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {attachmentPreviews.map((preview, index) => (
+                  <div key={index} style={{ position: 'relative', display: 'inline-block' }}>
+                    {attachmentFiles[index].type.startsWith('image/') ? (
+                      <Image
+                        src={preview}
+                        alt={`첨부파일 ${index + 1}`}
+                        width={300}
+                        height={200}
+                        style={imagePreviewStyle}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          ...imagePreviewStyle,
+                          width: 300,
+                          height: 200,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: '#f5f5f5',
+                        }}
+                      >
+                        <Text size="2" color="gray">
+                          {attachmentFiles[index].name}
+                        </Text>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleAttachmentDelete(index)}
+                      style={deleteButtonStyle}
+                      aria-label={`첨부파일 ${index + 1} 삭제`}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
+            <div {...getAttachmentRootProps()} style={dropzoneStyle}>
+              <input {...getAttachmentInputProps()} />
+              <Text size="2" color="gray">
+                {isAttachmentDragActive
+                  ? '여기로 첨부파일을 드래그하세요...'
+                  : '클릭 또는 드래그로 첨부파일을 추가하세요 (이미지, PDF, 엑셀, 워드 등)'}
+              </Text>
+            </div>
           </div>
         )}
 

@@ -13,7 +13,19 @@ export async function getExpenses(): Promise<Expense[]> {
 export async function getExpense(id: string): Promise<Expense | null> {
   return await client.fetch(
     `
-    *[_type == "expense" && _id == $id][0]
+    *[_type == "expense" && _id == $id][0] {
+      ...,
+      attachments[] {
+        ...,
+        asset-> {
+          _id,
+          _type,
+          "originalFilename": originalFilename,
+          "url": url,
+          "mimeType": mimeType
+        }
+      }
+    }
   `,
     { id },
   );
@@ -44,6 +56,9 @@ export async function createExpense(expenseData: ExpenseInput): Promise<Expense>
       ? { productImage: expenseData.productImage }
       : {}),
     ...(expenseData.extractedText ? { extractedText: expenseData.extractedText } : {}),
+    ...(expenseData.attachments && expenseData.attachments.length > 0
+      ? { attachments: expenseData.attachments }
+      : {}),
   };
 
   return (await client.create(doc)) as Expense;

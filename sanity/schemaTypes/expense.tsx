@@ -96,6 +96,12 @@ export default defineType({
       readOnly: true,
     }),
     defineField({
+      name: 'attachments',
+      title: '첨부파일',
+      type: 'array',
+      of: [{ type: 'file' }],
+    }),
+    defineField({
       name: 'author',
       title: '작성자',
       type: 'string',

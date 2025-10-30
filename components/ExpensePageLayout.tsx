@@ -106,9 +106,6 @@ export default function ExpensePageLayout({
         existingReceiptImageUrl={
           expense?.receiptImage ? urlFor(expense.receiptImage).url() : undefined
         }
-        existingProductImageUrl={
-          expense?.productImage ? urlFor(expense.productImage).url() : undefined
-        }
       />
     </Container>
   );

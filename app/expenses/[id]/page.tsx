@@ -9,6 +9,7 @@ import { useExpense, useExpenses } from '@/hooks/useExpenses';
 import { urlFor } from '@/sanity/lib/image';
 import type { Expense } from '@/model/expense';
 import SkeletonCard from '@/components/SkeletonCard';
+import { Download } from 'lucide-react';
 
 // 헤더 컴포넌트
 function ExpenseHeader({
@@ -205,6 +206,90 @@ function ImageSection({
   );
 }
 
+// 첨부파일 컴포넌트
+function AttachmentSection({ expense }: { expense: Expense }) {
+  if (!expense.attachments || expense.attachments.length === 0) {
+    return null;
+  }
+
+  const handleDownload = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('파일을 가져올 수 없습니다.');
+      }
+
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+
+      // 파일 다운로드
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+      console.error('첨부파일 다운로드 실패:', e);
+      alert('첨부파일 다운로드에 실패했습니다.');
+    }
+  };
+
+  return (
+    <div className="mt-6">
+      <Text weight="bold" size="3" mb="2" as="div">
+        첨부파일
+      </Text>
+      <Flex direction="column" gap="2">
+        {expense.attachments.map((attachment, index) => {
+          const asset = attachment.asset;
+          const assetRef = asset._ref || '';
+
+          // Sanity에서 가져온 URL이 있는지 확인
+          const attachmentUrl =
+            asset?.url ||
+            `https://cdn.sanity.io/files/${process.env.NEXT_PUBLIC_SANITY_PROJECT_ID}/${process.env.NEXT_PUBLIC_SANITY_DATASET}/${assetRef}`;
+
+          const fileName = asset.originalFilename || `첨부파일_${index + 1}`;
+          const mimeType = asset.mimeType || '';
+          const isImageFile = mimeType?.startsWith('image/') || assetRef?.startsWith('image-');
+
+          return (
+            <Box key={index} p="3" style={{ border: '1px solid #ddd', borderRadius: 8 }}>
+              <Flex gap="3" align="center">
+                {isImageFile && (
+                  <Image
+                    src={attachmentUrl}
+                    alt={`첨부파일 ${index + 1}`}
+                    width={100}
+                    height={100}
+                    style={{
+                      borderRadius: 8,
+                      objectFit: 'cover',
+                    }}
+                  />
+                )}
+                <Box
+                  style={{ flex: 1, cursor: 'pointer' }}
+                  onClick={() => handleDownload(attachmentUrl, fileName)}
+                >
+                  <Flex align="center" gap="2">
+                    <Text size="3" weight="medium">
+                      {fileName}
+                    </Text>
+                    <Download size={16} color="#666" />
+                  </Flex>
+                </Box>
+              </Flex>
+            </Box>
+          );
+        })}
+      </Flex>
+    </div>
+  );
+}
+
 export default function ExpenseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params);
   const router = useRouter();
@@ -270,8 +355,8 @@ export default function ExpenseDetailPage({ params }: { params: Promise<{ id: st
         {/* 영수증 이미지 */}
         <ImageSection expense={expense} imageType="receiptImage" title="영수증 이미지" />
 
-        {/* 물품 이미지 */}
-        <ImageSection expense={expense} imageType="productImage" title="물품 이미지" />
+        {/* 첨부파일 */}
+        <AttachmentSection expense={expense} />
       </div>
     </Container>
   );

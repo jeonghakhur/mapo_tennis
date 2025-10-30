@@ -59,6 +59,27 @@ export interface Expense {
     };
   };
   extractedText?: string;
+  attachments?: Array<{
+    asset: {
+      _ref: string;
+      _type: 'reference';
+      originalFilename?: string;
+      url?: string;
+      mimeType?: string;
+    };
+    hotspot?: {
+      x: number;
+      y: number;
+      height: number;
+      width: number;
+    };
+    crop?: {
+      top: number;
+      bottom: number;
+      left: number;
+      right: number;
+    };
+  }>;
   author: string;
   createdAt: string;
   updatedAt?: string;
@@ -89,5 +110,6 @@ export interface ExpenseInput {
   receiptImage?: File | { asset: { _ref: string; _type: 'reference' } };
   productImage?: File | { asset: { _ref: string; _type: 'reference' } };
   extractedText?: string;
+  attachments?: Array<{ asset: { _ref: string; _type: 'reference' } }>;
   author: string;
 }

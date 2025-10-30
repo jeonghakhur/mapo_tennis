@@ -35,9 +35,7 @@ const parseExpenseFormData = (formData: FormData) => {
   const date = formData.get('date') as string;
   const description = formData.get('description') as string;
   const receiptImageFile = formData.get('receiptImage') as File | null;
-  const productImageFile = formData.get('productImage') as File | null;
   const removeReceiptImage = formData.get('removeReceiptImage') as string | null;
-  const removeProductImage = formData.get('removeProductImage') as string | null;
 
   if (!title || !amount || !category || !date) {
     throw new Error('필수 필드가 누락되었습니다.');
@@ -53,9 +51,7 @@ const parseExpenseFormData = (formData: FormData) => {
     date,
     description,
     receiptImageFile,
-    productImageFile,
     removeReceiptImage: !!removeReceiptImage,
-    removeProductImage: !!removeProductImage,
   };
 };
 
@@ -99,19 +95,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       });
       updateData.receiptImage = { asset: { _type: 'reference' as const, _ref: asset._id } };
     }
-    if (parsedData.productImageFile && typeof parsedData.productImageFile === 'object') {
-      const asset = await client.assets.upload('image', parsedData.productImageFile, {
-        filename: parsedData.productImageFile.name,
-      });
-      updateData.productImage = { asset: { _type: 'reference' as const, _ref: asset._id } };
-    }
 
     let expense = await updateExpense(id, updateData);
 
     // 삭제 플래그 처리 (새 이미지가 없을 때만 언셋)
     const unsetFields: string[] = [];
     if (parsedData.removeReceiptImage && !updateData.receiptImage) unsetFields.push('receiptImage');
-    if (parsedData.removeProductImage && !updateData.productImage) unsetFields.push('productImage');
     if (unsetFields.length > 0) {
       expense = await client.patch(id).unset(unsetFields).commit();
     }

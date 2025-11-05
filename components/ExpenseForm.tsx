@@ -3,7 +3,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { Box, Text, Button, TextField, Select, Flex } from '@radix-ui/themes';
 import { useDropzone } from 'react-dropzone';
 import Image from 'next/image';
-import { Save } from 'lucide-react';
+import { Save, Trash2 } from 'lucide-react';
 import { categoryOptions, extractAmountFromText } from '@/lib/expenseUtils';
 
 interface ExpenseFormData {
@@ -263,8 +263,8 @@ export default function ExpenseForm({
       position: 'absolute' as const,
       top: 4,
       right: 4,
-      background: 'rgba(0,0,0,0.5)',
-      color: '#fff',
+      // background: 'rgba(0,0,0,0.5)',
+      color: '#666',
       border: 'none',
       borderRadius: '50%',
       width: 24,
@@ -374,38 +374,38 @@ export default function ExpenseForm({
                 {attachmentPreviews.map((preview, index) => (
                   <div key={index} style={{ position: 'relative', display: 'inline-block' }}>
                     {attachmentFiles[index].type.startsWith('image/') ? (
-                      <Image
-                        src={preview}
-                        alt={`첨부파일 ${index + 1}`}
-                        width={300}
-                        height={200}
-                        style={imagePreviewStyle}
-                      />
+                      <>
+                        <Image
+                          src={preview}
+                          alt={`첨부파일 ${index + 1}`}
+                          width={300}
+                          height={200}
+                          style={imagePreviewStyle}
+                        />
+                        <Trash2
+                          size={18}
+                          style={{ position: 'absolute', top: 4, right: 4, cursor: 'pointer' }}
+                          onClick={() => handleAttachmentDelete(index)}
+                        />
+                      </>
                     ) : (
                       <div
                         style={{
-                          ...imagePreviewStyle,
-                          width: 300,
-                          height: 200,
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: '#f5f5f5',
+                          padding: '8px 16px',
+                          borderRadius: 8,
+                          cursor: 'pointer',
+                          gap: 4,
                         }}
+                        onClick={() => handleAttachmentDelete(index)}
                       >
                         <Text size="2" color="gray">
                           {attachmentFiles[index].name}
                         </Text>
+                        <Trash2 size={18} />
                       </div>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => handleAttachmentDelete(index)}
-                      style={deleteButtonStyle}
-                      aria-label={`첨부파일 ${index + 1} 삭제`}
-                    >
-                      ×
-                    </button>
                   </div>
                 ))}
               </div>

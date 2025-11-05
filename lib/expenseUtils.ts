@@ -9,6 +9,7 @@ export const categoryOptions = [
   { value: 'marketing', label: '홍보/마케팅' },
   { value: 'staff', label: '인건비' },
   { value: 'office', label: '사무용품' },
+  { value: 'medical', label: '구급약' },
   { value: 'cleaning', label: '청소/위생' },
   { value: 'food', label: '식비/음료' },
   { value: 'transport', label: '교통비' },

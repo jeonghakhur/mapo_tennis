@@ -242,49 +242,52 @@ function AttachmentSection({ expense }: { expense: Expense }) {
         첨부파일
       </Text>
       <Flex direction="column" gap="2">
-        {expense.attachments.map((attachment, index) => {
-          const asset = attachment.asset;
-          const assetRef = asset._ref || '';
+        {expense.attachments
+          .filter((attachment) => attachment.asset != null)
+          .map((attachment, index) => {
+            const asset = attachment.asset;
+            // Sanity에서 확장된 asset 객체의 경우 _id가 있고, reference인 경우 _ref가 있음
+            const assetRef = asset?._ref || asset?._id || '';
 
-          // Sanity에서 가져온 URL이 있는지 확인
-          const attachmentUrl =
-            asset?.url ||
-            `https://cdn.sanity.io/files/${process.env.NEXT_PUBLIC_SANITY_PROJECT_ID}/${process.env.NEXT_PUBLIC_SANITY_DATASET}/${assetRef}`;
+            // Sanity에서 가져온 URL이 있는지 확인
+            const attachmentUrl =
+              asset?.url ||
+              `https://cdn.sanity.io/files/${process.env.NEXT_PUBLIC_SANITY_PROJECT_ID}/${process.env.NEXT_PUBLIC_SANITY_DATASET}/${assetRef}`;
 
-          const fileName = asset.originalFilename || `첨부파일_${index + 1}`;
-          const mimeType = asset.mimeType || '';
-          const isImageFile = mimeType?.startsWith('image/') || assetRef?.startsWith('image-');
+            const fileName = asset?.originalFilename || `첨부파일_${index + 1}`;
+            const mimeType = asset?.mimeType || '';
+            const isImageFile = mimeType?.startsWith('image/') || assetRef?.startsWith('image-');
 
-          return (
-            <Box key={index} p="3" style={{ border: '1px solid #ddd', borderRadius: 8 }}>
-              <Flex gap="3" align="center">
-                {isImageFile && (
-                  <Image
-                    src={attachmentUrl}
-                    alt={`첨부파일 ${index + 1}`}
-                    width={100}
-                    height={100}
-                    style={{
-                      borderRadius: 8,
-                      objectFit: 'cover',
-                    }}
-                  />
-                )}
-                <Box
-                  style={{ flex: 1, cursor: 'pointer' }}
-                  onClick={() => handleDownload(attachmentUrl, fileName)}
-                >
-                  <Flex align="center" gap="2">
-                    <Text size="3" weight="medium">
-                      {fileName}
-                    </Text>
-                    <Download size={16} color="#666" />
-                  </Flex>
-                </Box>
-              </Flex>
-            </Box>
-          );
-        })}
+            return (
+              <Box key={index} p="3" style={{ border: '1px solid #ddd', borderRadius: 8 }}>
+                <Flex gap="3" align="center">
+                  {isImageFile && (
+                    <Image
+                      src={attachmentUrl}
+                      alt={`첨부파일 ${index + 1}`}
+                      width={100}
+                      height={100}
+                      style={{
+                        borderRadius: 8,
+                        objectFit: 'cover',
+                      }}
+                    />
+                  )}
+                  <Box
+                    style={{ flex: 1, cursor: 'pointer' }}
+                    onClick={() => handleDownload(attachmentUrl, fileName)}
+                  >
+                    <Flex align="center" gap="2">
+                      <Text size="3" weight="medium">
+                        {fileName}
+                      </Text>
+                      <Download size={16} color="#666" />
+                    </Flex>
+                  </Box>
+                </Flex>
+              </Box>
+            );
+          })}
       </Flex>
     </div>
   );

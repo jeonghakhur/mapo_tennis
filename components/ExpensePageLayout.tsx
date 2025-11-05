@@ -106,6 +106,7 @@ export default function ExpensePageLayout({
         existingReceiptImageUrl={
           expense?.receiptImage ? urlFor(expense.receiptImage).url() : undefined
         }
+        existingAttachments={expense?.attachments}
       />
     </Container>
   );

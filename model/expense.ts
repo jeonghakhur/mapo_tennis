@@ -60,9 +60,11 @@ export interface Expense {
   };
   extractedText?: string;
   attachments?: Array<{
+    _key?: string;
     asset: {
-      _ref: string;
-      _type: 'reference';
+      _ref?: string;
+      _id?: string;
+      _type?: 'reference' | 'sanity.fileAsset';
       originalFilename?: string;
       url?: string;
       mimeType?: string;
@@ -110,6 +112,6 @@ export interface ExpenseInput {
   receiptImage?: File | { asset: { _ref: string; _type: 'reference' } };
   productImage?: File | { asset: { _ref: string; _type: 'reference' } };
   extractedText?: string;
-  attachments?: Array<{ asset: { _ref: string; _type: 'reference' } }>;
+  attachments?: Array<{ _key?: string; asset: { _ref: string; _type: 'reference' } }>;
   author: string;
 }

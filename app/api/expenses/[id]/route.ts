@@ -36,6 +36,8 @@ const parseExpenseFormData = (formData: FormData) => {
   const description = formData.get('description') as string;
   const receiptImageFile = formData.get('receiptImage') as File | null;
   const removeReceiptImage = formData.get('removeReceiptImage') as string | null;
+  const attachmentFiles = formData.getAll('attachments') as File[];
+  const removeAttachmentRefs = formData.getAll('removeAttachments') as string[];
 
   if (!title || !amount || !category || !date) {
     throw new Error('필수 필드가 누락되었습니다.');
@@ -52,6 +54,8 @@ const parseExpenseFormData = (formData: FormData) => {
     description,
     receiptImageFile,
     removeReceiptImage: !!removeReceiptImage,
+    attachmentFiles,
+    removeAttachmentRefs,
   };
 };
 
@@ -95,6 +99,64 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       });
       updateData.receiptImage = { asset: { _type: 'reference' as const, _ref: asset._id } };
     }
+
+    // 새 첨부파일 업로드
+    const attachmentReferences: Array<{
+      _key: string;
+      asset: { _ref: string; _type: 'reference' };
+    }> = [];
+    if (parsedData.attachmentFiles && parsedData.attachmentFiles.length > 0) {
+      for (const attachmentFile of parsedData.attachmentFiles) {
+        if (attachmentFile && typeof attachmentFile === 'object') {
+          const asset = await client.assets.upload('file', attachmentFile, {
+            filename: attachmentFile.name,
+          });
+          attachmentReferences.push({
+            _key: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+            asset: {
+              _type: 'reference' as const,
+              _ref: asset._id,
+            },
+          });
+        }
+      }
+    }
+
+    // 기존 expense 조회하여 attachments 가져오기
+    const existingExpense = await getExpense(id);
+    let updatedAttachments = existingExpense?.attachments || [];
+
+    // 삭제된 첨부파일 제거
+    if (parsedData.removeAttachmentRefs && parsedData.removeAttachmentRefs.length > 0) {
+      updatedAttachments = updatedAttachments.filter((attachment) => {
+        if (!attachment.asset) return false;
+        // 확장된 asset의 경우 _id가 있고, reference인 경우 _ref가 있음
+        const assetId = attachment.asset._ref || attachment.asset._id;
+        return assetId && !parsedData.removeAttachmentRefs.includes(assetId);
+      });
+    }
+
+    // 기존 첨부파일에 _key가 없으면 추가 (Sanity 배열 항목에는 _key가 필요)
+    updatedAttachments = updatedAttachments.map((attachment, index) => {
+      if (!attachment._key) {
+        return {
+          ...attachment,
+          _key: `existing-${attachment.asset._ref || attachment.asset._id || index}`,
+        };
+      }
+      return attachment;
+    });
+
+    // 새 첨부파일 추가
+    if (attachmentReferences.length > 0) {
+      updatedAttachments = [...updatedAttachments, ...attachmentReferences];
+    }
+
+    // attachments 업데이트 (빈 배열이어도 명시적으로 설정)
+    updateData.attachments = updatedAttachments as Array<{
+      _key?: string;
+      asset: { _ref: string; _type: 'reference' };
+    }>;
 
     let expense = await updateExpense(id, updateData);
 

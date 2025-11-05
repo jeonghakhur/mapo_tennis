@@ -89,7 +89,10 @@ export async function POST(req: NextRequest) {
     }
 
     // 첨부파일 업로드
-    const attachmentReferences: Array<{ asset: { _ref: string; _type: 'reference' } }> = [];
+    const attachmentReferences: Array<{
+      _key: string;
+      asset: { _ref: string; _type: 'reference' };
+    }> = [];
     if (parsedData.attachmentFiles && parsedData.attachmentFiles.length > 0) {
       for (const attachmentFile of parsedData.attachmentFiles) {
         if (attachmentFile && typeof attachmentFile === 'object') {
@@ -97,6 +100,7 @@ export async function POST(req: NextRequest) {
             filename: attachmentFile.name,
           });
           attachmentReferences.push({
+            _key: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
             asset: {
               _type: 'reference' as const,
               _ref: asset._id,

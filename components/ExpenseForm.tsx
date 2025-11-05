@@ -28,6 +28,17 @@ interface ExpenseFormProps {
   showImageUpload?: boolean;
   // 수정 페이지용: 기존 이미지 미리보기 URL
   existingReceiptImageUrl?: string;
+  // 수정 페이지용: 기존 첨부파일
+  existingAttachments?: Array<{
+    asset: {
+      _ref?: string;
+      _id?: string;
+      _type?: 'reference' | 'sanity.fileAsset';
+      originalFilename?: string;
+      url?: string;
+      mimeType?: string;
+    };
+  }>;
   isEditMode?: boolean;
 }
 
@@ -39,6 +50,7 @@ export default function ExpenseForm({
   loading = false,
   showImageUpload = true,
   existingReceiptImageUrl,
+  existingAttachments,
   isEditMode = false,
 }: ExpenseFormProps) {
   const [form, setForm] = useState<ExpenseFormData>({
@@ -57,6 +69,7 @@ export default function ExpenseForm({
   const [preview, setPreview] = useState<string | null>(null);
   const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
   const [attachmentPreviews, setAttachmentPreviews] = useState<string[]>([]);
+  const [removedAttachmentRefs, setRemovedAttachmentRefs] = useState<string[]>([]);
   const [ocrLoading, setOcrLoading] = useState(false);
   const [error, setError] = useState('');
   const [removeReceiptImage, setRemoveReceiptImage] = useState(false);
@@ -86,13 +99,47 @@ export default function ExpenseForm({
 
   // 첨부파일 드래그 앤 드롭 설정
   const onAttachmentDrop = useCallback(
-    (acceptedFiles: File[]) => {
+    (acceptedFiles: File[], rejectedFiles: unknown[]) => {
+      if (rejectedFiles && rejectedFiles.length > 0) {
+        console.warn('일부 파일이 거부되었습니다:', rejectedFiles);
+      }
+
       if (acceptedFiles && acceptedFiles.length > 0) {
-        const newFiles = [...attachmentFiles, ...acceptedFiles];
+        // 허용된 확장자 목록
+        const allowedExtensions = [
+          '.jpg',
+          '.jpeg',
+          '.png',
+          '.gif',
+          '.pdf',
+          '.doc',
+          '.docx',
+          '.xls',
+          '.xlsx',
+          '.hwp',
+          '.hwpx',
+        ];
+
+        // 파일 확장자 검증
+        const validFiles = acceptedFiles.filter((file) => {
+          const fileName = file.name.toLowerCase();
+          return allowedExtensions.some((ext) => fileName.endsWith(ext));
+        });
+
+        if (validFiles.length === 0) {
+          alert('지원하지 않는 파일 형식입니다.');
+          return;
+        }
+
+        if (validFiles.length < acceptedFiles.length) {
+          alert('일부 파일이 지원하지 않는 형식이어서 제외되었습니다.');
+        }
+
+        const newFiles = [...attachmentFiles, ...validFiles];
         setAttachmentFiles(newFiles);
 
         // 미리보기 생성
-        const newPreviews = acceptedFiles.map((file) => URL.createObjectURL(file));
+        const newPreviews = validFiles.map((file) => URL.createObjectURL(file));
         setAttachmentPreviews((prev) => [...prev, ...newPreviews]);
       }
     },
@@ -105,17 +152,7 @@ export default function ExpenseForm({
     isDragActive: isAttachmentDragActive,
   } = useDropzone({
     onDrop: onAttachmentDrop,
-    accept: {
-      'image/*': ['.jpg', '.jpeg', '.png', '.gif'],
-      'application/pdf': ['.pdf'],
-      'application/msword': ['.doc'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-      'application/vnd.ms-excel': ['.xls'],
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-      'application/x-unknown': ['.hwp'],
-      'application/haansofthwp': ['.hwp'],
-      'application/haansofthwpx': ['.hwpx'],
-    },
+    // accept 옵션을 제거하여 모든 파일을 허용하고, onDrop에서 확장자로 필터링
     multiple: true,
   });
 
@@ -241,6 +278,11 @@ export default function ExpenseForm({
         formData.append('attachments', file);
       });
 
+      // 삭제된 기존 첨부파일 정보 전달
+      removedAttachmentRefs.forEach((ref) => {
+        formData.append('removeAttachments', ref);
+      });
+
       await onSubmit(formData);
     } catch (err) {
       setError(err instanceof Error ? err.message : '저장 중 오류 발생');
@@ -279,7 +321,7 @@ export default function ExpenseForm({
     [],
   );
 
-  // 첨부파일 삭제 핸들러
+  // 새로 추가한 첨부파일 삭제 핸들러
   const handleAttachmentDelete = useCallback(
     (index: number) => {
       setAttachmentFiles((prev) => prev.filter((_, i) => i !== index));
@@ -289,6 +331,24 @@ export default function ExpenseForm({
     },
     [attachmentPreviews],
   );
+
+  // 기존 첨부파일 삭제 핸들러
+  const handleExistingAttachmentDelete = useCallback((assetRef: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    if (!assetRef) {
+      console.warn('assetRef가 비어있습니다.');
+      return;
+    }
+    setRemovedAttachmentRefs((prev) => {
+      if (prev.includes(assetRef)) {
+        return prev; // 이미 삭제 목록에 있으면 추가하지 않음
+      }
+      return [...prev, assetRef];
+    });
+  }, []);
 
   // 드롭존 스타일
   const dropzoneStyle = useMemo(
@@ -369,6 +429,91 @@ export default function ExpenseForm({
             <Text weight="bold" size="3" mb="2" as="div">
               첨부파일
             </Text>
+            {/* 기존 첨부파일 표시 */}
+            {existingAttachments && existingAttachments.length > 0 && (
+              <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {existingAttachments
+                  .filter((attachment) => {
+                    if (!attachment.asset) return false;
+                    // Sanity에서 확장된 asset 객체의 경우 _id가 있고, reference인 경우 _ref가 있음
+                    const assetId = attachment.asset._ref || attachment.asset._id;
+                    return (
+                      assetId != null && assetId !== '' && !removedAttachmentRefs.includes(assetId)
+                    );
+                  })
+                  .map((attachment, index) => {
+                    const asset = attachment.asset;
+                    // Sanity에서 확장된 asset 객체의 경우 _id가 있고, reference인 경우 _ref가 있음
+                    const assetRef = asset._ref || asset._id || '';
+                    const attachmentUrl =
+                      asset.url ||
+                      `https://cdn.sanity.io/files/${process.env.NEXT_PUBLIC_SANITY_PROJECT_ID}/${process.env.NEXT_PUBLIC_SANITY_DATASET}/${assetRef}`;
+                    const fileName = asset.originalFilename || `첨부파일_${index + 1}`;
+                    const mimeType = asset.mimeType || '';
+                    const isImageFile =
+                      mimeType?.startsWith('image/') || assetRef?.startsWith('image-');
+
+                    return (
+                      <div
+                        key={`existing-${assetRef}-${index}`}
+                        style={{ position: 'relative', display: 'inline-block' }}
+                      >
+                        {isImageFile ? (
+                          <>
+                            <Image
+                              src={attachmentUrl}
+                              alt={fileName}
+                              width={300}
+                              height={200}
+                              style={imagePreviewStyle}
+                            />
+                            <Trash2
+                              size={18}
+                              style={{
+                                position: 'absolute',
+                                top: 4,
+                                right: 4,
+                                cursor: 'pointer',
+                                color: '#666',
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                handleExistingAttachmentDelete(assetRef);
+                              }}
+                            />
+                          </>
+                        ) : (
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              padding: '8px 16px',
+                              borderRadius: 8,
+                              gap: 4,
+                              border: '1px solid #ddd',
+                            }}
+                          >
+                            <Text size="2" color="gray">
+                              {fileName}
+                            </Text>
+                            <Trash2
+                              size={18}
+                              style={{ cursor: 'pointer', color: '#666' }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                handleExistingAttachmentDelete(assetRef);
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+            {/* 새로 추가한 첨부파일 표시 */}
             {attachmentFiles.length > 0 && (
               <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {attachmentPreviews.map((preview, index) => (

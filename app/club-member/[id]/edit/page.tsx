@@ -181,6 +181,7 @@ export default function ClubMemberEditPage({ params }: { params: Promise<{ id: s
                           <Select.Item value="회장">회장</Select.Item>
                           <Select.Item value="부회장">부회장</Select.Item>
                           <Select.Item value="총무">총무</Select.Item>
+                          <Select.Item value="대의원">대의원</Select.Item>
                           <Select.Item value="고문">고문</Select.Item>
                           <Select.Item value="경기이사">경기이사</Select.Item>
                           <Select.Item value="회원">회원</Select.Item>

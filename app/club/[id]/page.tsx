@@ -232,7 +232,7 @@ export default function ClubDetailPage({ params }: { params: Promise<{ id: strin
                       {clubMembers
                         .slice()
                         .sort((a, b) => {
-                          const roleOrder = ['회장', '부회장', '총무'];
+                          const roleOrder = ['회장', '부회장', '총무', '대의원'];
                           const aRoleIdx = roleOrder.indexOf(a.role || '');
                           const bRoleIdx = roleOrder.indexOf(b.role || '');
                           if (aRoleIdx !== -1 && bRoleIdx !== -1) return aRoleIdx - bRoleIdx;

@@ -60,7 +60,11 @@ export default function ClubDetailPage({ params }: { params: Promise<{ id: strin
       canDelete = true;
     } else if (
       isMyClub &&
-      (myRole === '회장' || myRole === '총무' || myRole === '경기이사' || userLevel >= 2)
+      (myRole === '회장' ||
+        myRole === '총무' ||
+        myRole === '경기이사' ||
+        myRole === '대의원' ||
+        userLevel >= 2)
     ) {
       canEdit = true;
     }

@@ -320,6 +320,16 @@ export default function ClubMemberListPage() {
                     />
                     <label htmlFor="role-manager">총무</label>
                     <Checkbox
+                      checked={roleFilter.includes('대의원')}
+                      onCheckedChange={(checked) => {
+                        setRoleFilter((prev) =>
+                          checked ? [...prev, '대의원'] : prev.filter((r) => r !== '대의원'),
+                        );
+                      }}
+                      id="role-delegate"
+                    />
+                    <label htmlFor="role-delegate">대의원</label>
+                    <Checkbox
                       checked={roleFilter.length === 0}
                       onCheckedChange={(checked) => {
                         if (checked) setRoleFilter([]);

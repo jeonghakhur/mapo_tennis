@@ -40,13 +40,23 @@ export default function ClubMemberEditPage({ params }: { params: Promise<{ id: s
   const searchParams = useSearchParams();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // 이전 페이지에 따라 리다이렉트 경로 결정
+  // 이전 페이지에 따라 리다이렉트 경로 결정 (필터 쿼리 파라미터 포함)
   const getReturnPath = () => {
     const returnTo = searchParams.get('returnTo');
 
+    // 필터 쿼리 파라미터 추출 (returnTo 제외)
+    const filterParams = new URLSearchParams();
+    searchParams.forEach((value, key) => {
+      if (key !== 'returnTo') {
+        filterParams.set(key, value);
+      }
+    });
+    const filterQueryString = filterParams.toString();
+    const filterQuery = filterQueryString ? `?${filterQueryString}` : '';
+
     // 쿼리 파라미터가 있으면 우선 사용
     if (returnTo === 'club-member') {
-      return '/club-member';
+      return `/club-member${filterQuery}`;
     } else if (returnTo === 'club') {
       return `/club/${member?.club?._id || form.club}`;
     }
@@ -55,7 +65,7 @@ export default function ClubMemberEditPage({ params }: { params: Promise<{ id: s
     if (typeof window !== 'undefined') {
       const referrer = document.referrer;
       if (referrer.includes('/club-member')) {
-        return '/club-member';
+        return `/club-member${filterQuery}`;
       } else if (referrer.includes('/club/')) {
         return `/club/${member?.club?._id || form.club}`;
       }

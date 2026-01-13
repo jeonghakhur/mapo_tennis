@@ -7,11 +7,27 @@ import { useClubMember } from '@/hooks/useClubMembers';
 import React from 'react';
 import Container from '@/components/Container';
 import SkeletonCard from '@/components/SkeletonCard';
+import { useSearchParams } from 'next/navigation';
 
 export default function ClubMemberDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params);
   const { member, isLoading, error } = useClubMember(id);
   const { loading } = useLoading();
+  const searchParams = useSearchParams();
+
+  // 필터 쿼리 파라미터를 유지하여 edit 페이지로 전달
+  const getFilterQueryString = (includeReturnTo = true) => {
+    const params = new URLSearchParams();
+    searchParams.forEach((value, key) => {
+      if (key !== 'returnTo') {
+        params.set(key, value);
+      }
+    });
+    if (includeReturnTo) {
+      params.set('returnTo', 'club-member');
+    }
+    return params.toString();
+  };
 
   return (
     <Container>
@@ -86,10 +102,14 @@ export default function ClubMemberDetailPage({ params }: { params: Promise<{ id:
 
           <Flex gap="2">
             <Button asChild size="3" className="!flex-1">
-              <Link href={`/club-member/${id}/edit?returnTo=club-member`}>수정</Link>
+              <Link href={`/club-member/${id}/edit?${getFilterQueryString(true)}`}>수정</Link>
             </Button>
             <Button asChild variant="soft" size="3" className="!flex-1">
-              <Link href="/club-member">목록으로</Link>
+              <Link
+                href={`/club-member${getFilterQueryString(false) ? `?${getFilterQueryString(false)}` : ''}`}
+              >
+                목록으로
+              </Link>
             </Button>
           </Flex>
         </div>

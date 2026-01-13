@@ -18,30 +18,66 @@ import { useLoading } from '@/hooks/useLoading';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import SkeletonCard from '@/components/SkeletonCard';
 import Container from '@/components/Container';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { NotebookPen, SlidersHorizontal } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useUser } from '@/hooks/useUser';
 import { hasPermissionLevel } from '@/lib/authUtils';
 import { Combobox } from '@/components/ui/combobox';
+import { useEffect } from 'react';
 
 export default function ClubMemberListPage() {
   const { data: session } = useSession();
   const { user } = useUser(session?.user?.email);
   const { members, isLoading, error } = useClubMembers();
-
-  const [selectedClub, setSelectedClub] = useState<string>('ALL');
-  // const [deletingAll, setDeletingAll] = useState(false);
-  const [searchUser, setSearchUser] = useState('');
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState('');
-  const [genderFilter, setGenderFilter] = useState('ALL');
-  const [scoreMin, setScoreMin] = useState('');
-  const [scoreMax, setScoreMax] = useState('');
-  const [over65, setOver65] = useState(false);
-  const [roleFilter, setRoleFilter] = useState<string[]>([]);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { loading } = useLoading();
+
+  // URL 쿼리 파라미터에서 필터 상태 초기화
+  const [selectedClub, setSelectedClub] = useState<string>(searchParams.get('club') || 'ALL');
+  const [searchUser, setSearchUser] = useState(searchParams.get('search') || '');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
+  const [genderFilter, setGenderFilter] = useState(searchParams.get('gender') || 'ALL');
+  const [scoreMin, setScoreMin] = useState(searchParams.get('scoreMin') || '');
+  const [scoreMax, setScoreMax] = useState(searchParams.get('scoreMax') || '');
+  const [over65, setOver65] = useState(searchParams.get('over65') === 'true');
+  const [roleFilter, setRoleFilter] = useState<string[]>(
+    searchParams.get('roles') ? searchParams.get('roles')!.split(',') : [],
+  );
+
+  // 필터 상태를 URL 쿼리 파라미터로 동기화
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (selectedClub !== 'ALL') params.set('club', selectedClub);
+    if (searchUser) params.set('search', searchUser);
+    if (statusFilter) params.set('status', statusFilter);
+    if (genderFilter !== 'ALL') params.set('gender', genderFilter);
+    if (scoreMin) params.set('scoreMin', scoreMin);
+    if (scoreMax) params.set('scoreMax', scoreMax);
+    if (over65) params.set('over65', 'true');
+    if (roleFilter.length > 0) params.set('roles', roleFilter.join(','));
+
+    const queryString = params.toString();
+    const currentQuery = window.location.search.slice(1); // '?' 제거
+
+    // 현재 URL과 다를 때만 업데이트 (무한 루프 방지)
+    if (currentQuery !== queryString) {
+      const newUrl = queryString ? `/club-member?${queryString}` : '/club-member';
+      router.replace(newUrl, { scroll: false });
+    }
+  }, [
+    selectedClub,
+    searchUser,
+    statusFilter,
+    genderFilter,
+    scoreMin,
+    scoreMax,
+    over65,
+    roleFilter,
+    router,
+  ]);
 
   // 중복 없는 클럽명 목록 추출
   type MemberType = ClubMember | ClubMemberInput;
@@ -376,7 +412,21 @@ export default function ClubMemberListPage() {
                         <td>{idx + 1}</td>
                         <td>{m.club && 'name' in m.club ? m.club.name : '-'}</td>
                         <td
-                          onClick={() => router.push(`/club-member/${(m as ClubMember)._id || ''}`)}
+                          onClick={() => {
+                            const params = new URLSearchParams();
+                            if (selectedClub !== 'ALL') params.set('club', selectedClub);
+                            if (searchUser) params.set('search', searchUser);
+                            if (statusFilter) params.set('status', statusFilter);
+                            if (genderFilter !== 'ALL') params.set('gender', genderFilter);
+                            if (scoreMin) params.set('scoreMin', scoreMin);
+                            if (scoreMax) params.set('scoreMax', scoreMax);
+                            if (over65) params.set('over65', 'true');
+                            if (roleFilter.length > 0) params.set('roles', roleFilter.join(','));
+                            const queryString = params.toString();
+                            router.push(
+                              `/club-member/${(m as ClubMember)._id || ''}${queryString ? `?${queryString}` : ''}`,
+                            );
+                          }}
                           style={{ cursor: 'pointer' }}
                         >
                           {m.user}

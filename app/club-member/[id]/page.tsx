@@ -86,7 +86,7 @@ export default function ClubMemberDetailPage({ params }: { params: Promise<{ id:
 
           <Flex gap="2">
             <Button asChild size="3" className="!flex-1">
-              <Link href={`/club-member/${id}/edit`}>수정</Link>
+              <Link href={`/club-member/${id}/edit?returnTo=club-member`}>수정</Link>
             </Button>
             <Button asChild variant="soft" size="3" className="!flex-1">
               <Link href="/club-member">목록으로</Link>

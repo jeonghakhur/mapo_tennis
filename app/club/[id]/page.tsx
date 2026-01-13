@@ -265,7 +265,8 @@ export default function ClubDetailPage({ params }: { params: Promise<{ id: strin
                             isManager && hasId
                               ? {
                                   style: { cursor: 'pointer' },
-                                  onClick: () => router.push(`/club-member/${member._id}/edit`),
+                                  onClick: () =>
+                                    router.push(`/club-member/${member._id}/edit?returnTo=club`),
                                 }
                               : {};
                           return (

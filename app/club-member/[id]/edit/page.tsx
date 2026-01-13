@@ -9,7 +9,7 @@ import {
   updateClubMemberRequest,
   deleteClubMemberRequest,
 } from '@/hooks/useClubMembers';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Container from '@/components/Container';
 import React from 'react';
 import SkeletonCard from '@/components/SkeletonCard';
@@ -37,7 +37,33 @@ export default function ClubMemberEditPage({ params }: { params: Promise<{ id: s
   const { loading, withLoading } = useLoading();
   const [error, setError] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  // 이전 페이지에 따라 리다이렉트 경로 결정
+  const getReturnPath = () => {
+    const returnTo = searchParams.get('returnTo');
+
+    // 쿼리 파라미터가 있으면 우선 사용
+    if (returnTo === 'club-member') {
+      return '/club-member';
+    } else if (returnTo === 'club') {
+      return `/club/${member?.club?._id || form.club}`;
+    }
+
+    // 쿼리 파라미터가 없으면 referrer 확인
+    if (typeof window !== 'undefined') {
+      const referrer = document.referrer;
+      if (referrer.includes('/club-member')) {
+        return '/club-member';
+      } else if (referrer.includes('/club/')) {
+        return `/club/${member?.club?._id || form.club}`;
+      }
+    }
+
+    // 기본값: club 페이지로 이동
+    return `/club/${member?.club?._id || form.club}`;
+  };
 
   useEffect(() => {
     if (member) {
@@ -90,7 +116,7 @@ export default function ClubMemberEditPage({ params }: { params: Promise<{ id: s
           club: { _ref: form.club, _type: 'reference' },
           score: form.score ? Number(form.score) : undefined,
         });
-        router.push(`/club/${member?.club?._id || form.club}`);
+        router.push(getReturnPath());
       } catch (e) {
         setError('수정 실패: ' + (e instanceof Error ? e.message : e));
       }
@@ -102,7 +128,7 @@ export default function ClubMemberEditPage({ params }: { params: Promise<{ id: s
     await withLoading(async () => {
       try {
         await deleteClubMemberRequest(id);
-        router.push('/club-member');
+        router.push(getReturnPath());
       } catch (e) {
         setError('삭제 실패: ' + (e instanceof Error ? e.message : e));
       }
@@ -333,7 +359,7 @@ export default function ClubMemberEditPage({ params }: { params: Promise<{ id: s
                 type="button"
                 className="!flex-1"
                 size="3"
-                onClick={() => router.push(`/club/${member?.club?._id || form.club}`)}
+                onClick={() => router.push(getReturnPath())}
               >
                 취소
               </Button>
@@ -359,11 +385,7 @@ export default function ClubMemberEditPage({ params }: { params: Promise<{ id: s
           </AlertDialog.Description>
           <Flex gap="3" mt="4" justify="end">
             <AlertDialog.Cancel>
-              <Button
-                variant="soft"
-                color="gray"
-                onClick={() => router.push(`/club/${member?.club?._id || form.club}`)}
-              >
+              <Button variant="soft" color="gray" onClick={() => router.push(getReturnPath())}>
                 취소
               </Button>
             </AlertDialog.Cancel>
@@ -372,7 +394,7 @@ export default function ClubMemberEditPage({ params }: { params: Promise<{ id: s
                 color="red"
                 onClick={async () => {
                   await handleDelete();
-                  router.push(`/club/${member?.club?._id || form.club}`);
+                  router.push(getReturnPath());
                 }}
                 loading={loading}
               >

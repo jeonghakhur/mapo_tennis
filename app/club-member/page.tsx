@@ -372,13 +372,15 @@ export default function ClubMemberListPage() {
                   .map((m, idx) => {
                     const id = (m as ClubMember)._id || idx;
                     return (
-                      <tr
-                        key={id}
-                        onClick={() => router.push(`/club-member/${(m as ClubMember)._id || ''}`)}
-                      >
+                      <tr key={id}>
                         <td>{idx + 1}</td>
                         <td>{m.club && 'name' in m.club ? m.club.name : '-'}</td>
-                        <td>{m.user}</td>
+                        <td
+                          onClick={() => router.push(`/club-member/${(m as ClubMember)._id || ''}`)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          {m.user}
+                        </td>
                         <td>{m.role || '-'}</td>
                         <td>{getAge(m.birth)}</td>
                         <td>{m.score || '-'}</td>

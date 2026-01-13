@@ -24,9 +24,9 @@ import { useSession } from 'next-auth/react';
 import { useUser } from '@/hooks/useUser';
 import { hasPermissionLevel } from '@/lib/authUtils';
 import { Combobox } from '@/components/ui/combobox';
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 
-export default function ClubMemberListPage() {
+function ClubMemberListContent() {
   const { data: session } = useSession();
   const { user } = useUser(session?.user?.email);
   const { members, isLoading, error } = useClubMembers();
@@ -447,5 +447,19 @@ export default function ClubMemberListPage() {
         </Box>
       )}
     </Container>
+  );
+}
+
+export default function ClubMemberListPage() {
+  return (
+    <Suspense
+      fallback={
+        <Container>
+          <SkeletonCard lines={4} />
+        </Container>
+      }
+    >
+      <ClubMemberListContent />
+    </Suspense>
   );
 }

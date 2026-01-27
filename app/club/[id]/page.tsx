@@ -256,7 +256,12 @@ export default function ClubDetailPage({ params }: { params: Promise<{ id: strin
                           }
                           const userLevel = session?.user?.level ?? 0;
                           const isManager =
-                            myRole === '회장' || myRole === '총무' || userLevel >= 4;
+                            myRole === '회장' ||
+                            myRole === '부회장' ||
+                            myRole === '총무' ||
+                            myRole === '경기이사' ||
+                            myRole === '대의원' ||
+                            userLevel >= 4;
                           const hasId = typeof member._id === 'string' && !!member._id;
                           const rowKey = hasId
                             ? member._id
